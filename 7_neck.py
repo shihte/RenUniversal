@@ -1,20 +1,15 @@
 import cv2
 import mediapipe as mp
-import math
+import numpy as np
 import time
-import sys
 
 class PostureMonitor:
-    def __init__(self, threshold_angle=3.0, camera_id=0):
-        self.threshold_angle = abs(threshold_angle) # Use absolute value
+    def __init__(self, threshold_angle=15.0, camera_id=0):
+        # Threshold is now Pitch angle in degrees (e.g., > 15 degrees is looking down)
+        self.threshold_angle = threshold_angle 
         self.camera_id = camera_id
         
-        # We will now use absolute deviation Logic
-        # logic: if abs(current_angle) > self.threshold_angle -> Bad Posture
-        
         # MediaPipe Setup
-        self.mp_drawing = mp.solutions.drawing_utils
-        self.mp_drawing_styles = mp.solutions.drawing_styles
         self.mp_face_mesh = mp.solutions.face_mesh
         
         # State
@@ -22,114 +17,144 @@ class PostureMonitor:
         self.is_down = False
         self.prev_time = 0
         
-        # Smoothing
-        self.smooth_angle = None
-        self.alpha = args.alpha if 'args' in globals() else 0.1  # Smoothing factor
+        # Smoothing (Exponential Moving Average)
+        self.smooth_pitch = 0
+        self.alpha = args.alpha if 'args' in globals() else 0.2
         
-        # Auto-Reset (Dynamic Stability)
-        self.stable_ref_angle = 0.0 # The angle we are currently holding stable at
-        self.stable_start_time = time.time()
-        self.reset_duration = 3.0 # seconds
-        self.zero_offset = 0.0 # Calibration offset
+        # 3D Model Points (Standard Generic Face Model)
+        # Coordinates in arbitrary units, centered roughly at the head
+        self.face_3d = np.array([
+            [0.0, 0.0, 0.0],            # Nose tip (Landmark 1)
+            [0.0, -330.0, -65.0],       # Chin (Landmark 152)
+            [-225.0, 170.0, -135.0],    # Left eye left corner (Landmark 33)
+            [225.0, 170.0, -135.0],     # Right eye right corner (Landmark 263)
+            [-150.0, -150.0, -125.0],   # Left Mouth corner (Landmark 61)
+            [150.0, -150.0, -125.0]     # Right Mouth corner (Landmark 291)
+        ], dtype=np.float64)
 
-    def calculate_angle(self, p1, p2):
-        """Calculates the angle of the vector p1->p2 relative to vertical (0, -1)."""
-        x1, y1 = p1
-        x2, y2 = p2
-        vx = x2 - x1
-        vy = y2 - y1
-        return math.degrees(math.atan2(vx, -vy))
+        # Corresponding MediaPipe Indices
+        self.face_2d_indices = [1, 152, 33, 263, 61, 291]
+
+    def get_head_pose(self, face_landmarks, img_w, img_h):
+        face_2d = []
+        for idx in self.face_2d_indices:
+            lm = face_landmarks.landmark[idx]
+            x, y = int(lm.x * img_w), int(lm.y * img_h)
+            face_2d.append([x, y])
+        
+        face_2d = np.array(face_2d, dtype=np.float64)
+
+        # Camera Matrix (Approximation)
+        focal_length = 1 * img_w
+        cam_matrix = np.array([
+            [focal_length, 0, img_h / 2],
+            [0, focal_length, img_w / 2],
+            [0, 0, 1]
+        ])
+        
+        # Distance Matrix (Assuming no lens distortion for simplicity)
+        dist_matrix = np.zeros((4, 1), dtype=np.float64)
+
+        # Solve PnP
+        success, rot_vec, trans_vec = cv2.solvePnP(self.face_3d, face_2d, cam_matrix, dist_matrix)
+
+        if not success:
+            return None, None
+
+        # Convert Rotation Vector to Rotation Matrix
+        rmat, jac = cv2.Rodrigues(rot_vec)
+
+        # Calculate Euler Angles
+        # Project a 3D point to get pitch/yaw/roll roughly or use matrix decomposition
+        # Standard decomposition for head pose:
+        # Pitch: Rotation around X-axis (Looking up/down)
+        # Yaw: Rotation around Y-axis (Looking left/right)
+        # Roll: Rotation around Z-axis (Tilt left/right)
+        
+        angles, mtxR, mtxQ, Qx, Qy, Qz = cv2.RQDecomp3x3(rmat)
+
+        # Angles are in degrees
+        pitch = angles[0] * 360
+        yaw = angles[1] * 360
+        roll = angles[2] * 360
+        
+        return pitch, (rot_vec, trans_vec, cam_matrix, dist_matrix, face_2d[0])
 
     def process_frame(self, frame, face_mesh):
         h, w, _ = frame.shape
         img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = face_mesh.process(img_rgb)
         
-        current_angle = None
+        current_pitch = None
         
         if results.multi_face_landmarks:
             face_landmarks = results.multi_face_landmarks[0]
             
-            pt_chin = face_landmarks.landmark[152]
-            pt_fore = face_landmarks.landmark[10]
+            # Draw the 6 anchor points used for PnP calculation
+            for idx in self.face_2d_indices:
+                lm = face_landmarks.landmark[idx]
+                pt_x, pt_y = int(lm.x * w), int(lm.y * h)
+                cv2.circle(frame, (pt_x, pt_y), 3, (255, 255, 0), -1) # Cyan dots
+
+            # Get Head Pose
+            pitch, debug_info = self.get_head_pose(face_landmarks, w, h)
             
-            x_chin, y_chin = int(pt_chin.x * w), int(pt_chin.y * h)
-            x_fore, y_fore = int(pt_fore.x * w), int(pt_fore.y * h)
-
-            # Calculate Angle (Raw)
-            raw_angle = self.calculate_angle((x_chin, y_chin), (x_fore, y_fore))
-            
-            # Smoothing
-            if self.smooth_angle is None:
-                self.smooth_angle = raw_angle
-                self.stable_ref_angle = raw_angle
-            else:
-                self.smooth_angle = self.alpha * raw_angle + (1 - self.alpha) * self.smooth_angle
-            
-            # Apply offset (Tare)
-            current_angle = round(self.smooth_angle - self.zero_offset, 1)
-
-            # Draw Visuals
-            cv2.circle(frame, (x_chin, y_chin), 5, (0, 0, 255), -1)
-            cv2.circle(frame, (x_fore, y_fore), 5, (0, 255, 0), -1)
-            cv2.line(frame, (x_chin, y_chin), (x_fore, y_fore), (255, 0, 0), 2)
-            
-            self.mp_drawing.draw_landmarks(
-                image=frame,
-                landmark_list=face_landmarks,
-                connections=self.mp_face_mesh.FACEMESH_CONTOURS,
-                landmark_drawing_spec=None,
-                connection_drawing_spec=self.mp_drawing_styles.get_default_face_mesh_contours_style()
-            )
-
-            # Logic: Check Down
-            # Absolute Deviation Logic
-            # Assuming 0 is neutral. Any deviation > threshold is "Bad" (or at least "Down" if we ignore Looking Up)
-            is_posture_bad = False
-            if abs(current_angle) > self.threshold_angle:
-                is_posture_bad = True
-
-            if is_posture_bad:
-                if not self.is_down:
-                    self.down_count += 1
-                    self.is_down = True
-                
-                cv2.putText(frame, "Bad Posture (Look Up)", (50, 200),
-                            cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2)
-            else:
-                self.is_down = False
-
-            # Dynamic Stability Reset Logic
-            # Check if *actual smoothed angle* (not the offsetted one) is stable
-            # This allows us to track stability of head movement regardless of current zero
-            if abs(self.smooth_angle - self.stable_ref_angle) <= 1.0:
-                elapsed = time.time() - self.stable_start_time
-                if elapsed >= self.reset_duration:
-                    # self.down_count = 0  <-- REMOVED: Count should persist
-                    self.zero_offset = self.smooth_angle # Recalibrate/Tare!
-                    
-                    # Visual feedback
-                    cv2.putText(frame, "RECALIBRATED!", (50, 300),
-                            cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 255), 2)
+            if pitch is not None:
+                # Smoothing
+                if self.smooth_pitch == 0:
+                    self.smooth_pitch = pitch
                 else:
-                    # Show progress
-                     if elapsed > 0.5:
-                        cv2.putText(frame, f"Calibrating... {max(0, self.reset_duration - elapsed):.1f}s", (50, 300),
-                                cv2.FONT_HERSHEY_PLAIN, 1.5, (255, 255, 0), 2)
-            else:
-                # Movement detected, reset stability reference
-                self.stable_ref_angle = self.smooth_angle
-                self.stable_start_time = time.time()
+                    self.smooth_pitch = self.alpha * pitch + (1 - self.alpha) * self.smooth_pitch
+                
+                current_pitch = self.smooth_pitch
+                
+                # Visuals: Draw Nose Direction or Axis
+                rot_vec, trans_vec, cam_matrix, dist_matrix, nose_2d = debug_info
+                
+                # Project axis points to visualize
+                # X-axis (Pitch) - Red, Y-axis (Yaw) - Green, Z-axis (Forward) - Blue
+                axis_length = 50
+                axis_points_3d = np.array([
+                    [axis_length, 0, 0],
+                    [0, axis_length, 0],
+                    [0, 0, axis_length] 
+                ], dtype=np.float64)
+                
+                axis_points_2d, _ = cv2.projectPoints(axis_points_3d, rot_vec, trans_vec, cam_matrix, dist_matrix)
+                
+                p_nose = (int(nose_2d[0]), int(nose_2d[1]))
+                p_x = (int(axis_points_2d[0][0][0]), int(axis_points_2d[0][0][1])) # Pitch Axis
+                p_y = (int(axis_points_2d[1][0][0]), int(axis_points_2d[1][0][1])) # Yaw Axis
+                
+                # Draw visual axes
+                cv2.line(frame, p_nose, p_x, (0, 0, 255), 2) # Red: Pitch movement axis
+                cv2.line(frame, p_nose, p_y, (0, 255, 0), 2) # Green: Yaw movement axis
 
-            # Display Angle
-            # Determine color based on bad/good status
-            color = (0, 0, 255) if is_posture_bad else (0, 255, 255)
-            cv2.putText(frame, f"Angle: {current_angle} deg", (50, 150),
-                        cv2.FONT_HERSHEY_PLAIN, 2, color, 2)
-            
-            # Display Threshold
-            cv2.putText(frame, f"Limit: {self.threshold_angle}", (w - 200, 80),
-                        cv2.FONT_HERSHEY_PLAIN, 1.5, (200, 200, 200), 2)
+                # Logic: Check Down (Pitch)
+                # Usually Pitch > Threshold means looking down. 
+                # Note: Depending on coordinate system, looking down might be positive or negative.
+                # In this RQDecomp setup, Looking DOWN usually increases Pitch (Positive).
+                
+                is_posture_bad = False
+                if current_pitch > self.threshold_angle:
+                    is_posture_bad = True
+
+                if is_posture_bad:
+                    if not self.is_down:
+                        self.down_count += 1
+                        self.is_down = True
+                    
+                    cv2.putText(frame, "Bad Posture (Looking Down)", (50, 200),
+                                cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2)
+                else:
+                    self.is_down = False
+
+                # Display Info
+                color = (0, 0, 255) if is_posture_bad else (0, 255, 255)
+                cv2.putText(frame, f"Pitch: {current_pitch:.1f} deg", (50, 150),
+                            cv2.FONT_HERSHEY_PLAIN, 2, color, 2)
+                cv2.putText(frame, f"Limit: > {self.threshold_angle}", (w - 250, 80),
+                            cv2.FONT_HERSHEY_PLAIN, 1.5, (200, 200, 200), 2)
 
         return frame
 
@@ -139,12 +164,12 @@ class PostureMonitor:
             print("Error: Could not open webcam.")
             return
 
-        print("Starting Posture Monitor... Press 'ESC' to exit.")
-        print(f"Threshold: {self.threshold_angle} (Absolute Deviation)")
+        print("Starting 3D Posture Monitor...")
+        print(f"Pitch Threshold: {self.threshold_angle} degrees (Positive = Down)")
         
         with self.mp_face_mesh.FaceMesh(
             max_num_faces=1,
-            refine_landmarks=False,
+            refine_landmarks=True,
             min_detection_confidence=0.7,
             min_tracking_confidence=0.7
         ) as face_mesh:
@@ -152,7 +177,6 @@ class PostureMonitor:
             while cap.isOpened():
                 success, frame = cap.read()
                 if not success:
-                    print("Ignoring empty camera frame.")
                     continue
 
                 frame = cv2.flip(frame, 1) # Mirror view
@@ -162,16 +186,13 @@ class PostureMonitor:
                 fps = 1 / (curr_time - self.prev_time) if (curr_time - self.prev_time) > 0 else 0
                 self.prev_time = curr_time
                 
-                # Display FPS and Count
-                if 'w' not in locals(): # Get width safely if not defined
-                    h, w, _ = frame.shape
-                
+                h, w, _ = frame.shape
                 cv2.putText(frame, f"FPS: {int(fps)}", (w - 150, 50), 
                             cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
                 cv2.putText(frame, f"Count: {self.down_count}", (50, 100),
                             cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
 
-                cv2.imshow('Posture Monitor (FaceMesh)', frame)
+                cv2.imshow('3D Posture Monitor (PnP)', frame)
 
                 if cv2.waitKey(5) & 0xFF == 27:
                     break
@@ -180,14 +201,13 @@ class PostureMonitor:
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description='Posture Monitor')
-    parser.add_argument('--threshold', type=float, default=3.0, help='Angle deviation threshold (degrees). Triggers if abs(angle) > threshold.')
-    parser.add_argument('--alpha', type=float, default=0.1, help='Smoothing factor (0.01-1.0). smaller = smoother.')
+    import argpars
+    parser = argparse.ArgumentParser(description='3D Posture Monitor')
+    parser.add_argument('--threshold', type=float, default=15.0, help='Pitch threshold degrees (Default 15).')
+    parser.add_argument('--alpha', type=float, default=0.2, help='Smoothing factor.')
     parser.add_argument('--camera', type=int, default=0, help='Camera ID')
     args = parser.parse_args()
 
     monitor = PostureMonitor(threshold_angle=args.threshold, camera_id=args.camera)
-    # Update state from args
     monitor.alpha = args.alpha
     monitor.run()
