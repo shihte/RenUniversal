@@ -2,141 +2,122 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import time
+import math
 
 class PostureMonitor:
-    def __init__(self, threshold_angle=15.0, camera_id=0):
-        # Threshold is now Pitch angle in degrees (e.g., > 15 degrees is looking down)
-        self.threshold_angle = threshold_angle 
+    def __init__(self, threshold_ratio=2.0, camera_id=0):
+        # Threshold: Ratio of (Chin-Nose Y) / (Nose-Eye Y) that indicates "looking down"
+        self.threshold_ratio = threshold_ratio 
         self.camera_id = camera_id
         
         # MediaPipe Setup
         self.mp_face_mesh = mp.solutions.face_mesh
         
-        # State
+        # Posture Counters
         self.down_count = 0
+        
+        # State Flags
         self.is_down = False
+        
+        # Timing
         self.prev_time = 0
         
         # Smoothing (Exponential Moving Average)
-        self.smooth_pitch = 0
-        self.alpha = args.alpha if 'args' in globals() else 0.2
+        self.smooth_ratio = 0
+        self.alpha = 0.3  # Smoothing factor
         
-        # 3D Model Points (Standard Generic Face Model)
-        # Coordinates in arbitrary units, centered roughly at the head
-        self.face_3d = np.array([
-            [0.0, 0.0, 0.0],            # Nose tip (Landmark 1)
-            [0.0, -330.0, -65.0],       # Chin (Landmark 152)
-            [-225.0, 170.0, -135.0],    # Left eye left corner (Landmark 33)
-            [225.0, 170.0, -135.0],     # Right eye right corner (Landmark 263)
-            [-150.0, -150.0, -125.0],   # Left Mouth corner (Landmark 61)
-            [150.0, -150.0, -125.0]     # Right Mouth corner (Landmark 291)
-        ], dtype=np.float64)
+        # Landmark indices for 2D ratio calculation
+        self.NOSE = 1
+        self.CHIN = 152
+        self.LEFT_EYE = 33
+        self.RIGHT_EYE = 263
 
-        # Corresponding MediaPipe Indices
-        self.face_2d_indices = [1, 152, 33, 263, 61, 291]
-
-    def get_head_pose(self, face_landmarks, img_w, img_h):
-        face_2d = []
-        for idx in self.face_2d_indices:
-            lm = face_landmarks.landmark[idx]
-            x, y = int(lm.x * img_w), int(lm.y * img_h)
-            face_2d.append([x, y])
+    def calculate_distance(self, p1, p2):
+        """Calculate Euclidean distance between two points."""
+        return math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
+    
+    def get_ratio(self, face_landmarks, w, h):
+        """
+        Calculate vertical ratio to detect looking down.
+        Ratio = (Chin Y - Nose Y) / (Nose Y - Eye Y)
         
-        face_2d = np.array(face_2d, dtype=np.float64)
-
-        # Camera Matrix (Approximation)
-        focal_length = 1 * img_w
-        cam_matrix = np.array([
-            [focal_length, 0, img_h / 2],
-            [0, focal_length, img_w / 2],
-            [0, 0, 1]
-        ])
+        When looking down:
+        - Nose moves UP in frame (closer to eyes)
+        - Chin moves DOWN in frame (further from nose)
+        - So (Chin-Nose) increases and (Nose-Eye) decreases
+        - Net result: Ratio INCREASES
         
-        # Distance Matrix (Assuming no lens distortion for simplicity)
-        dist_matrix = np.zeros((4, 1), dtype=np.float64)
-
-        # Solve PnP
-        success, rot_vec, trans_vec = cv2.solvePnP(self.face_3d, face_2d, cam_matrix, dist_matrix)
-
-        if not success:
-            return None, None
-
-        # Convert Rotation Vector to Rotation Matrix
-        rmat, jac = cv2.Rodrigues(rot_vec)
-
-        # Calculate Euler Angles
-        # Project a 3D point to get pitch/yaw/roll roughly or use matrix decomposition
-        # Standard decomposition for head pose:
-        # Pitch: Rotation around X-axis (Looking up/down)
-        # Yaw: Rotation around Y-axis (Looking left/right)
-        # Roll: Rotation around Z-axis (Tilt left/right)
+        When turning head:
+        - All Y coordinates shift similarly
+        - Ratio stays relatively stable
+        """
+        # Get landmark positions
+        nose = face_landmarks.landmark[self.NOSE]
+        chin = face_landmarks.landmark[self.CHIN]
+        left_eye = face_landmarks.landmark[self.LEFT_EYE]
+        right_eye = face_landmarks.landmark[self.RIGHT_EYE]
         
-        angles, mtxR, mtxQ, Qx, Qy, Qz = cv2.RQDecomp3x3(rmat)
-
-        # Angles are in degrees
-        pitch = angles[0] * 360
-        yaw = angles[1] * 360
-        roll = angles[2] * 360
+        # Use Y coordinates (vertical position)
+        # Note: In image coordinates, Y increases downward
+        nose_y = nose.y * h
+        chin_y = chin.y * h
+        eye_y = (left_eye.y + right_eye.y) / 2 * h  # Average of both eyes
         
-        return pitch, (rot_vec, trans_vec, cam_matrix, dist_matrix, face_2d[0])
+        # Get pixel positions for drawing
+        nose_pt = (nose.x * w, nose.y * h)
+        chin_pt = (chin.x * w, chin.y * h)
+        left_eye_pt = (left_eye.x * w, left_eye.y * h)
+        right_eye_pt = (right_eye.x * w, right_eye.y * h)
+        
+        # Calculate vertical distances
+        chin_to_nose = chin_y - nose_y  # Distance from nose to chin
+        nose_to_eye = nose_y - eye_y    # Distance from eye to nose
+        
+        # Avoid division by zero
+        if nose_to_eye <= 0:
+            return None
+        
+        ratio = chin_to_nose / nose_to_eye
+        return ratio, (nose_pt, chin_pt, left_eye_pt, right_eye_pt)
 
     def process_frame(self, frame, face_mesh):
         h, w, _ = frame.shape
         img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = face_mesh.process(img_rgb)
         
-        current_pitch = None
+        current_ratio = None
         
         if results.multi_face_landmarks:
             face_landmarks = results.multi_face_landmarks[0]
             
-            # Draw the 6 anchor points used for PnP calculation
-            for idx in self.face_2d_indices:
-                lm = face_landmarks.landmark[idx]
-                pt_x, pt_y = int(lm.x * w), int(lm.y * h)
-                cv2.circle(frame, (pt_x, pt_y), 3, (255, 255, 0), -1) # Cyan dots
-
-            # Get Head Pose
-            pitch, debug_info = self.get_head_pose(face_landmarks, w, h)
+            # Get ratio
+            result = self.get_ratio(face_landmarks, w, h)
             
-            if pitch is not None:
+            if result is not None:
+                ratio, (nose_pt, chin_pt, left_eye_pt, right_eye_pt) = result
+                
                 # Smoothing
-                if self.smooth_pitch == 0:
-                    self.smooth_pitch = pitch
+                if self.smooth_ratio == 0:
+                    self.smooth_ratio = ratio
                 else:
-                    self.smooth_pitch = self.alpha * pitch + (1 - self.alpha) * self.smooth_pitch
+                    self.smooth_ratio = self.alpha * ratio + (1 - self.alpha) * self.smooth_ratio
                 
-                current_pitch = self.smooth_pitch
+                current_ratio = self.smooth_ratio
                 
-                # Visuals: Draw Nose Direction or Axis
-                rot_vec, trans_vec, cam_matrix, dist_matrix, nose_2d = debug_info
+                # Draw landmarks for visualization
+                cv2.circle(frame, (int(nose_pt[0]), int(nose_pt[1])), 5, (0, 255, 255), -1)  # Nose - Yellow
+                cv2.circle(frame, (int(chin_pt[0]), int(chin_pt[1])), 5, (0, 255, 0), -1)    # Chin - Green
+                cv2.circle(frame, (int(left_eye_pt[0]), int(left_eye_pt[1])), 5, (255, 0, 0), -1)  # Left Eye - Blue
+                cv2.circle(frame, (int(right_eye_pt[0]), int(right_eye_pt[1])), 5, (255, 0, 0), -1)  # Right Eye - Blue
                 
-                # Project axis points to visualize
-                # X-axis (Pitch) - Red, Y-axis (Yaw) - Green, Z-axis (Forward) - Blue
-                axis_length = 50
-                axis_points_3d = np.array([
-                    [axis_length, 0, 0],
-                    [0, axis_length, 0],
-                    [0, 0, axis_length] 
-                ], dtype=np.float64)
+                # Draw lines
+                cv2.line(frame, (int(nose_pt[0]), int(nose_pt[1])), (int(chin_pt[0]), int(chin_pt[1])), (0, 255, 0), 2)
+                cv2.line(frame, (int(left_eye_pt[0]), int(left_eye_pt[1])), (int(right_eye_pt[0]), int(right_eye_pt[1])), (255, 0, 0), 2)
                 
-                axis_points_2d, _ = cv2.projectPoints(axis_points_3d, rot_vec, trans_vec, cam_matrix, dist_matrix)
-                
-                p_nose = (int(nose_2d[0]), int(nose_2d[1]))
-                p_x = (int(axis_points_2d[0][0][0]), int(axis_points_2d[0][0][1])) # Pitch Axis
-                p_y = (int(axis_points_2d[1][0][0]), int(axis_points_2d[1][0][1])) # Yaw Axis
-                
-                # Draw visual axes
-                cv2.line(frame, p_nose, p_x, (0, 0, 255), 2) # Red: Pitch movement axis
-                cv2.line(frame, p_nose, p_y, (0, 255, 0), 2) # Green: Yaw movement axis
-
-                # Logic: Check Down (Pitch)
-                # Usually Pitch > Threshold means looking down. 
-                # Note: Depending on coordinate system, looking down might be positive or negative.
-                # In this RQDecomp setup, Looking DOWN usually increases Pitch (Positive).
-                
+                # Logic: Check if ratio exceeds threshold (Looking Down)
                 is_posture_bad = False
-                if current_pitch > self.threshold_angle:
+                
+                if current_ratio > self.threshold_ratio:
                     is_posture_bad = True
 
                 if is_posture_bad:
@@ -151,9 +132,9 @@ class PostureMonitor:
 
                 # Display Info
                 color = (0, 0, 255) if is_posture_bad else (0, 255, 255)
-                cv2.putText(frame, f"Pitch: {current_pitch:.1f} deg", (50, 150),
+                cv2.putText(frame, f"Ratio: {current_ratio:.2f}", (50, 150),
                             cv2.FONT_HERSHEY_PLAIN, 2, color, 2)
-                cv2.putText(frame, f"Limit: > {self.threshold_angle}", (w - 250, 80),
+                cv2.putText(frame, f"Limit: > {self.threshold_ratio}", (w - 250, 80),
                             cv2.FONT_HERSHEY_PLAIN, 1.5, (200, 200, 200), 2)
 
         return frame
@@ -164,26 +145,30 @@ class PostureMonitor:
             print("Error: Could not open webcam.")
             return
 
-        print("Starting 3D Posture Monitor...")
-        print(f"Pitch Threshold: {self.threshold_angle} degrees (Positive = Down)")
+        print("Starting 2D Vertical Ratio Posture Monitor...")
+        print(f"Ratio Threshold: > {self.threshold_ratio}")
+        print("(Chin-Nose Y) / (Nose-Eye Y) ratio")
         
         with self.mp_face_mesh.FaceMesh(
             max_num_faces=1,
             refine_landmarks=True,
-            min_detection_confidence=0.7,
-            min_tracking_confidence=0.7
-        ) as face_mesh:
+            min_detection_confidence=0.5,
+            min_tracking_confidence=0.5) as face_mesh:
             
             while cap.isOpened():
                 success, frame = cap.read()
                 if not success:
+                    print("Ignoring empty camera frame.")
                     continue
 
-                frame = cv2.flip(frame, 1) # Mirror view
                 frame = self.process_frame(frame, face_mesh)
-
+                
+                # Mirror
+                frame = cv2.flip(frame, 1)
+                
+                # FPS
                 curr_time = time.time()
-                fps = 1 / (curr_time - self.prev_time) if (curr_time - self.prev_time) > 0 else 0
+                fps = 1 / (curr_time - self.prev_time) if self.prev_time else 0
                 self.prev_time = curr_time
                 
                 h, w, _ = frame.shape
@@ -192,22 +177,21 @@ class PostureMonitor:
                 cv2.putText(frame, f"Count: {self.down_count}", (50, 100),
                             cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
 
-                cv2.imshow('3D Posture Monitor (PnP)', frame)
-
+                cv2.imshow('Posture Monitor (2D Ratio)', frame)
+                
                 if cv2.waitKey(5) & 0xFF == 27:
                     break
-
+        
         cap.release()
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    import argpars
-    parser = argparse.ArgumentParser(description='3D Posture Monitor')
-    parser.add_argument('--threshold', type=float, default=15.0, help='Pitch threshold degrees (Default 15).')
-    parser.add_argument('--alpha', type=float, default=0.2, help='Smoothing factor.')
-    parser.add_argument('--camera', type=int, default=0, help='Camera ID')
+    import argparse
+    parser = argparse.ArgumentParser(description='2D Ratio-Based Posture Monitor')
+    parser.add_argument('--threshold', type=float, default=2.0, help='Ratio threshold (Default 2.0).')
+    parser.add_argument('--camera', type=int, default=0, help='Camera ID (default 0).')
+    
     args = parser.parse_args()
-
-    monitor = PostureMonitor(threshold_angle=args.threshold, camera_id=args.camera)
-    monitor.alpha = args.alpha
+    
+    monitor = PostureMonitor(threshold_ratio=args.threshold, camera_id=args.camera)
     monitor.run()
