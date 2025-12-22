@@ -6,8 +6,12 @@ import math
 
 class PostureMonitor:
     def __init__(self, threshold_ratio=2.0, camera_id=0):
-        # Threshold: Ratio of (Chin-Nose Y) / (Nose-Eye Y) that indicates "looking down"
-        self.threshold_ratio = threshold_ratio 
+        # Hysteresis thresholds to prevent fluctuation
+        # Enter "bad posture" at ratio > threshold_high
+        # Exit "bad posture" at ratio < threshold_low
+        self.threshold_high = threshold_ratio + 0.3  # e.g., 2.3
+        self.threshold_low = threshold_ratio - 0.3   # e.g., 1.7
+        self.threshold_ratio = threshold_ratio  # For display
         self.camera_id = camera_id
         
         # MediaPipe Setup
@@ -114,27 +118,34 @@ class PostureMonitor:
                 cv2.line(frame, (int(nose_pt[0]), int(nose_pt[1])), (int(chin_pt[0]), int(chin_pt[1])), (0, 255, 0), 2)
                 cv2.line(frame, (int(left_eye_pt[0]), int(left_eye_pt[1])), (int(right_eye_pt[0]), int(right_eye_pt[1])), (255, 0, 0), 2)
                 
-                # Logic: Check if ratio exceeds threshold (Looking Down)
+                # Logic: Hysteresis to prevent fluctuation
+                # Enter "bad posture" at ratio > threshold_high
+                # Exit "bad posture" at ratio < threshold_low
                 is_posture_bad = False
                 
-                if current_ratio > self.threshold_ratio:
-                    is_posture_bad = True
-
-                if is_posture_bad:
-                    if not self.is_down:
+                if self.is_down:
+                    # Currently in "bad" state, need to drop below low threshold to exit
+                    if current_ratio < self.threshold_low:
+                        self.is_down = False
+                    else:
+                        is_posture_bad = True
+                else:
+                    # Currently in "good" state, need to exceed high threshold to enter
+                    if current_ratio > self.threshold_high:
+                        is_posture_bad = True
                         self.down_count += 1
                         self.is_down = True
-                    
+
+                # Display warning message if posture bad
+                if is_posture_bad:
                     cv2.putText(frame, "Bad Posture (Looking Down)", (50, 200),
                                 cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2)
-                else:
-                    self.is_down = False
 
                 # Display Info
                 color = (0, 0, 255) if is_posture_bad else (0, 255, 255)
                 cv2.putText(frame, f"Ratio: {current_ratio:.2f}", (50, 150),
                             cv2.FONT_HERSHEY_PLAIN, 2, color, 2)
-                cv2.putText(frame, f"Limit: > {self.threshold_ratio}", (w - 250, 80),
+                cv2.putText(frame, f"Range: {self.threshold_low:.1f} - {self.threshold_high:.1f}", (w - 280, 80),
                             cv2.FONT_HERSHEY_PLAIN, 1.5, (200, 200, 200), 2)
 
         return frame
@@ -146,8 +157,8 @@ class PostureMonitor:
             return
 
         print("Starting 2D Vertical Ratio Posture Monitor...")
-        print(f"Ratio Threshold: > {self.threshold_ratio}")
-        print("(Chin-Nose Y) / (Nose-Eye Y) ratio")
+        print(f"Threshold Range: {self.threshold_low:.1f} (exit) - {self.threshold_high:.1f} (enter)")
+        print("(Chin-Nose Y) / (Nose-Eye Y) ratio with Hysteresis")
         
         with self.mp_face_mesh.FaceMesh(
             max_num_faces=1,
