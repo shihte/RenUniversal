@@ -107,33 +107,9 @@ export function StatsDisplay({ className }: StatsDisplayProps) {
 
     return (
         <div className={cn("space-y-4", className)}>
-            {/* Bad Posture Warning */}
+            {/* Turning Indicator */}
             <AnimatePresence>
-                {stats.is_bad_posture && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                        className="flex items-center gap-3 p-4 rounded-xl bg-red-500/20 border border-red-500/30"
-                    >
-                        <motion.div
-                            animate={{ scale: [1, 1.2, 1] }}
-                            transition={{ duration: 0.5, repeat: Infinity }}
-                            className="p-2 rounded-full bg-red-500/30"
-                        >
-                            <AlertTriangle className="w-5 h-5 text-red-400" />
-                        </motion.div>
-                        <div>
-                            <p className="text-red-400 font-semibold">姿勢不良警告</p>
-                            <p className="text-red-300/70 text-sm">請抬起頭部，保持正確坐姿</p>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Turning Warning */}
-            <AnimatePresence>
-                {stats.is_turning && !stats.is_bad_posture && (
+                {stats.is_turning && (
                     <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
