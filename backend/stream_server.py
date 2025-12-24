@@ -117,12 +117,15 @@ class PostureMonitor:
         left_eye_pt = (left_eye.x * w, left_eye.y * h)
         right_eye_pt = (right_eye.x * w, right_eye.y * h)
         
-        # Calculate distances
-        eye_distance = self.calculate_distance(left_eye_pt, right_eye_pt)
+        # Use HORIZONTAL eye distance for yaw detection
+        # This won't change when looking up/down, only when turning left/right
+        eye_horizontal_distance = abs(right_eye_pt[0] - left_eye_pt[0])
+        
+        # Use full distance for nose-chin (affected by head tilt)
         nose_chin_distance = self.calculate_distance(nose_pt, chin_pt)
         
         return {
-            "eye_distance": eye_distance,
+            "eye_distance": eye_horizontal_distance,
             "nose_chin_distance": nose_chin_distance,
             "points": (nose_pt, chin_pt, left_eye_pt, right_eye_pt)
         }
@@ -355,8 +358,8 @@ def status():
 
 def main():
     parser = argparse.ArgumentParser(description='CTAR Posture Monitor Stream Server')
-    parser.add_argument('--threshold', type=float, default=0.12, 
-                        help='Head-down threshold as fraction (default 0.12 = 12%% decrease)')
+    parser.add_argument('--threshold', type=float, default=0.30, 
+                        help='Head-down threshold as fraction (default 0.30 = 30%% decrease)')
     parser.add_argument('--camera', type=int, default=0, 
                         help='Camera ID (default 0)')
     parser.add_argument('--port', type=int, default=5000, 
