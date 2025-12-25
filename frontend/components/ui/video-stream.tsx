@@ -42,17 +42,16 @@ export function VideoStream({ streamUrl, className }: VideoStreamProps) {
 
     useEffect(() => {
         // Initial check
-        checkStreamStatus().then((connected) => {
+        checkStreamStatus();
+
+        // Always keep checking every 2 seconds to detect disconnection
+        checkIntervalRef.current = setInterval(async () => {
+            const connected = await checkStreamStatus();
             if (!connected) {
-                // Keep checking every 2 seconds until connected
-                checkIntervalRef.current = setInterval(async () => {
-                    const isNowConnected = await checkStreamStatus();
-                    if (isNowConnected && checkIntervalRef.current) {
-                        clearInterval(checkIntervalRef.current);
-                    }
-                }, 2000);
+                setIsConnected(false);
+                setError("後端已停止運行");
             }
-        });
+        }, 2000);
 
         return () => {
             if (checkIntervalRef.current) {
