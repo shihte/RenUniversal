@@ -36,16 +36,21 @@ export function BackendControl({ onStatusChange, className }: BackendControlProp
         const action = isRunning ? "stop" : "start";
 
         try {
-            await fetch("/api/backend", {
+            const res = await fetch("/api/backend", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action, cameraId: 0 }),
             });
-            setTimeout(checkStatus, 1500);
+            const data = await res.json();
+            console.log("Backend control response:", data);
+
+            // Wait longer for the server to actually start/stop
+            await new Promise((resolve) => setTimeout(resolve, 2500));
+            await checkStatus();
         } catch (error) {
             console.error("Backend control error:", error);
         } finally {
-            setTimeout(() => setIsLoading(false), 1500);
+            setIsLoading(false);
         }
     };
 
