@@ -25,7 +25,7 @@ import time
 import math
 import argparse
 import threading
-from flask import Flask, Response, jsonify
+from flask import Flask, Response, jsonify, request
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -43,10 +43,15 @@ current_status = {
     "calibrating": True,
     "calibration_progress": 0,
     "is_turning": False,
-    "baseline_eye_dist": 0
+    "baseline_eye_dist": 0,
+    "threshold": 0.30,
+    "yaw_tolerance": 0.20
 }
 frame_lock = threading.Lock()
 status_lock = threading.Lock()
+
+# Global monitor instance for runtime settings changes
+monitor_instance = None
 
 
 class PostureMonitor:
@@ -251,7 +256,9 @@ class PostureMonitor:
                 "calibrating": bool(not self.is_calibrated),
                 "calibration_progress": int(round(calibration_progress * 100)),
                 "is_turning": bool(self.is_turning),
-                "baseline_eye_dist": float(round(self.baseline_eye_distance, 1))
+                "baseline_eye_dist": float(round(self.baseline_eye_distance, 1)),
+                "threshold": float(round(self.threshold_ratio * 100)),
+                "yaw_tolerance": float(round(self.yaw_tolerance * 100))
             }
         
         # Mirror the frame
@@ -356,25 +363,78 @@ def status():
         return jsonify(current_status)
 
 
+@app.route('/settings', methods=['GET', 'POST'])
+def settings():
+    """Get or update detection settings."""
+    global monitor_instance
+    
+    if request.method == 'GET':
+        if monitor_instance:
+            return jsonify({
+                "threshold": float(round(monitor_instance.threshold_ratio * 100)),
+                "yaw_tolerance": float(round(monitor_instance.yaw_tolerance * 100))
+            })
+        return jsonify({"error": "Monitor not initialized"}), 500
+    
+    # POST - update settings
+    data = request.get_json()
+    
+    if monitor_instance:
+        if 'threshold' in data:
+            # Convert from percentage to fraction
+            monitor_instance.threshold_ratio = float(data['threshold']) / 100.0
+            print(f"Threshold updated to: {monitor_instance.threshold_ratio * 100}%")
+        
+        if 'yaw_tolerance' in data:
+            monitor_instance.yaw_tolerance = float(data['yaw_tolerance']) / 100.0
+            print(f"Yaw tolerance updated to: {monitor_instance.yaw_tolerance * 100}%")
+        
+        return jsonify({
+            "success": True,
+            "threshold": float(round(monitor_instance.threshold_ratio * 100)),
+            "yaw_tolerance": float(round(monitor_instance.yaw_tolerance * 100))
+        })
+    
+    return jsonify({"error": "Monitor not initialized"}), 500
+
+
+@app.route('/recalibrate', methods=['POST'])
+def recalibrate():
+    """Trigger recalibration."""
+    global monitor_instance
+    
+    if monitor_instance:
+        monitor_instance.is_calibrated = False
+        monitor_instance.calibration_start_time = None
+        monitor_instance.calibration_samples_eye = []
+        monitor_instance.calibration_samples_nose_chin = []
+        print("Recalibration triggered")
+        return jsonify({"success": True, "message": "Recalibration started"})
+    
+    return jsonify({"error": "Monitor not initialized"}), 500
+
+
 def main():
     parser = argparse.ArgumentParser(description='CTAR Posture Monitor Stream Server')
-    parser.add_argument('--threshold', type=float, default=0.30, 
-                        help='Head-down threshold as fraction (default 0.30 = 30%% decrease)')
+    parser.add_argument('--threshold', type=float, default=0.20, 
+                        help='Head-down threshold as fraction (default 0.20 = 20%% decrease)')
     parser.add_argument('--camera', type=int, default=0, 
                         help='Camera ID (default 0)')
     parser.add_argument('--port', type=int, default=5000, 
                         help='Server port (default 5000)')
-    parser.add_argument('--yaw-tolerance', type=float, default=0.20,
-                        help='Yaw tolerance as fraction (default 0.20 = 20%% deviation)')
+    parser.add_argument('--yaw-tolerance', type=float, default=0.10,
+                        help='Yaw tolerance as fraction (default 0.10 = 10%% deviation)')
     
     args = parser.parse_args()
     
     # Create and start posture monitor in separate thread
+    global monitor_instance
     monitor = PostureMonitor(
         threshold_ratio=args.threshold, 
         camera_id=args.camera,
         yaw_tolerance=args.yaw_tolerance
     )
+    monitor_instance = monitor  # Set global reference for runtime settings
     capture_thread = threading.Thread(target=monitor.capture_loop, daemon=True)
     capture_thread.start()
     

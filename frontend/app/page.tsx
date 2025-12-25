@@ -1,11 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Activity, Camera, Server, BarChart3 } from "lucide-react";
+import { Activity, Camera, Server, BarChart3, Settings } from "lucide-react";
 import { VideoStream } from "@/components/ui/video-stream";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BackendControl } from "@/components/ui/backend-control";
 import { StatsDisplay } from "@/components/ui/stats-display";
+import { SettingsControl } from "@/components/ui/settings-control";
 
 export default function Home() {
   const PYTHON_STREAM_URL = "http://localhost:5001/video_feed";
@@ -113,6 +114,22 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <StatsDisplay />
+              </CardContent>
+            </Card>
+
+            {/* Settings Control */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Settings className="w-5 h-5 text-amber-400" />
+                  偵測設定
+                </CardTitle>
+                <CardDescription>
+                  調整靈敏度和校準
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SettingsControl />
               </CardContent>
             </Card>
 

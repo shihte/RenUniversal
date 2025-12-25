@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ASCENSION: CENTER LOCKED</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Playfair+Display:ital,wght@1,400&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            touch-action: manipulation;
+            user-select: none;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #ui-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            z-index: 10;
+        }
+
+        .hud-text {
+            font-family: 'Orbitron', sans-serif;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .serif-text {
+            font-family: 'Playfair Display', serif;
+        }
+
+        .damage-flash {
+            animation: flashRed 0.3s ease-out;
+        }
+
+        @keyframes flashRed {
+            0% {
+                background-color: rgba(255, 0, 0, 0.3);
+            }
+
+            100% {
+                background-color: transparent;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="damage-overlay" class="absolute inset-0 pointer-events-none z-20"></div>
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui-layer">
+        <!-- HUD -->
+        <div class="w-full flex justify-between items-start px-8 py-8">
+            <div class="flex flex-col items-start">
+                <div class="text-[10px] text-white/50 tracking-[0.2em] uppercase mb-1">Integrity</div>
+                <div class="flex gap-1" id="lives-container"></div>
+            </div>
+            <div class="text-right">
+                <div class="text-[10px] text-white/50 tracking-[0.2em] uppercase mb-1">Altitude</div>
+                <div id="altitude-label" class="text-xs text-white/80 uppercase serif-text">Sea Level</div>
+            </div>
+        </div>
+
+        <div class="absolute top-20 text-center transition-all duration-500" id="score-container">
+            <div id="score" class="text-7xl text-white font-bold hud-text tracking-widest opacity-80">0</div>
+        </div>
+
+        <div id="perfect-msg"
+            class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white/90 text-sm tracking-[0.8em] uppercase font-light opacity-0 transition-opacity duration-300 hud-text">
+            Sync
+        </div>
+
+        <div id="pause-screen"
+            class="hidden fixed inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm pointer-events-auto z-50">
+            <h2 class="text-4xl text-white hud-text mb-4 tracking-widest">PAUSED</h2>
+            <p class="text-[10px] text-white/60 tracking-[0.4em] uppercase">Press ESC to Resume</p>
+        </div>
+
+        <div id="start-screen"
+            class="fixed inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-md pointer-events-auto z-50 transition-all duration-700">
+            <h1 class="text-5xl text-white hud-text mb-2 tracking-widest">ASCENSION</h1>
+            <p class="text-[10px] text-white/60 tracking-[0.6em] uppercase mb-4">👇 低頭控制跳躍</p>
+
+            <!-- Backend Connection Status -->
+            <div id="backend-status"
+                class="flex items-center gap-2 mb-8 px-4 py-2 rounded-lg bg-black/30 border border-white/10">
+                <div id="backend-indicator" class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                <span id="backend-text" class="text-[10px] text-white/60 tracking-wider uppercase">正在連接姿態偵測...</span>
+            </div>
+
+            <button id="start-btn" disabled
+                class="group relative px-12 py-4 overflow-hidden rounded-none bg-white/30 text-white/50 transition-all border border-white/30 cursor-not-allowed disabled:opacity-50">
+                <span class="relative text-xs tracking-[0.3em] font-bold z-10" id="start-btn-text">等待連線...</span>
+                <div
+                    class="absolute inset-0 h-full w-full scale-0 rounded-full transition-all duration-300 group-hover:scale-100 group-hover:bg-white/10">
+                </div>
+            </button>
+        </div>
+
+        <div id="game-over-screen"
+            class="hidden fixed inset-0 flex flex-col items-center justify-center bg-black/90 pointer-events-auto z-50">
+            <p class="text-xs text-white/50 tracking-[0.4em] uppercase mb-4">Integrity Critical</p>
+            <div class="text-8xl text-white hud-text mb-8" id="final-score">0</div>
+            <div class="text-xs text-white/40 tracking-widest mb-12" id="final-altitude">Altitude: Stratosphere</div>
+            <button id="retry-btn"
+                class="px-10 py-3 border border-white/20 text-white text-xs tracking-[0.3em] hover:bg-white hover:text-black transition-all">
+                RE-LAUNCH
+            </button>
+        </div>
+
+        <!-- Posture Detection Status -->
+        <div id="posture-status"
+            class="fixed bottom-4 left-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-black/50 backdrop-blur-sm border border-white/10 z-40">
+            <div id="posture-indicator" class="w-2 h-2 rounded-full bg-red-500"></div>
+            <span id="posture-text" class="text-[10px] text-white/60 tracking-wider uppercase">Connecting...</span>
+        </div>
+
+        <!-- Control Mode Hint -->
+        <div
+            class="fixed bottom-4 right-4 px-3 py-2 rounded-lg bg-black/50 backdrop-blur-sm border border-white/10 z-40">
+            <span class="text-[10px] text-white/60 tracking-wider uppercase">👇 低頭跳躍</span>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * 音效控制器
+         */
+        const AudioController = {
+            ctx: null,
+            init() {
+                window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioContext();
+            },
+            playTone(freq, type, duration, vol = 0.1) {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + duration);
+            },
+            jump() {
+                this.playTone(300, 'sine', 0.3, 0.15);
+                setTimeout(() => this.playTone(450, 'sine', 0.3, 0.1), 50);
+            },
+            land() {
+                this.playTone(150, 'triangle', 0.2, 0.1);
+            },
+            perfect() {
+                const now = this.ctx.currentTime;
+                [523.25, 659.25, 783.99, 987.77].forEach((freq, i) => {
+                    setTimeout(() => {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.value = freq;
+                        gain.gain.setValueAtTime(0.1, now + i * 0.05);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.05 + 1.5);
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(now + i * 0.05);
+                        osc.stop(now + i * 0.05 + 1.5);
+                    }, i * 30);
+                });
+            },
+            damage() {
+                this.playTone(100, 'sawtooth', 0.4, 0.05);
+                this.playTone(80, 'sine', 0.4, 0.2);
+            }
+        };
+
+        /**
+         * 姿態偵測控制器 - 連接後端 API，低頭觸發跳躍
+         */
+        const PostureController = {
+            apiUrl: 'http://localhost:5001/status',
+            pollInterval: 100,  // 100ms polling
+            isConnected: false,
+            wasHeadDown: false,  // 用於偵測狀態變化（邊緣觸發）
+            lastDownCount: 0,    // 追蹤低頭次數變化
+            intervalId: null,
+
+            init() {
+                this.startPolling();
+                this.updateUI(false, 'Connecting...');
+            },
+
+            startPolling() {
+                if (this.intervalId) clearInterval(this.intervalId);
+                this.intervalId = setInterval(() => this.poll(), this.pollInterval);
+            },
+
+            async poll() {
+                try {
+                    const res = await fetch(this.apiUrl, {
+                        signal: AbortSignal.timeout(500)
+                    });
+
+                    if (!res.ok) throw new Error('Not OK');
+
+                    const data = await res.json();
+
+                    if (!this.isConnected) {
+                        this.isConnected = true;
+                        this.lastDownCount = data.down_count;
+                    }
+
+                    // 校準中
+                    if (data.calibrating) {
+                        this.updateUI(true, `Calibrating ${data.calibration_progress}%`);
+                        return;
+                    }
+
+                    // 轉頭中
+                    if (data.is_turning) {
+                        this.updateUI(true, 'Turning...');
+                        return;
+                    }
+
+                    // 偵測低頭次數變化（邊緣觸發）
+                    if (data.down_count > this.lastDownCount) {
+                        // 低頭次數增加 = 觸發跳躍
+                        this.triggerJump();
+                        this.lastDownCount = data.down_count;
+                        this.updateUI(true, '👇 HEAD DOWN!');
+                    } else {
+                        this.updateUI(true, `Ratio: ${data.ratio}%`);
+                    }
+
+                } catch (error) {
+                    this.isConnected = false;
+                    this.updateUI(false, 'Disconnected');
+                }
+            },
+
+            triggerJump() {
+                if (typeof player !== 'undefined' && player && gameState === 'PLAYING') {
+                    player.jump();
+                }
+            },
+
+            updateUI(connected, text) {
+                const indicator = document.getElementById('posture-indicator');
+                const textEl = document.getElementById('posture-text');
+
+                if (indicator) {
+                    indicator.className = `w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`;
+                }
+                if (textEl) {
+                    textEl.textContent = text;
+                }
+            },
+
+            stop() {
+                if (this.intervalId) {
+                    clearInterval(this.intervalId);
+                    this.intervalId = null;
+                }
+            }
+        };
+
+        const config = {
+            gravity: 0.55,
+            jumpForce: -12.5,
+            cubeSize: 130,
+            cubeHeight: 45,
+            speed: 4.0,
+            depthRatio: 0.35,
+            perfectThreshold: 28,
+            maxLives: 10
+        };
+
+        const themes = {
+            earth: {
+                skyTop: '#87CEEB', skyBot: '#E0F7FA',
+                cubeTop: '#A8E6CF', cubeFront: '#4DB6AC', cubeRight: '#00897B'
+            },
+            sky: {
+                skyTop: '#6A1B9A', skyBot: '#FF8F00',
+                cubeTop: '#FFF9C4', cubeFront: '#FFB74D', cubeRight: '#F57C00'
+            },
+            space: {
+                skyTop: '#000000', skyBot: '#1A237E',
+                cubeTop: '#E1BEE7', cubeFront: '#8E24AA', cubeRight: '#4A148C'
+            }
+        };
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const altLabel = document.getElementById('altitude-label');
+        const perfectMsg = document.getElementById('perfect-msg');
+        const pauseScreen = document.getElementById('pause-screen');
+        const livesContainer = document.getElementById('lives-container');
+        const damageOverlay = document.getElementById('damage-overlay');
+
+        let gameState = 'START';
+        let score = 0;
+        let lives = config.maxLives;
+        let cameraY = 0;
+        let tick = 0;
+        let player, stacks, incoming;
+        let bgObjects = [];
+
+        // 計算畫面的視覺中心 X 座標
+        function getScreenCenterX() {
+            // 2D 中心 + 2.5D 深度偏移的一半 (因為方塊繪製時頂面向右偏移)
+            return canvas.width / 2 + (config.cubeSize * config.depthRatio) / 2;
+        }
+
+        class BgObject {
+            constructor(y, type) {
+                this.x = Math.random() * canvas.width;
+                this.y = y;
+                this.type = type;
+                this.size = Math.random();
+                this.speed = (Math.random() - 0.5) * 0.5;
+                this.color = this.getColor(type);
+            }
+            getColor(type) {
+                if (type === 'mountain') return ['#546E7A', '#455A64', '#37474F'][Math.floor(Math.random() * 3)];
+                if (type === 'cloud') return 'rgba(255,255,255,' + (0.4 + Math.random() * 0.4) + ')';
+                if (type === 'star') return '#FFF';
+                if (type === 'planet') return ['#FF6B6B', '#4ECDC4', '#FFE66D'][Math.floor(Math.random() * 3)];
+                return '#FFF';
+            }
+            draw(ctx, camY) {
+                const renderY = this.y + camY * (this.type === 'mountain' ? 0.2 : 0.8);
+                if (renderY > canvas.height + 200 || renderY < -200) return;
+                ctx.save();
+                if (this.type === 'mountain') {
+                    const s = 100 + this.size * 200;
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, canvas.height);
+                    ctx.lineTo(this.x + s / 2, canvas.height - s + (renderY - this.y) * 0.5);
+                    ctx.lineTo(this.x + s, canvas.height);
+                    ctx.fill();
+                }
+                else if (this.type === 'cloud') {
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(this.x + tick * this.speed, renderY, 30 + this.size * 20, 0, Math.PI * 2);
+                    ctx.arc(this.x + 40 + tick * this.speed, renderY + 10, 40 + this.size * 20, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                else if (this.type === 'star') {
+                    ctx.fillStyle = 'white';
+                    const flicker = Math.sin(tick * 0.1 + this.x) > 0.9 ? 0 : 1;
+                    ctx.globalAlpha = flicker * this.size;
+                    ctx.fillRect(this.x, renderY, 2, 2);
+                    ctx.globalAlpha = 1;
+                }
+                else if (this.type === 'planet') {
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(this.x, renderY, 10 + this.size * 40, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.ellipse(this.x, renderY, 20 + this.size * 50, 5, 0.2, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+        }
+
+        function drawIsometricCube(ctx, x, y, w, h, theme) {
+            const depth = w * config.depthRatio;
+            ctx.fillStyle = theme.cubeTop;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + w, y);
+            ctx.lineTo(x + w + depth, y - depth);
+            ctx.lineTo(x + depth, y - depth);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.fill();
+            ctx.fillStyle = theme.cubeFront;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + w, y);
+            ctx.lineTo(x + w, y + h);
+            ctx.lineTo(x, y + h);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = theme.cubeRight;
+            ctx.beginPath();
+            ctx.moveTo(x + w, y);
+            ctx.lineTo(x + w + depth, y - depth);
+            ctx.lineTo(x + w + depth, y - depth + h);
+            ctx.lineTo(x + w, y + h);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        class Player {
+            constructor() { this.reset(); }
+            reset() {
+                this.w = 20;
+                this.h = 40;
+                this.vy = 0;
+                this.onGround = true;
+                this.stretch = 1;
+                this.x = getScreenCenterX();
+                this.y = 0;
+            }
+            jump() {
+                if (this.onGround) {
+                    this.vy = config.jumpForce;
+                    this.onGround = false;
+                    this.stretch = 1.3;
+                    AudioController.jump();
+                }
+            }
+            update() {
+                if (!this.onGround) {
+                    this.vy += config.gravity;
+                    this.y += this.vy;
+                    this.stretch += (0.8 - this.stretch) * 0.1;
+                } else {
+                    this.stretch += (1 - this.stretch) * 0.15;
+                }
+            }
+            draw() {
+                const ry = this.y - cameraY;
+                ctx.save();
+                ctx.translate(this.x, ry);
+                ctx.scale(1 / Math.sqrt(this.stretch), this.stretch);
+
+                const headSize = 12;
+                const bodyHeight = 26;
+                const bodyWidth = 16;
+
+                if (this.onGround) {
+                    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, 8, 3, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.fillStyle = '#FFFFFF';
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(-bodyWidth / 2, 0);
+                ctx.lineTo(0, -bodyHeight);
+                ctx.lineTo(bodyWidth / 2, 0);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = 'rgba(0,0,0,0.08)';
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(bodyWidth / 2, 0);
+                ctx.lineTo(0, -bodyHeight);
+                ctx.fill();
+
+                if (!this.onGround) {
+                    ctx.strokeStyle = '#FFFFFF';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(-3, 0); ctx.lineTo(-3, 6);
+                    ctx.moveTo(3, 0); ctx.lineTo(3, 4);
+                    ctx.stroke();
+                } else {
+                    ctx.fillStyle = '#333';
+                    ctx.fillRect(-4, 0, 2, 2);
+                    ctx.fillRect(2, 0, 2, 2);
+                }
+
+                ctx.fillStyle = '#FFFFFF';
+                ctx.beginPath();
+                ctx.arc(0, -bodyHeight - 2, headSize / 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'rgba(0,0,0,0.05)';
+                ctx.beginPath();
+                ctx.arc(0, -bodyHeight - 2, headSize / 2, 0.2 * Math.PI, 0.8 * Math.PI);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class Block {
+            constructor(y, side = 'none', speed = 0, currentTheme) {
+                this.w = config.cubeSize;
+                this.h = config.cubeHeight;
+                this.y = y; this.side = side; this.speed = speed;
+                this.isPlaced = (side === 'none');
+                this.x = side === 'left' ? -this.w : (side === 'right' ? canvas.width : canvas.width / 2 - this.w / 2);
+                this.theme = currentTheme;
+            }
+            update() {
+                if (!this.isPlaced) {
+                    if (this.side === 'left') this.x += this.speed;
+                    else this.x -= this.speed;
+                    if (this.x > canvas.width + 150 || this.x < -this.w - 150) {
+                        this.x = this.side === 'left' ? -this.w : canvas.width;
+                    }
+                }
+            }
+            draw() {
+                drawIsometricCube(ctx, this.x, this.y - cameraY, this.w, this.h, this.theme);
+            }
+        }
+
+        function updateLivesUI() {
+            livesContainer.innerHTML = '';
+            for (let i = 0; i < config.maxLives; i++) {
+                const heart = document.createElement('div');
+                heart.className = `w-1.5 h-1.5 rounded-full ${i < lives ? 'bg-white shadow-[0_0_5px_rgba(255,255,255,0.8)]' : 'bg-white/10'}`;
+                livesContainer.appendChild(heart);
+            }
+        }
+
+        function init() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            player = new Player();
+            score = 0;
+            lives = config.maxLives;
+            cameraY = 0;
+            scoreEl.innerText = score;
+            altLabel.innerText = "SEA LEVEL";
+            updateLivesUI();
+
+            stacks = [new Block(canvas.height - 150, 'none', 0, themes.earth)];
+
+            // 初始化玩家Y座標
+            const firstBlock = stacks[0];
+            const depth = firstBlock.w * config.depthRatio;
+            // X軸永遠鎖定在畫面中心
+            player.x = getScreenCenterX();
+            player.y = firstBlock.y - (depth * 0.5);
+
+            bgObjects = [];
+            for (let i = 0; i < 8; i++) bgObjects.push(new BgObject(canvas.height - Math.random() * 500, 'mountain'));
+
+            spawn();
+        }
+
+        function getCurrentTheme() {
+            if (score < 20) return themes.earth;
+            if (score < 50) return themes.sky;
+            return themes.space;
+        }
+
+        function spawn() {
+            const side = Math.random() > 0.5 ? 'left' : 'right';
+            const lastY = stacks[stacks.length - 1].y;
+            const speed = config.speed + (score * 0.1);
+            incoming = new Block(lastY - config.cubeHeight, side, speed, getCurrentTheme());
+            const spawnY = lastY - 400;
+            if (score > 15 && Math.random() > 0.6) bgObjects.push(new BgObject(spawnY, 'cloud'));
+            if (score > 45 && Math.random() > 0.3) bgObjects.push(new BgObject(spawnY, Math.random() > 0.8 ? 'planet' : 'star'));
+        }
+
+        function land(b) {
+            b.isPlaced = true;
+            player.onGround = true;
+
+            const depth = b.w * config.depthRatio;
+            player.y = b.y - (depth * 0.5);
+            player.vy = 0;
+            AudioController.land();
+
+            const targetX = canvas.width / 2 - b.w / 2;
+
+            if (Math.abs(b.x - targetX) < config.perfectThreshold) {
+                score += 2;
+                b.x = targetX;
+                showPerfect();
+            } else {
+                score += 1;
+            }
+
+            // 關鍵修正：角色永遠鎖定畫面中央，不再根據方塊位置偏移
+            player.x = getScreenCenterX();
+
+            scoreEl.innerText = score;
+            if (score === 20) altLabel.innerText = "ENTERING STRATOSPHERE";
+            else if (score === 50) altLabel.innerText = "ENTERING DEEP SPACE";
+
+            stacks.push(b);
+            if (stacks.length > 15) stacks.shift();
+            bgObjects = bgObjects.filter(o => o.y + cameraY < canvas.height + 300);
+
+            spawn();
+        }
+
+        function showPerfect() {
+            AudioController.perfect();
+            perfectMsg.style.opacity = 1;
+            perfectMsg.style.transform = "translate(-50%, -150%)";
+            setTimeout(() => {
+                perfectMsg.style.opacity = 0;
+                perfectMsg.style.transform = "translate(-50%, -50%)";
+            }, 600);
+        }
+
+        function takeDamage(isFall = false) {
+            lives--;
+            updateLivesUI();
+            AudioController.damage();
+
+            damageOverlay.classList.remove('damage-flash');
+            void damageOverlay.offsetWidth;
+            damageOverlay.classList.add('damage-flash');
+
+            if (lives <= 0) {
+                fail();
+            } else {
+                incoming = null;
+
+                let targetBlock = stacks[stacks.length - 1];
+                const depth = targetBlock.w * config.depthRatio;
+
+                if (isFall) {
+                    // 墜落：生成新的、完全置中的安全方塊
+                    const lastY = targetBlock.y;
+                    const newBlock = new Block(lastY - config.cubeHeight, 'none', 0, getCurrentTheme());
+                    newBlock.x = canvas.width / 2 - newBlock.w / 2;
+
+                    stacks.push(newBlock);
+                    targetBlock = newBlock;
+                }
+
+                spawn();
+
+                // 重生時，角色強制回到畫面中央
+                player.x = getScreenCenterX();
+                player.y = targetBlock.y - (depth * 0.5);
+                player.vy = 0;
+                player.onGround = true;
+            }
+        }
+
+        function fail() {
+            if (gameState === 'GAMEOVER') return;
+            gameState = 'GAMEOVER';
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('final-altitude').innerText = score < 20 ? "Altitude: Surface" : (score < 50 ? "Altitude: Sky" : "Altitude: Cosmos");
+            document.getElementById('game-over-screen').classList.remove('hidden');
+        }
+
+        function togglePause() {
+            if (gameState === 'PLAYING') {
+                gameState = 'PAUSED';
+                pauseScreen.classList.remove('hidden');
+            } else if (gameState === 'PAUSED') {
+                gameState = 'PLAYING';
+                pauseScreen.classList.add('hidden');
+                gameLoop();
+            }
+        }
+
+        function drawBackground() {
+            let progress = Math.min(score / 60, 1);
+
+            if (progress < 0.5) {
+                const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                grad.addColorStop(0, score < 20 ? themes.earth.skyTop : themes.sky.skyTop);
+                grad.addColorStop(1, score < 20 ? themes.earth.skyBot : themes.sky.skyBot);
+                ctx.fillStyle = grad;
+            } else {
+                const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                grad.addColorStop(0, themes.space.skyTop);
+                grad.addColorStop(1, themes.space.skyBot);
+                ctx.fillStyle = grad;
+            }
+
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            bgObjects.forEach(obj => obj.draw(ctx, cameraY));
+
+            if (score < 25) {
+                const waterWorldY = canvas.height;
+                const waveRenderY = waterWorldY - cameraY;
+
+                if (waveRenderY < canvas.height + 100) {
+                    ctx.fillStyle = '#4FC3F7';
+                    ctx.beginPath();
+                    ctx.moveTo(0, canvas.height);
+                    for (let x = 0; x <= canvas.width; x += 20) {
+                        ctx.lineTo(x, waveRenderY + Math.sin((x + tick) * 0.05) * 15);
+                    }
+                    ctx.lineTo(canvas.width, canvas.height);
+                    ctx.fill();
+                }
+            }
+        }
+
+        function gameLoop() {
+            if (gameState === 'PAUSED') return;
+
+            tick++;
+            drawBackground();
+
+            if (gameState === 'PLAYING' || gameState === 'GAMEOVER') {
+                stacks.forEach(s => s.draw());
+
+                if (incoming && gameState === 'PLAYING') {
+                    incoming.update();
+                    incoming.draw();
+
+                    // 判定落地
+                    if (!player.onGround && player.vy > 0) {
+                        if (player.y > incoming.y - 15 && player.y < incoming.y + 25) {
+                            if (player.x > incoming.x && player.x < incoming.x + incoming.w) {
+                                land(incoming);
+                            }
+                        }
+                    }
+
+                    // 判定側撞
+                    if (player.onGround && Math.abs(player.y - incoming.y) < 30) {
+                        if (player.x > incoming.x - 10 && player.x < incoming.x + incoming.w + 10) {
+                            takeDamage(false);
+                        }
+                    }
+                }
+
+                player.update();
+                player.draw();
+
+                // 判定墜落
+                const currentTopY = stacks[stacks.length - 1].y;
+                if (player.y > currentTopY + 50 && gameState === 'PLAYING') {
+                    takeDamage(true);
+                }
+
+                if (player.y - cameraY > canvas.height + 100) fail();
+
+                if (stacks.length > 0) {
+                    const targetCam = stacks[stacks.length - 1].y - (canvas.height * 0.6);
+                    cameraY += (targetCam - cameraY) * 0.08;
+                }
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        const handleInput = (e) => {
+            if (e.type === 'keydown' && e.code === 'Escape') {
+                if (gameState === 'PLAYING' || gameState === 'PAUSED') togglePause();
+                return;
+            }
+            const isFunctional = (e.type === 'keydown') && (
+                e.key.startsWith('F') && e.key.length > 1 ||
+                ['Alt', 'Control', 'Shift', 'Meta', 'Tab', 'CapsLock', 'ContextMenu'].includes(e.key)
+            );
+            if (isFunctional) return;
+
+            if (gameState === 'PLAYING') {
+                player.jump();
+            }
+        };
+
+        window.addEventListener('keydown', handleInput);
+        window.addEventListener('mousedown', () => { if (gameState === 'PLAYING') player.jump(); });
+        window.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameState === 'PLAYING') player.jump();
+        }, { passive: false });
+
+        document.getElementById('start-btn').onclick = () => {
+            AudioController.init();
+            PostureController.init();  // 初始化姿態偵測
+            document.getElementById('start-screen').classList.add('opacity-0');
+            setTimeout(() => {
+                document.getElementById('start-screen').classList.add('hidden');
+                gameState = 'PLAYING';
+                init();
+                gameLoop();
+            }, 700);
+        };
+
+        document.getElementById('retry-btn').onclick = () => {
+            document.getElementById('game-over-screen').classList.add('hidden');
+            gameState = 'PLAYING';
+            init();
+        };
+
+        window.onload = () => {
+            init();
+
+            // Backend Connection Checker
+            const checkBackendConnection = async () => {
+                const indicator = document.getElementById('backend-indicator');
+                const text = document.getElementById('backend-text');
+                const btn = document.getElementById('start-btn');
+                const btnText = document.getElementById('start-btn-text');
+
+                try {
+                    const res = await fetch('http://localhost:5001/status', {
+                        signal: AbortSignal.timeout(2000)
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+
+                        if (data.calibrating) {
+                            // Still calibrating
+                            indicator.className = 'w-2 h-2 rounded-full bg-yellow-500 animate-pulse';
+                            text.textContent = `校準中 ${data.calibration_progress}%`;
+                            btn.disabled = true;
+                            btn.className = 'group relative px-12 py-4 overflow-hidden rounded-none bg-white/30 text-white/50 transition-all border border-white/30 cursor-not-allowed disabled:opacity-50';
+                            btnText.textContent = '校準中...';
+                        } else {
+                            // Connected and ready!
+                            indicator.className = 'w-2 h-2 rounded-full bg-green-500';
+                            text.textContent = '姿態偵測已連接';
+                            btn.disabled = false;
+                            btn.className = 'group relative px-12 py-4 overflow-hidden rounded-none bg-white text-black transition-all hover:bg-transparent hover:text-white border border-white cursor-pointer';
+                            btnText.textContent = 'INITIATE';
+                        }
+                    } else {
+                        throw new Error('Not OK');
+                    }
+                } catch (error) {
+                    // Not connected
+                    indicator.className = 'w-2 h-2 rounded-full bg-red-500 animate-pulse';
+                    text.textContent = '正在連接姿態偵測...';
+                    btn.disabled = true;
+                    btn.className = 'group relative px-12 py-4 overflow-hidden rounded-none bg-white/30 text-white/50 transition-all border border-white/30 cursor-not-allowed disabled:opacity-50';
+                    btnText.textContent = '等待連線...';
+                }
+            };
+
+            // Check immediately and then every second
+            checkBackendConnection();
+            setInterval(checkBackendConnection, 1000);
+        };
+        window.onresize = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if (player) {
+                player.x = getScreenCenterX();
+            }
+        };
+    </script>
+</body>
+
+</html>
