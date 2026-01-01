@@ -9,7 +9,7 @@ import socketserver
 import os
 import sys
 
-PORT = 3000
+PORT = 3001
 DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 
 class Handler(http.server.SimpleHTTPRequestHandler):

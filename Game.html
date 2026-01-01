@@ -193,7 +193,7 @@
          * 姿態偵測控制器 - 連接後端 API，低頭觸發跳躍
          */
         const PostureController = {
-            apiUrl: 'http://localhost:5001/status',
+            apiUrl: '/status',  // Use relative path for single server architecture
             pollInterval: 100,  // 100ms polling
             isConnected: false,
             wasHeadDown: false,  // 用於偵測狀態變化（邊緣觸發）
@@ -812,7 +812,7 @@
                 const btnText = document.getElementById('start-btn-text');
 
                 try {
-                    const res = await fetch('http://localhost:5001/status', {
+                    const res = await fetch('/status', {
                         signal: AbortSignal.timeout(2000)
                     });
 
