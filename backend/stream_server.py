@@ -9,8 +9,19 @@ Features:
 - Yaw filtering to ignore head turns
 - Nose-chin distance based head-down detection
 
+Optimizations:
+- Threaded webcam capture
+- Resized inference (640x360) for speed
+- Disabled iris tracking (refine_landmarks=False)
+
+Architecture:
+- Single Server on Port 8080
+- /game: Serves the Game.html
+- /live: Serves the video stream
+- /status: Serves the posture status JSON
+
 Usage:
-    python stream_server.py [--threshold 0.15] [--camera 0] [--port 5000]
+    python stream_server.py [--threshold 0.15] [--camera 0] [--port 8080]
 
 Endpoints:
     /           - Health check
@@ -25,7 +36,8 @@ import time
 import math
 import argparse
 import threading
-from flask import Flask, Response, jsonify, request
+import os
+from flask import Flask, Response, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -53,6 +65,37 @@ status_lock = threading.Lock()
 # Global monitor instance for runtime settings changes
 monitor_instance = None
 
+# Helper to locate resources relative to this script
+BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BACKEND_DIR)
+
+# ==================== Helper Class ====================
+class WebcamStream:
+    """Threaded webcam capture to improve FPS."""
+    def __init__(self, src=0, width=1280, height=720):
+        self.stream = cv2.VideoCapture(src)
+        self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        self.stream.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        self.stream.set(cv2.CAP_PROP_BUFFERSIZE, 1) # Reduce latency
+        (self.grabbed, self.frame) = self.stream.read()
+        self.stopped = False
+
+    def start(self):
+        threading.Thread(target=self.update, args=(), daemon=True).start()
+        return self
+
+    def update(self):
+        while True:
+            if self.stopped:
+                return
+            (self.grabbed, self.frame) = self.stream.read()
+
+    def read(self):
+        return self.frame
+
+    def stop(self):
+        self.stopped = True
+        self.stream.release()
 
 class PostureMonitor:
     """Posture Monitor with calibration and yaw filtering."""
@@ -104,6 +147,7 @@ class PostureMonitor:
         
         # Running flag
         self.running = False
+        self.active = True  # Controls detection ON/OFF while keeping stream alive
 
     def calculate_distance(self, p1, p2):
         """Calculate Euclidean distance between two points."""
@@ -136,12 +180,33 @@ class PostureMonitor:
         }
 
     def process_frame(self, frame, face_mesh):
-        """Process a single frame and return annotated frame."""
+        """Process a single frame and return annotated frame.
+           OPTIMIZATION: Resizes frame for inference but draws on original.
+        """
         global current_status
         
+        # If detection is paused, just return the frame (dimmed) and update basic status
+        if not self.active:
+            # Dim the frame to indicate inactivity
+            dimmed = cv2.addWeighted(frame, 0.5, np.zeros(frame.shape, frame.dtype), 0, 0)
+            cv2.putText(dimmed, "DETECTION PAUSED", (50, 50), cv2.FONT_HERSHEY_PLAIN, 2, (100, 100, 100), 2)
+            
+            with status_lock:
+                current_status.update({
+                    "is_active": False,
+                    "fps": 30, # Fake FPS
+                    "connected": True
+                })
+            return dimmed
+
         h, w, _ = frame.shape
-        img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = face_mesh.process(img_rgb)
+        
+        # Optimization: Resize for inference
+        inference_w, inference_h = 640, 360
+        frame_small = cv2.resize(frame, (inference_w, inference_h))
+        img_rgb_small = cv2.cvtColor(frame_small, cv2.COLOR_BGR2RGB)
+        
+        results = face_mesh.process(img_rgb_small)
         
         is_posture_bad = False
         nose_chin_ratio = 0
@@ -149,6 +214,7 @@ class PostureMonitor:
         
         if results.multi_face_landmarks:
             face_landmarks = results.multi_face_landmarks[0]
+            # Pass original w, h so points map back to the high-res frame
             metrics = self.get_metrics(face_landmarks, w, h)
             
             eye_dist = metrics["eye_distance"]
@@ -185,6 +251,11 @@ class PostureMonitor:
                     # Calculate baselines
                     self.baseline_eye_distance = np.mean(self.calibration_samples_eye)
                     self.baseline_nose_chin_distance = np.mean(self.calibration_samples_nose_chin)
+                    
+                    # Prevent division by zero
+                    if self.baseline_eye_distance == 0: self.baseline_eye_distance = 1
+                    if self.baseline_nose_chin_distance == 0: self.baseline_nose_chin_distance = 1
+                    
                     self.is_calibrated = True
                     print(f"Calibration complete!")
                     print(f"  Baseline eye distance: {self.baseline_eye_distance:.2f}")
@@ -258,7 +329,8 @@ class PostureMonitor:
                 "is_turning": bool(self.is_turning),
                 "baseline_eye_dist": float(round(self.baseline_eye_distance, 1)),
                 "threshold": float(round(self.threshold_ratio * 100)),
-                "yaw_tolerance": float(round(self.yaw_tolerance * 100))
+                "yaw_tolerance": float(round(self.yaw_tolerance * 100)),
+                "is_active": bool(self.active)
             }
         
         # Mirror the frame
@@ -268,8 +340,13 @@ class PostureMonitor:
         """Main capture loop running in separate thread."""
         global current_frame
         
-        cap = cv2.VideoCapture(self.camera_id)
-        if not cap.isOpened():
+        # Optimization: Use threaded WebcamStream
+        cap = WebcamStream(src=self.camera_id).start()
+        time.sleep(1.0) # Warmup
+        
+        if cap.stream.isOpened():
+             pass # Stream started
+        else:
             print("Error: Could not open webcam.")
             with status_lock:
                 current_status["connected"] = False
@@ -282,23 +359,33 @@ class PostureMonitor:
         
         self.running = True
         
+        # Optimization: refine_landmarks=False for speed
         with self.mp_face_mesh.FaceMesh(
             max_num_faces=1,
-            refine_landmarks=True,
+            refine_landmarks=False,
             min_detection_confidence=0.5,
             min_tracking_confidence=0.5) as face_mesh:
             
             while self.running:
-                success, frame = cap.read()
-                if not success:
+                start_time = time.time()
+                
+                # Capture frame
+                frame = cap.read()
+                if frame is None:
                     continue
 
                 processed_frame = self.process_frame(frame, face_mesh)
                 
                 with frame_lock:
                     current_frame = processed_frame.copy()
+
+                # FPS Lock: Ensure we don't exceed 30 FPS (approx 33ms per frame)
+                processing_time = time.time() - start_time
+                target_frame_time = 1.0 / 30.0
+                if processing_time < target_frame_time:
+                    time.sleep(target_frame_time - processing_time)
         
-        cap.release()
+        cap.stop()
         print("Camera released.")
 
     def stop(self):
@@ -336,17 +423,15 @@ def generate_frames():
 
 @app.route('/')
 def index():
-    """Health check endpoint."""
-    return jsonify({
-        "status": "ok",
-        "service": "CTAR Posture Monitor Stream Server",
-        "endpoints": {
-            "/video_feed": "MJPEG video stream",
-            "/status": "Current posture status"
-        }
-    })
+    """Serve the Monitor Dashboard (Monitor.html)."""
+    return send_from_directory(PROJECT_ROOT, 'Monitor.html')
 
+@app.route('/game')
+def serve_game():
+    """Serve the Game.html file from the project root."""
+    return send_from_directory(PROJECT_ROOT, 'Game.html')
 
+@app.route('/live')
 @app.route('/video_feed')
 def video_feed():
     """MJPEG video stream endpoint."""
@@ -414,14 +499,30 @@ def recalibrate():
     return jsonify({"error": "Monitor not initialized"}), 500
 
 
+@app.route('/control', methods=['POST'])
+def control():
+    """Control the detection loop (Pause/Resume)."""
+    global monitor_instance
+    data = request.get_json()
+    
+    if monitor_instance:
+        if 'active' in data:
+            monitor_instance.active = bool(data['active'])
+            state = "Active" if monitor_instance.active else "Paused"
+            print(f"Detection state changed to: {state}")
+            return jsonify({"success": True, "active": monitor_instance.active})
+    
+    return jsonify({"error": "Monitor not initialized"}), 500
+
+
 def main():
     parser = argparse.ArgumentParser(description='CTAR Posture Monitor Stream Server')
     parser.add_argument('--threshold', type=float, default=0.20, 
                         help='Head-down threshold as fraction (default 0.20 = 20%% decrease)')
     parser.add_argument('--camera', type=int, default=0, 
                         help='Camera ID (default 0)')
-    parser.add_argument('--port', type=int, default=5000, 
-                        help='Server port (default 5000)')
+    parser.add_argument('--port', type=int, default=8080, 
+                        help='Server port (default 8080)')
     parser.add_argument('--yaw-tolerance', type=float, default=0.10,
                         help='Yaw tolerance as fraction (default 0.10 = 10%% deviation)')
     
@@ -439,9 +540,10 @@ def main():
     capture_thread.start()
     
     print(f"\n{'='*50}")
-    print("CTAR Posture Monitor Stream Server")
+    print("CTAR Posture Monitor & Game Server")
     print(f"{'='*50}")
-    print(f"Video stream: http://localhost:{args.port}/video_feed")
+    print(f"Game URL:     http://localhost:{args.port}/game")
+    print(f"Live Stream:  http://localhost:{args.port}/live")
     print(f"Status API:   http://localhost:{args.port}/status")
     print(f"{'='*50}\n")
     
