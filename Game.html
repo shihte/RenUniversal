@@ -244,7 +244,8 @@
                         this.lastDownCount = data.down_count;
                         this.updateUI(true, '👇 HEAD DOWN!');
                     } else {
-                        this.updateUI(true, `Ratio: ${data.ratio}%`);
+                        // Show both ratio and latency
+                        this.updateUI(true, `Ratio: ${data.ratio}% | ${data.latency_ms}ms`);
                     }
 
                 } catch (error) {

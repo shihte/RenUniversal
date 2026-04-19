@@ -30,7 +30,7 @@ Endpoints:
 """
 
 import cv2
-import mediapipe as mp
+import mediapipe.python.solutions.face_mesh as mp_face_mesh
 import numpy as np
 import time
 import math
@@ -57,7 +57,8 @@ current_status = {
     "is_turning": False,
     "baseline_eye_dist": 0,
     "threshold": 0.30,
-    "yaw_tolerance": 0.20
+    "yaw_tolerance": 0.20,
+    "latency_ms": 0
 }
 frame_lock = threading.Lock()
 status_lock = threading.Lock()
@@ -114,7 +115,7 @@ class PostureMonitor:
         self.yaw_tolerance = yaw_tolerance
         
         # MediaPipe Setup
-        self.mp_face_mesh = mp.solutions.face_mesh
+        self.mp_face_mesh = mp_face_mesh
         
         # Calibration
         self.calibration_duration = 3.0  # seconds
@@ -138,6 +139,10 @@ class PostureMonitor:
         # Smoothing (Exponential Moving Average)
         self.smooth_nose_chin = 0
         self.alpha = 0.3
+        
+        # Latency tracking
+        self.smooth_latency = 0
+        self.latency_alpha = 0.1  # Smoother for latency
         
         # Landmark indices
         self.NOSE = 1
@@ -205,6 +210,9 @@ class PostureMonitor:
         inference_w, inference_h = 640, 360
         frame_small = cv2.resize(frame, (inference_w, inference_h))
         img_rgb_small = cv2.cvtColor(frame_small, cv2.COLOR_BGR2RGB)
+        
+        # Start latency timer
+        start_proc_time = time.time()
         
         results = face_mesh.process(img_rgb_small)
         
@@ -310,8 +318,16 @@ class PostureMonitor:
                             self.down_count += 1
                             self.is_down = True
 
-        # Calculate FPS
+        # Calculate FPS and Latency
         curr_time = time.time()
+        
+        # Latency is time spent in face_mesh.process + local calculations
+        proc_latency = (curr_time - start_proc_time) * 1000 # to ms
+        if self.smooth_latency == 0:
+            self.smooth_latency = proc_latency
+        else:
+            self.smooth_latency = self.latency_alpha * proc_latency + (1 - self.latency_alpha) * self.smooth_latency
+
         fps = 1 / (curr_time - self.prev_time) if self.prev_time else 0
         self.prev_time = curr_time
         
@@ -330,7 +346,8 @@ class PostureMonitor:
                 "baseline_eye_dist": float(round(self.baseline_eye_distance, 1)),
                 "threshold": float(round(self.threshold_ratio * 100)),
                 "yaw_tolerance": float(round(self.yaw_tolerance * 100)),
-                "is_active": bool(self.active)
+                "is_active": bool(self.active),
+                "latency_ms": int(round(self.smooth_latency))
             }
         
         # Mirror the frame
