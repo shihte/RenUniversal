@@ -1,23 +1,21 @@
 import cv2
-import mediapipe.python.solutions.face_mesh as mp_face_mesh
 import numpy as np
 import time
 import math
 from typing import Dict, Any, Tuple, Optional, List
+from loguru import logger
 from .state import SharedState
+from .schema import DetectorStatus
 
 class PostureDetector:
     """
     負責姿勢檢測的核心推理邏輯。
-    包含校準相位、偏航 (Yaw) 過濾與低頭判定。
+    遵循 Pattern: Single Responsibility (Reasoning only) 與 Strongly Typed I/O。
     """
     def __init__(self, state: SharedState, threshold_ratio: float = 0.20, yaw_tolerance: float = 0.10):
         self.state = state
         self.threshold_ratio = threshold_ratio
         self.yaw_tolerance = yaw_tolerance
-        
-        # MediaPipe 初始化
-        self.mp_face_mesh = mp_face_mesh
         
         # 校準設定
         self.calibration_duration: float = 3.0
@@ -45,6 +43,8 @@ class PostureDetector:
         self.CHIN = 152
         self.LEFT_EYE = 33
         self.RIGHT_EYE = 263
+        
+        logger.info(f"PostureDetector initialized (Threshold: {threshold_ratio}, Yaw: {yaw_tolerance})")
 
     def calculate_distance(self, p1: Tuple[float, float], p2: Tuple[float, float]) -> float:
         """計算兩點間的歐幾里得距離。"""
@@ -76,12 +76,13 @@ class PostureDetector:
 
     def process_frame(self, frame: np.ndarray, face_mesh: Any) -> np.ndarray:
         """
-        處理單幀影像，執行推理並標註結果。
+        處理單幀影像，執行推理並更新狀態。
+        影像繪製邏輯已封裝於內部輔助函式。
         """
         h, w, _ = frame.shape
         inference_w, inference_h = 640, 360
         
-        # 優化：推理前縮小尺寸
+        # 優化：推理前縮小尺寸 (符合 Pattern: Efficiency)
         frame_small = cv2.resize(frame, (inference_w, inference_h))
         img_rgb = cv2.cvtColor(frame_small, cv2.COLOR_BGR2RGB)
         
@@ -98,11 +99,12 @@ class PostureDetector:
             
             eye_dist = metrics["eye_dist"]
             nc_dist = metrics["nose_chin_dist"]
-            nose_pt, chin_pt, le_pt, re_pt = metrics["points"]
+            pts = metrics["points"]
 
             # --- 校準階段 (Calibration Phase) ---
             if not self.is_calibrated:
                 if self.calibration_start_time is None:
+                    logger.info("Starting calibration phase...")
                     self.calibration_start_time = time.time()
                 
                 elapsed = time.time() - self.calibration_start_time
@@ -111,16 +113,16 @@ class PostureDetector:
                 self.calib_samples_eye.append(eye_dist)
                 self.calib_samples_nose_chin.append(nc_dist)
                 
-                # 繪製 UI
+                # 繪製校準 UI (暫留於此，未來可移至專用 Renderer)
                 self._draw_calibration_ui(frame, calib_prog, w, h)
                 
                 if elapsed >= self.calibration_duration:
                     self.baseline_eye_dist = float(np.mean(self.calib_samples_eye))
                     self.baseline_nose_chin_dist = float(np.mean(self.calib_samples_nose_chin))
-                    # 防止除以零
                     if self.baseline_eye_dist == 0: self.baseline_eye_dist = 1.0
                     if self.baseline_nose_chin_dist == 0: self.baseline_nose_chin_dist = 1.0
                     self.is_calibrated = True
+                    logger.info(f"Calibration complete. Baseline eye dist: {self.baseline_eye_dist:.1f}")
             
             # --- 檢測階段 (Detection Phase) ---
             else:
@@ -128,7 +130,7 @@ class PostureDetector:
                 deviation = abs(eye_dist - self.baseline_eye_dist) / self.baseline_eye_dist
                 self.is_turning = deviation > self.yaw_tolerance
                 
-                # 平滑處理
+                # 平滑處理 (Exponential Smoothing)
                 if self.smooth_nose_chin == 0:
                     self.smooth_nose_chin = nc_dist
                 else:
@@ -137,14 +139,15 @@ class PostureDetector:
                 # 計算比例
                 nc_ratio = (self.smooth_nose_chin - self.baseline_nose_chin_dist) / self.baseline_nose_chin_dist
                 
-                # 繪製視覺化地標 (Visual Landmarks)
+                # UI 標註
                 color = (0, 255, 255) if self.is_turning else (0, 255, 0)
-                self._draw_landmarks(frame, metrics["points"], color)
+                self._draw_landmarks(frame, pts, color)
                 
                 if not self.is_turning:
                     if self.is_down:
-                        if nc_ratio > -self.threshold_ratio + 0.05: # 磁滯效應 (Hysteresis)
+                        if nc_ratio > -self.threshold_ratio + 0.05: # 磁滯效應
                             self.is_down = False
+                            logger.debug("Posture restored to normal")
                         else:
                             is_bad = True
                     else:
@@ -152,6 +155,59 @@ class PostureDetector:
                             is_bad = True
                             self.down_count += 1
                             self.is_down = True
+                            logger.warning(f"Poor posture detected! Count: {self.down_count}")
+
+        # --- 計算效能指標 (Metrics) ---
+        now = time.time()
+        latency = (now - start_time) * 1000
+        self.smooth_latency = self.latency_alpha * latency + (1 - self.latency_alpha) * self.smooth_latency
+        fps = 1 / (now - self.prev_time) if self.prev_time else 0
+        self.prev_time = now
+        
+        # 更新共享狀態 (強型別)
+        self.state.update_status(
+            ratio=float(round(nc_ratio * 100, 1)),
+            nose_chin_ratio=float(round(nc_ratio, 3)),
+            is_bad_posture=bool(is_bad),
+            down_count=int(self.down_count),
+            fps=int(fps),
+            calibrating=not self.is_calibrated,
+            calibration_progress=int(calib_prog * 100),
+            is_turning=self.is_turning,
+            baseline_eye_dist=round(self.baseline_eye_dist, 1),
+            latency_ms=int(self.smooth_latency)
+        )
+        
+        return cv2.flip(frame, 1)
+
+    def _draw_calibration_ui(self, frame: np.ndarray, progress: float, w: int, h: int) -> None:
+        """專責校準指示繪製。"""
+        cv2.putText(frame, f"Calibrating... {int(progress * 100)}%", 
+                   (50, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 255), 2)
+        cv2.putText(frame, "Please look straight ahead", 
+                   (50, 90), cv2.FONT_HERSHEY_PLAIN, 1.5, (200, 200, 200), 2)
+        
+        bw = int(w * 0.6)
+        bx = int((w - bw) / 2)
+        by = h - 50
+        cv2.rectangle(frame, (bx, by), (bx + bw, by + 20), (100, 100, 100), -1)
+        cv2.rectangle(frame, (bx, by), (bx + int(bw * progress), by + 20), (0, 255, 0), -1)
+
+    def _draw_landmarks(self, frame: np.ndarray, pts: Tuple, color: Tuple[int, int, int]) -> None:
+        """專責關鍵點繪製。"""
+        n, c, le, re = pts
+        cv2.circle(frame, (int(n[0]), int(n[1])), 5, (0, 255, 255), -1)
+        cv2.circle(frame, (int(c[0]), int(c[1])), 5, color, -1)
+        cv2.line(frame, (int(n[0]), int(n[1])), (int(c[0]), int(c[1])), color, 2)
+        cv2.line(frame, (int(le[0]), int(le[1])), (int(re[0]), int(re[1])), (255, 0, 0), 2)
+
+    def recalibrate(self) -> None:
+        """重置校準狀態並記錄日誌。"""
+        logger.info("Recalibration requested")
+        self.is_calibrated = False
+        self.calibration_start_time = None
+        self.calib_samples_eye = []
+        self.calib_samples_nose_chin = []
 
         # --- 計算效能指標 (Metrics) ---
         now = time.time()
