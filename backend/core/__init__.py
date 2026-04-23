@@ -1,4 +1,4 @@
-# Package initialization for CTAR core modules
+# Package initialization for CTAR core modules (Refactored to Agent Skills)
 from .state import SharedState
-from .detector import PostureDetector
-from .video_stream import VideoStream
+from .pipeline import AgentPipeline
+from .schema import DetectorStatus
