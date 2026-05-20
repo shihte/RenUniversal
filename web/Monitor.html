@@ -645,8 +645,60 @@
             }
         }
 
+        // Fetch available local cameras and populate select element dynamically
+        async function loadAvailableCameras() {
+            try {
+                const res = await fetch('/api/cameras');
+                const cameras = await res.json();
+                const select = document.getElementById('camera-source-select');
+                if (!select) return;
+                
+                // Get currently selected option
+                const currentValue = select.value;
+                
+                // Collect non-local options (phone, dual, etc.)
+                const nonLocalOptions = [];
+                for (let option of select.options) {
+                    if (!option.value.startsWith('local_')) {
+                        nonLocalOptions.push({ value: option.value, text: option.innerText });
+                    }
+                }
+                
+                // Clear and rebuild options
+                select.innerHTML = '';
+                
+                // Add dynamically found local cameras
+                cameras.forEach(index => {
+                    const opt = document.createElement('option');
+                    opt.value = `local_${index}`;
+                    if (index === 0) {
+                        opt.text = '電腦預設鏡頭 (Local Camera 0)';
+                    } else {
+                        opt.text = `USB外接鏡頭 ${index} (Local Camera ${index})`;
+                    }
+                    select.appendChild(opt);
+                });
+                
+                // Re-add non-local options
+                nonLocalOptions.forEach(optData => {
+                    const opt = document.createElement('option');
+                    opt.value = optData.value;
+                    opt.text = optData.text;
+                    select.appendChild(opt);
+                });
+                
+                // Restore selection if valid
+                if (currentValue) {
+                    select.value = currentValue;
+                }
+            } catch (err) {
+                console.error("Failed to load local cameras", err);
+            }
+        }
+
         // Initialize Language
         setLang('zh-TW');
+        loadAvailableCameras();
 
         // Poll
         setInterval(fetchStatus, 100);

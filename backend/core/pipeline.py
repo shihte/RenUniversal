@@ -337,8 +337,15 @@ class AgentPipeline:
                 elif phone_frame is not None:
                     frame = phone_frame
         else:
-            # 預設 Local 模式 ("local_0", "local_1")
-            target_src = 1 if camera_source == "local_1" else 0
+            # 預設 Local 模式 ("local_0", "local_1", "local_2", ...)
+            if camera_source.startswith("local_"):
+                try:
+                    target_src = int(camera_source.split("_")[1])
+                except Exception:
+                    target_src = 0
+            else:
+                target_src = 0
+                
             if self.capture.config.src != target_src:
                 logger.info(f"Switching local webcam source from {self.capture.config.src} to {target_src}")
                 self.capture.stop()

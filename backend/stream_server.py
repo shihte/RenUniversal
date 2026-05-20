@@ -57,6 +57,7 @@ state = SharedState()
 # 路徑定義
 BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BACKEND_DIR)
+WEB_DIR = os.path.join(PROJECT_ROOT, 'web')
 
 # 全局代理流水線
 service_context = {
@@ -132,15 +133,15 @@ def generate_mjpeg_stream():
 
 @app.route('/')
 def index():
-    return send_from_directory(PROJECT_ROOT, 'Monitor.html')
+    return send_from_directory(WEB_DIR, 'Monitor.html')
 
 @app.route('/game')
 def serve_game():
-    return send_from_directory(PROJECT_ROOT, 'Game.html')
+    return send_from_directory(WEB_DIR, 'Game.html')
 
 @app.route('/tailwind.js')
 def serve_tailwind():
-    return send_from_directory(PROJECT_ROOT, 'tailwind.js')
+    return send_from_directory(WEB_DIR, 'tailwind.js')
 
 @app.route('/live')
 @app.route('/video_feed')
@@ -201,7 +202,22 @@ def settings():
 
 @app.route('/mobile')
 def serve_mobile():
-    return send_from_directory(PROJECT_ROOT, 'MobileCamera.html')
+    return send_from_directory(WEB_DIR, 'MobileCamera.html')
+
+@app.route('/api/cameras')
+def list_cameras():
+    available_cameras = []
+    # 快速偵測索引 0 至 4 內可用的鏡頭
+    for i in range(5):
+        cap = cv2.VideoCapture(i)
+        if cap.isOpened():
+            ret, frame = cap.read()
+            if ret:
+                available_cameras.append(i)
+            cap.release()
+    if not available_cameras:
+        available_cameras = [0]
+    return jsonify(available_cameras)
 
 @app.route('/upload_frame', methods=['POST'])
 def upload_frame():
