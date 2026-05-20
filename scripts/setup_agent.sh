@@ -22,9 +22,8 @@ pip install --upgrade pip
 pip install -r backend/requirements.txt
 
 # Initialize skill directories if missing
-mkdir -p skills/video_capture
-mkdir -p skills/posture_reviewer
-mkdir -p skills/calibration_wizard
+mkdir -p skills
+mkdir -p backend/services
 
 echo "=== Setup Complete! ==="
 echo "To activate the environment, run: source venv/bin/activate"

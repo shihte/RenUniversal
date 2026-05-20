@@ -2,7 +2,8 @@ import threading
 import numpy as np
 import json
 import os
-from typing import Optional, Dict, Any
+import time
+from typing import Optional, Dict, Any, Tuple
 from pathlib import Path
 from loguru import logger
 from .schema import DetectorStatus
@@ -19,12 +20,23 @@ class SharedState:
         self.frame: Optional[np.ndarray] = None
         self.frame_lock = threading.Lock()
         
-        # Posture 狀態
-        self.status = DetectorStatus()
-        self.status_lock = threading.Lock()
+        # 網路手機攝影機資料
+        self.network_frame: Optional[np.ndarray] = None
+        self.last_network_frame_time: float = 0.0
+        self.network_frame_lock = threading.Lock()
         
         # 個人化偏好 (Memory)
         self.prefs = self._load_prefs()
+
+        # Posture 狀態
+        self.status = DetectorStatus(
+            threshold=float(self.prefs.get("threshold_ratio", 0.20) * 100),
+            yaw_tolerance=float(self.prefs.get("yaw_tolerance", 0.10) * 100),
+            sway_threshold=float(self.prefs.get("sway_threshold", 0.15) * 100),
+            lean_threshold=float(self.prefs.get("lean_threshold", 0.10) * 100),
+            camera_source=self.prefs.get("camera_source", "local_0")
+        )
+        self.status_lock = threading.Lock()
         
         logger.info(f"SharedState initialized. Memory loaded from {prefs_path}")
 
@@ -33,8 +45,11 @@ class SharedState:
         default_prefs = {
             "threshold_ratio": 0.20,
             "yaw_tolerance": 0.10,
+            "sway_threshold": 0.15,
+            "lean_threshold": 0.10,
             "username": "User",
-            "last_baseline_eye": 0.0
+            "last_baseline_eye": 0.0,
+            "camera_source": "local_0"
         }
         if self.prefs_path.exists():
             try:
@@ -71,3 +86,14 @@ class SharedState:
     def get_frame(self) -> Optional[np.ndarray]:
         with self.frame_lock:
             return self.frame.copy() if self.frame is not None else None
+
+    def update_network_frame(self, frame: np.ndarray) -> None:
+        with self.network_frame_lock:
+            self.network_frame = frame.copy()
+            self.last_network_frame_time = time.time()
+
+    def get_network_frame(self) -> Tuple[Optional[np.ndarray], float]:
+        with self.network_frame_lock:
+            if self.network_frame is not None:
+                return self.network_frame.copy(), self.last_network_frame_time
+            return None, 0.0

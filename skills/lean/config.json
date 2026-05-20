@@ -1,0 +1,12 @@
+{
+  "name": "lean",
+  "description": "身體過度前傾偵測",
+  "enabled": true,
+  "requirements": {
+    "face_mesh": true,
+    "pose": true
+  },
+  "default_preferences": {
+    "lean_threshold": 0.10
+  }
+}

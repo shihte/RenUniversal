@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTAR Mobile Stream Camera</title>
+    <!-- Use Google Fonts Outfit & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(22, 30, 49, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.35);
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.35);
+            --error: #ef4444;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.06) 0%, transparent 45%);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #fff 30%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .preview-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            background-color: #030712;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* mirror default front camera */
+        }
+
+        .preview-placeholder {
+            position: absolute;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--text-muted);
+        }
+
+        .status-dot.active {
+            background-color: var(--success);
+            box-shadow: 0 0 10px var(--success-glow);
+            animation: pulse 1.5s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .select-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            text-align: left;
+        }
+
+        label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        select {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px;
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        select:focus {
+            border-color: var(--primary);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--primary-glow);
+            background: #2563eb;
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.streaming {
+            background: var(--error);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+        }
+
+        .btn.streaming:hover {
+            background: #dc2626;
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+        }
+
+        .metrics {
+            margin-top: 16px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 13px;
+        }
+
+        .metric-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .metric-val {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0;
+            cursor: pointer;
+            user-select: none;
+            text-align: left;
+        }
+
+        .checkbox-container input {
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+            accent-color: var(--primary);
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .checkbox-container span {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CTAR 內網通透攝影機</h1>
+        <div class="subtitle">將您的手機轉化為 CTAR 側邊/副追蹤鏡頭</div>
+
+        <div class="preview-container">
+            <video id="video" autoplay playsinline></video>
+            <div class="status-badge">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">未連接</span>
+            </div>
+            <div class="preview-placeholder" id="placeholder">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <span>相機預覽尚未開啟</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="select-group">
+                <label for="cameraSelect">選擇相機鏡頭</label>
+                <select id="cameraSelect">
+                    <option value="">載入鏡頭列表中...</option>
+                </select>
+            </div>
+
+            <div class="select-group">
+                <label for="qualitySelect">傳送畫質 (極速模式可降低延遲)</label>
+                <select id="qualitySelect">
+                    <option value="low" selected>極速模式 (320px, 壓縮率高 - 延遲最低)</option>
+                    <option value="medium">平衡模式 (480px, 中度壓縮)</option>
+                    <option value="high">清晰模式 (640px, 低度壓縮)</option>
+                </select>
+            </div>
+
+            <label class="checkbox-container">
+                <input type="checkbox" id="mirrorStream" checked>
+                <span>鏡像翻轉串流畫面 (若左右相反請切換)</span>
+            </label>
+
+            <button class="btn" id="streamBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                <span id="btnText">開啟鏡頭與串流</span>
+            </button>
+
+            <div class="metrics">
+                <div class="metric-item">
+                    <span style="color: var(--text-muted);">傳送速率</span>
+                    <span class="metric-val" id="fpsVal">0 FPS</span>
+                </div>
+                <div class="metric-item">
+                    <span style        const video = document.getElementById('video');
+        const cameraSelect = document.getElementById('cameraSelect');
+        const mirrorStream = document.getElementById('mirrorStream');
+        const streamBtn = document.getElementById('streamBtn');
+        const btnText = document.getElementById('btnText');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const placeholder = document.getElementById('placeholder');
+        const fpsVal = document.getElementById('fpsVal');
+        const latencyVal = document.getElementById('latencyVal');
+
+        let localStream = null;
+        let isStreaming = false;
+        let streamInterval = null;
+        let lastFrameTime = Date.now();
+        let frameCount = 0;
+        let fpsTimer = null;
+
+        // 建立離屏 Canvas 來捕捉與壓縮影像
+        const captureCanvas = document.createElement('canvas');
+        const captureCtx = captureCanvas.getContext('2d');
+
+        // 鏡像翻轉更新函式
+        function updatePreviewMirror() {
+            if (mirrorStream.checked) {
+                video.style.transform = 'scaleX(-1)';
+            } else {
+                video.style.transform = 'scaleX(1)';
+            }
+        }
+        mirrorStream.onchange = updatePreviewMirror;
+
+        // 根據鏡頭選取決定是否啟用預設鏡像
+        function onCameraChanged() {
+            const activeLabel = cameraSelect.options[cameraSelect.selectedIndex]?.text || "";
+            if (activeLabel.toLowerCase().includes('back') || activeLabel.toLowerCase().includes('environment') || activeLabel.toLowerCase().includes('後置') || activeLabel.toLowerCase().includes('rear')) {
+                mirrorStream.checked = false; // 後置鏡頭預設不鏡像
+            } else {
+                mirrorStream.checked = true;  // 前置鏡頭預設鏡像
+            }
+            updatePreviewMirror();
+        }
+
+        // 載入相機列表 (不強求在 onload 時直接取得權限，避免遭瀏覽器安全性封鎖)
+        async function getCameras() {
+            try {
+                if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+                    const devices = await navigator.mediaDevices.enumerateDevices();
+                    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                    
+                    cameraSelect.innerHTML = '';
+                    if (videoDevices.length > 0) {
+                        videoDevices.forEach((device, index) => {
+                            const option = document.createElement('option');
+                            option.value = device.deviceId;
+                            const label = device.label || `相機鏡頭 ${index + 1}`;
+                            option.text = label;
+                            
+                            // 優先勾選後置鏡頭
+                            if (label.toLowerCase().includes('back') || label.toLowerCase().includes('environment') || label.toLowerCase().includes('後置') || label.toLowerCase().includes('rear')) {
+                                option.selected = true;
+                            }
+                            cameraSelect.appendChild(option);
+                        });
+                        onCameraChanged();
+                    } else {
+                        cameraSelect.innerHTML = '<option value="">點擊下方按鈕以取得授權</option>';
+                    }
+                } else {
+                    cameraSelect.innerHTML = '<option value="">不支援媒體裝置 API</option>';
+                }
+            } catch (err) {
+                console.warn("無法列出鏡頭:", err);
+                cameraSelect.innerHTML = '<option value="">點擊下方按鈕以取得授權</option>';
+            }
+        }
+
+        // 當鏡頭選擇變更時，自動更新串流
+        cameraSelect.onchange = () => {
+            onCameraChanged();
+            if (isStreaming) {
+                stopStream();
+                startStream();
+            }
+        };
+
+        let isSendingFrame = false;
+
+        async function startStream() {
+            // 在使用者點擊按鈕的事件中觸發 getUserMedia，瀏覽器必定會彈出同意授權對話框
+            const deviceId = cameraSelect.value;
+            const constraints = {
+                video: {
+                    deviceId: deviceId ? { exact: deviceId } : undefined,
+                    width: { ideal: 640 },
+                    height: { ideal: 480 },
+                    frameRate: { ideal: 30 }
+                }
+            };
+
+            try {
+                statusText.textContent = "請求相機權限中...";
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = localStream;
+                placeholder.style.display = 'none';
+                
+                // 授權成功後，重新整理相機列表以讀取真實的裝置名稱 (如 "Back Camera")
+                await refreshCameraList();
+                onCameraChanged();
+
+                isStreaming = true;
+                btnText.textContent = "停止串流";
+                streamBtn.classList.add('streaming');
+                statusDot.classList.add('active');
+                statusText.textContent = "串流中";
+
+                // 開始以 30 FPS 發送影格
+                const fpsLimit = 30;
+                const intervalMs = 1000 / fpsLimit;
+                
+                streamInterval = setInterval(sendFrame, intervalMs);
+
+                // FPS 計數器
+                frameCount = 0;
+                fpsTimer = setInterval(() => {
+                    fpsVal.textContent = `${frameCount} FPS`;
+                    frameCount = 0;
+                }, 1000);
+
+            } catch (err) {
+                console.error("開啟相機失敗", err);
+                statusText.textContent = "開啟失敗";
+                alert("無法存取相機，請確認您已同意相機存取權限。若是使用本地模式，請確認網址開頭為 https:// 並點選『進階/繼續存取網站』。");
+            }
+        }
+
+        async function refreshCameraList() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                const currentVal = cameraSelect.value;
+                
+                cameraSelect.innerHTML = '';
+                videoDevices.forEach((device, index) => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.text = device.label || `鏡頭 ${index + 1}`;
+                    if (device.deviceId === currentVal || (!currentVal && index === 0)) {
+                        option.selected = true;
+                    }
+                    cameraSelect.appendChild(option);
+                });
+            } catch (e) {
+                console.error("無法重新載入相機列表", e);
+            }
+        }
+
+        function stopStream() {
+            clearInterval(streamInterval);
+            clearInterval(fpsTimer);
+            
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+            }
+            
+            placeholder.style.display = 'flex';
+            isStreaming = false;
+            btnText.textContent = "開啟鏡頭與串流";
+            streamBtn.classList.remove('streaming');
+            statusDot.classList.remove('active');
+            statusText.textContent = "未連接";
+            fpsVal.textContent = "0 FPS";
+            latencyVal.textContent = "0 ms";
+            isSendingFrame = false;
+        }
+
+        function sendFrame() {
+            if (!video.videoWidth || isSendingFrame) return;
+
+            // 讀取所選畫質，動態設定最大解析度邊長與壓縮品質
+            const qualitySelect = document.getElementById('qualitySelect');
+            const quality = qualitySelect ? qualitySelect.value : 'low';
+            
+            let maxDim = 320;
+            let jpegQuality = 0.35;
+            
+            if (quality === 'medium') {
+                maxDim = 480;
+                jpegQuality = 0.55;
+            } else if (quality === 'high') {
+                maxDim = 640;
+                jpegQuality = 0.70;
+            }
+
+            let w = video.videoWidth;
+            let h = video.videoHeight;
+            if (w > maxDim || h > maxDim) {
+                if (w > h) {
+                    h = Math.round((h * maxDim) / w);
+                    w = maxDim;
+                } else {
+                    w = Math.round((w * maxDim) / h);
+                    h = maxDim;
+                }
+            }
+            
+            if (captureCanvas.width !== w || captureCanvas.height !== h) {
+                captureCanvas.width = w;
+                captureCanvas.height = h;
+            }
+
+            // 將 Video 畫面畫到 Canvas (並根據 mirrorStream 勾選決定是否水平翻轉影像)
+            captureCtx.save();
+            if (mirrorStream.checked) {
+                captureCtx.translate(w, 0);
+                captureCtx.scale(-1, 1);
+            }
+            captureCtx.drawImage(video, 0, 0, w, h);
+            captureCtx.restore();
+
+            // 鎖定傳送，防止網路延遲導致請求堆疊產生一分鐘延遲
+            isSendingFrame = true;
+
+            // 轉成 JPEG Blob 並透過 HTTP POST 發送
+            captureCanvas.toBlob((blob) => {
+                if (!blob) {
+                    isSendingFrame = false;
+                    return;
+                }
+                
+                const startTime = performance.now();
+                fetch('/upload_frame', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'image/jpeg'
+                    },
+                    body: blob
+                })
+                .then(res => res.json())
+                .then(data => {
+                    isSendingFrame = false;
+                    if (data.success) {
+                        frameCount++;
+                        const latency = Math.round(performance.now() - startTime);
+                        latencyVal.textContent = `${latency} ms`;
+                        
+                        // 當網路品質良好時，恢復正常狀態
+                        statusText.textContent = "串流中";
+                        statusDot.classList.add('active');
+                    }
+                })
+                .catch(err => {
+                    isSendingFrame = false;
+                    console.error("傳送影格失敗:", err);
+                    statusText.textContent = "傳送失敗";
+                    statusDot.classList.remove('active');
+                });
+            }, 'image/jpeg', jpegQuality);
+        }
+
+        streamBtn.onclick = () => {
+            if (isStreaming) {
+                stopStream();
+            } else {
+                startStream();
+            }
+        };
+
+        // 載入時初始化
+        window.onload = getCameras;
+    </script>
+</body>
+</html>

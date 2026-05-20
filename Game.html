@@ -5,10 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ASCENSION: CENTER LOCKED</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/tailwind.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Playfair+Display:ital,wght@1,400&display=swap');
-
         body {
             margin: 0;
             overflow: hidden;
@@ -33,12 +31,12 @@
         }
 
         .hud-text {
-            font-family: 'Orbitron', sans-serif;
+            font-family: Impact, "Arial Black", "Courier New", Courier, monospace;
             text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
         }
 
         .serif-text {
-            font-family: 'Playfair Display', serif;
+            font-family: Georgia, Cambria, "Times New Roman", Times, serif;
         }
 
         .damage-flash {
@@ -237,15 +235,32 @@
                         return;
                     }
 
+                    let statusText = `Ratio: ${data.ratio}%`;
+                    if (data.is_bad_posture) {
+                        statusText = '👇 HEAD DOWN';
+                    }
+                    
+                    let extraAlerts = [];
+                    if (data.is_swaying) {
+                        extraAlerts.push('↔️ SWAYING');
+                    }
+                    if (data.is_leaning_forward) {
+                        extraAlerts.push('🔍 LEANING');
+                    }
+                    
+                    if (extraAlerts.length > 0) {
+                        statusText = `${statusText} (${extraAlerts.join(' + ')})`;
+                    }
+
                     // 偵測低頭次數變化（邊緣觸發）
                     if (data.down_count > this.lastDownCount) {
                         // 低頭次數增加 = 觸發跳躍
                         this.triggerJump();
                         this.lastDownCount = data.down_count;
-                        this.updateUI(true, '👇 HEAD DOWN!');
+                        this.updateUI(true, `👇 HEAD DOWN! | ${data.latency_ms}ms`);
                     } else {
-                        // Show both ratio and latency
-                        this.updateUI(true, `Ratio: ${data.ratio}% | ${data.latency_ms}ms`);
+                        // Show ratio, extra alerts, and latency
+                        this.updateUI(true, `${statusText} | ${data.latency_ms}ms`);
                     }
 
                 } catch (error) {

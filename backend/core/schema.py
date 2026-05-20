@@ -18,8 +18,16 @@ class DetectorStatus(BaseModel):
     baseline_eye_dist: float = Field(0.0, description="Calibrated baseline eye distance")
     threshold: float = Field(30.0, description="Detection threshold")
     yaw_tolerance: float = Field(20.0, description="Yaw tolerance threshold")
+    sway_threshold: float = Field(15.0, description="Sway detection threshold percentage")
+    lean_threshold: float = Field(10.0, description="Lean forward detection threshold percentage")
     is_active: bool = Field(True, description="Whether detection is active")
     latency_ms: int = Field(0, description="Inference latency in milliseconds")
+    is_swaying: bool = Field(False, description="Whether the user is swaying")
+    is_leaning_forward: bool = Field(False, description="Whether the user is leaning forward")
+    sway_ratio: float = Field(0.0, description="Torso sway ratio percentage")
+    lean_ratio: float = Field(0.0, description="Torso lean ratio percentage")
+    camera_source: str = Field("local_0", description="Selected camera source (local_0, local_1, phone, dual)")
+    public_url: Optional[str] = Field(None, description="Public intranet tunnel URL")
 
 class SettingsUpdate(BaseModel):
     """
@@ -27,6 +35,9 @@ class SettingsUpdate(BaseModel):
     """
     threshold: Optional[float] = None
     yaw_tolerance: Optional[float] = None
+    sway_threshold: Optional[float] = None
+    lean_threshold: Optional[float] = None
+    camera_source: Optional[str] = None
 
 class ControlCommand(BaseModel):
     """
