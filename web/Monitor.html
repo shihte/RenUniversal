@@ -156,7 +156,21 @@
             </div>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 font-sans">
+        <!-- Tabs Navigation -->
+        <div class="flex border-b border-[#b0aea5]/10 mb-8 font-heading">
+            <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="px-6 py-3 text-sm font-semibold border-b-2 border-[#d97757] text-[#faf9f5] transition-all duration-200">
+                即時監控 (Monitor)
+            </button>
+            <button onclick="switchTab('camera')" id="tab-btn-camera" class="px-6 py-3 text-sm font-semibold border-b-2 border-transparent text-[#b0aea5] hover:text-[#faf9f5] transition-all duration-200">
+                相機設定 (Camera)
+            </button>
+            <button onclick="switchTab('skills')" id="tab-btn-skills" class="px-6 py-3 text-sm font-semibold border-b-2 border-transparent text-[#b0aea5] hover:text-[#faf9f5] transition-all duration-200">
+                技能中心 (Skills Hub)
+            </button>
+        </div>
+
+        <!-- Tab 1: Dashboard View -->
+        <div id="view-dashboard" class="grid grid-cols-1 lg:grid-cols-12 gap-8 font-sans">
             <!-- Main Video Stream -->
             <div class="lg:col-span-8 space-y-6">
                 <div class="relative aspect-video bg-[#0a0a09] rounded-[24px] overflow-hidden border border-[#b0aea5]/10 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.6)]">
@@ -242,122 +256,7 @@
                     </div>
                 </div>
 
-                <!-- Settings -->
-                <div class="anthropic-card p-8 space-y-8">
-                    <h2 class="text-xs font-bold text-[#faf9f5] uppercase tracking-[0.2em] border-b border-[#b0aea5]/10 pb-4"
-                        data-i18n="sensitivity_settings">Configuration</h2>
-
-                    <!-- Threshold Slider -->
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-end">
-                            <label class="text-xs text-[#b0aea5] font-medium" data-i18n="threshold_label">Detection Sensitivity</label>
-                            <span class="text-sm font-serif italic text-[#d97757]" id="thresh-val">20%</span>
-                        </div>
-                        <input type="range" id="threshold-slider" min="5" max="50" value="20"
-                            oninput="updateSetting('threshold', this.value)">
-                        <p class="text-[10px] text-[#706e68] leading-relaxed italic" data-i18n="threshold_desc">Adjust the tipping point for head-down detection.</p>
-                    </div>
-
-                    <!-- Yaw Tolerance Slider -->
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-end">
-                            <label class="text-xs text-[#b0aea5] font-medium" data-i18n="yaw_label">Rotational Tolerance</label>
-                            <span class="text-sm font-serif italic text-[#6a9bcc]" id="yaw-val">10%</span>
-                        </div>
-                        <input type="range" id="yaw-slider" min="5" max="50" value="10"
-                            oninput="updateSetting('yaw_tolerance', this.value)">
-                        <p class="text-[10px] text-[#706e68] leading-relaxed italic" data-i18n="yaw_desc">Define how much side-to-side movement is allowed.</p>
-                    </div>
-
-                    <!-- Sway Tolerance Slider -->
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-end">
-                            <label class="text-xs text-[#b0aea5] font-medium" data-i18n="sway_label">Sway Tolerance</label>
-                            <span class="text-sm font-serif italic text-[#d97757]" id="sway-val">15%</span>
-                        </div>
-                        <input type="range" id="sway-slider" min="5" max="50" value="15"
-                            oninput="updateSetting('sway_threshold', this.value)">
-                        <p class="text-[10px] text-[#706e68] leading-relaxed italic" data-i18n="sway_desc">Adjust tolerance for torso sway.</p>
-                    </div>
-
-                    <!-- Lean Tolerance Slider -->
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-end">
-                            <label class="text-xs text-[#b0aea5] font-medium" data-i18n="lean_label">Lean Tolerance</label>
-                            <span class="text-sm font-serif italic text-[#d97757]" id="lean-val">10%</span>
-                        </div>
-                        <input type="range" id="lean-slider" min="5" max="50" value="10"
-                            oninput="updateSetting('lean_threshold', this.value)">
-                        <p class="text-[10px] text-[#706e68] leading-relaxed italic" data-i18n="lean_desc">Adjust tolerance for leaning forward.</p>
-                    </div>
-
-                    <!-- Camera Source Selection -->
-                    <div class="space-y-4 pt-4 border-t border-[#b0aea5]/10">
-                        <div class="flex justify-between items-end">
-                            <label class="text-xs text-[#b0aea5] font-medium" data-i18n="camera_source_label">鏡頭輸入來源 (Camera Source)</label>
-                        </div>
-                        <select id="camera-source-select" class="w-full bg-[#1a1a18] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-3 text-xs focus:outline-none focus:border-[#d97757]" onchange="updateSetting('camera_source', this.value)">
-                            <option value="local_0">電腦預設鏡頭 (Local Camera 0)</option>
-                            <option value="local_1">電腦外接鏡頭 (Local Camera 1)</option>
-                            <option value="phone">手機網路串流 (Mobile WiFi Stream)</option>
-                            <option value="dual">雙鏡頭連線模式 (Dual-Camera: Face + Pose)</option>
-                        </select>
-                        <p class="text-[10px] text-[#706e68] leading-relaxed italic" data-i18n="camera_source_desc" id="camera-source-desc">
-                            在手機上開啟 <a href="/mobile" target="_blank" class="text-[#6a9bcc] underline">手機串流網頁</a> 發送畫面，並在此選擇「手機網路串流」或「雙鏡頭連線模式」。
-                        </p>
-                        
-                        <!-- Dual connection info -->
-                        <div id="tunnel-info-container" class="hidden space-y-4 bg-[#1d1d1b] p-4 rounded-xl border border-[#d97757]/20">
-                            <div class="space-y-1">
-                                <span class="text-[10px] font-bold text-[#d97757] uppercase tracking-[0.15em] block">
-                                    📱 手機連線配置 (Phone Connection Options)
-                                </span>
-                                <p class="text-[10px] text-[#b0aea5] leading-normal">
-                                    請確保手機與電腦連線配置正確，以獲得最佳串流體驗：
-                                </p>
-                            </div>
-                            
-                            <!-- Option A: Local Wi-Fi (Highly Recommended) -->
-                            <div class="space-y-2 p-2.5 rounded-lg bg-[#252523] border border-[#788c5d]/20">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-[10px] font-bold text-[#788c5d]">選項 A：本地 Wi-Fi 連線 (極速低延遲 &lt;30ms)</span>
-                                    <span class="text-[8px] bg-[#788c5d]/20 text-[#788c5d] px-1.5 py-0.5 rounded font-bold">推薦</span>
-                                </div>
-                                <p class="text-[9px] text-[#706e68]">
-                                    手機必須與電腦連接到<strong>同一個 Wi-Fi</strong>。請掃描下方 QR Code 或輸入網址（請手動指定 http）：
-                                </p>
-                                <div class="flex items-center gap-3">
-                                    <div class="bg-white p-1 rounded-lg shrink-0">
-                                        <img id="local-qr" src="" alt="Local QR" class="w-20 h-20" />
-                                    </div>
-                                    <div class="space-y-1 overflow-hidden min-w-0">
-                                        <a id="local-link" href="" target="_blank" class="text-[10px] text-[#788c5d] underline block truncate font-mono"></a>
-                                        <span class="text-[8px] text-[#706e68] block">⚠️ 如果手機未開 Wi-Fi 或連接不同網路，此連結會連不上。</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Option B: Public Tunnel -->
-                            <div class="space-y-2 p-2.5 rounded-lg bg-[#252523] border border-[#d97757]/20">
-                                <span class="text-[10px] font-bold text-[#d97757]">選項 B：遠端公網穿透連線 (延遲較高 1.5s+)</span>
-                                <p class="text-[9px] text-[#706e68]">
-                                    當手機使用行動網路 (4G/5G) 或跨網段時使用。請掃描下方 QR Code：
-                                </p>
-                                <div class="flex items-center gap-3">
-                                    <div class="bg-white p-1 rounded-lg shrink-0">
-                                        <img id="tunnel-qr" src="" alt="Tunnel QR" class="w-20 h-20" />
-                                    </div>
-                                    <div class="space-y-1 overflow-hidden min-w-0">
-                                        <a id="tunnel-link" href="" target="_blank" class="text-[10px] text-[#d97757] underline block truncate font-mono"></a>
-                                        <span class="text-[8px] text-[#706e68] block">✈️ 資料需繞行海外轉機點，延遲較高。建議切換手機至極速模式。</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Actions -->
+                <!-- Quick Actions -->
                 <div class="anthropic-card p-8 space-y-6">
                     <h2 class="text-xs font-bold text-[#faf9f5] uppercase tracking-[0.2em] border-b border-[#b0aea5]/10 pb-4" data-i18n="actions">
                         System Control</h2>
@@ -395,7 +294,174 @@
                 </div>
             </div>
         </div>
-    </div>
+
+        <!-- Tab 2: Camera View -->
+        <div id="view-camera" class="hidden max-w-3xl mx-auto space-y-8 font-sans">
+            <div class="anthropic-card p-8 space-y-8">
+                <h2 class="text-xs font-bold text-[#faf9f5] uppercase tracking-[0.2em] border-b border-[#b0aea5]/10 pb-4"
+                    data-i18n="camera_source_label">鏡頭輸入來源 (Camera Source)</h2>
+
+                <div class="space-y-4">
+                    <label class="text-xs text-[#b0aea5] font-medium">請選擇作用中的鏡頭裝置：</label>
+                    <select id="camera-source-select" class="w-full bg-[#1a1a18] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-3 text-xs focus:outline-none focus:border-[#d97757]" onchange="updateSetting('camera_source', this.value)">
+                        <option value="local_0">電腦預設鏡頭 (Local Camera 0)</option>
+                        <option value="local_1">電腦外接鏡頭 (Local Camera 1)</option>
+                        <option value="phone">手機網路串流 (Mobile WiFi Stream)</option>
+                        <option value="dual">雙鏡頭連線模式 (Dual-Camera: Face + Pose)</option>
+                    </select>
+                    <p class="text-[10px] text-[#706e68] leading-relaxed italic" data-i18n="camera_source_desc" id="camera-source-desc">
+                        在手機上開啟手機串流網頁發送畫面，並在此選擇手機網路串流或雙鏡頭連線模式。
+                    </p>
+                </div>
+
+                <!-- Dual connection info -->
+                <div id="tunnel-info-container" class="hidden space-y-4 bg-[#1d1d1b] p-6 rounded-xl border border-[#d97757]/20">
+                    <div class="space-y-1">
+                        <span class="text-xs font-bold text-[#d97757] uppercase tracking-[0.15em] block">
+                            📱 手機連線配置 (Phone Connection Options)
+                        </span>
+                        <p class="text-[11px] text-[#b0aea5] leading-normal">
+                            請使用手機掃描以下 QR Code 開啟前置相機進行高精度人臉與姿態辨識：
+                        </p>
+                    </div>
+                    
+                    <!-- Option A: Local Wi-Fi (Highly Recommended) -->
+                    <div class="space-y-2 p-4 rounded-lg bg-[#252523] border border-[#788c5d]/20">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-[#788c5d]">選項 A：本地 Wi-Fi 連線 (極速低延遲 &lt;30ms)</span>
+                            <span class="text-[8px] bg-[#788c5d]/20 text-[#788c5d] px-1.5 py-0.5 rounded font-bold">推薦</span>
+                        </div>
+                        <p class="text-[10px] text-[#706e68]">
+                            手機必須與電腦連接到<strong>同一個 Wi-Fi</strong>。請掃描下方 QR Code 或輸入網址（請手動指定 http）：
+                        </p>
+                        <div class="flex items-center gap-4 mt-2">
+                            <div class="bg-white p-2 rounded-lg shrink-0">
+                                <img id="local-qr" src="" alt="Local QR" class="w-24 h-24" />
+                            </div>
+                            <div class="space-y-2 overflow-hidden min-w-0">
+                                <a id="local-link" href="" target="_blank" class="text-xs text-[#788c5d] underline block truncate font-mono"></a>
+                                <span class="text-[9px] text-[#706e68] block">⚠️ 如果手機未開 Wi-Fi 或連接不同網路，此連結會連不上。</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Option B: Public Tunnel -->
+                    <div class="space-y-2 p-4 rounded-lg bg-[#252523] border border-[#d97757]/20">
+                        <span class="text-xs font-bold text-[#d97757]">選項 B：遠端公網穿透連線 (延遲較高 1.5s+)</span>
+                        <p class="text-[10px] text-[#706e68]">
+                            當手機使用行動網路 (4G/5G) 或跨網段時使用。請掃描下方 QR Code：
+                        </p>
+                        <div class="flex items-center gap-4 mt-2">
+                            <div class="bg-white p-2 rounded-lg shrink-0">
+                                <img id="tunnel-qr" src="" alt="Tunnel QR" class="w-24 h-24" />
+                            </div>
+                            <div class="space-y-2 overflow-hidden min-w-0">
+                                <a id="tunnel-link" href="" target="_blank" class="text-xs text-[#d97757] underline block truncate font-mono"></a>
+                                <span class="text-[9px] text-[#706e68] block">✈️ 資料需繞行海外轉機點，延遲較高。建議切換手機至極速模式。</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Skills View -->
+        <div id="view-skills" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8 font-sans">
+            <!-- Left Column: Active Skills List -->
+            <div class="lg:col-span-6 space-y-6">
+                <div class="flex justify-between items-center pb-2 border-b border-[#b0aea5]/10">
+                    <h2 class="text-sm font-bold text-[#faf9f5] uppercase tracking-[0.15em]">作用中的動作判斷包</h2>
+                    <button onclick="loadSkills()" class="text-[#6a9bcc] hover:underline text-xs">重新整理</button>
+                </div>
+                <div id="skills-list-container" class="space-y-6">
+                    <!-- Dynamic active skills items list here -->
+                </div>
+            </div>
+
+            <!-- Right Column: Create Skill Builder Form -->
+            <div class="lg:col-span-6 space-y-6">
+                <div class="pb-2 border-b border-[#b0aea5]/10">
+                    <h2 class="text-sm font-bold text-[#faf9f5] uppercase tracking-[0.15em]">自訂動作語法建構器</h2>
+                </div>
+                <div class="anthropic-card p-6 space-y-6">
+                    <form id="create-skill-form" onsubmit="submitCreateSkill(event)" class="space-y-5">
+                        <div class="space-y-2">
+                            <label class="text-xs text-[#b0aea5] font-semibold block">動作包系統名稱 (ID)*</label>
+                            <input type="text" id="skill-name" required placeholder="例如: shoulder_tilt" 
+                                class="w-full bg-[#1a1a18] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#d97757] font-mono">
+                            <p class="text-[9px] text-[#706e68]">限小寫英文、數字與底線，不可與現有動作包重名。</p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-xs text-[#b0aea5] font-semibold block">中文描述名稱</label>
+                            <input type="text" id="skill-desc" placeholder="例如: 肩部高低傾斜偵測" 
+                                class="w-full bg-[#1a1a18] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#d97757]">
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-xs text-[#b0aea5] font-semibold block">演算法依賴 (Requirements)</label>
+                            <div class="flex gap-6 mt-1">
+                                <label class="flex items-center gap-2 text-xs text-[#faf9f5] cursor-pointer">
+                                    <input type="checkbox" id="req-face" checked class="rounded border-[#b0aea5]/20 bg-[#1a1a18] text-[#d97757] focus:ring-0">
+                                    人臉網格 (Face Mesh)
+                                </label>
+                                <label class="flex items-center gap-2 text-xs text-[#faf9f5] cursor-pointer">
+                                    <input type="checkbox" id="req-pose" class="rounded border-[#b0aea5]/20 bg-[#1a1a18] text-[#d97757] focus:ring-0">
+                                    骨骼姿態 (Pose)
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3 pt-3 border-t border-[#b0aea5]/10">
+                            <label class="text-xs text-[#b0aea5] font-semibold block">條件判斷邏輯 (Rule Config)</label>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-1">
+                                    <span class="text-[10px] text-[#b0aea5]">比較特徵 (Feature)</span>
+                                    <select id="rule-feature" class="w-full bg-[#1a1a18] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-2 text-xs focus:outline-none focus:border-[#d97757]">
+                                        <option value="nose_chin_ratio">低頭比例 (Nose-Chin Ratio)</option>
+                                        <option value="torso_sway">左右搖晃 (Torso Sway)</option>
+                                        <option value="torso_lean">身體前傾 (Torso Lean)</option>
+                                        <option value="shoulder_slope">肩膀傾斜 (Shoulder Slope)</option>
+                                        <option value="yaw_deviation">轉頭角度 (Head Yaw)</option>
+                                    </select>
+                                </div>
+                                <div class="space-y-1">
+                                    <span class="text-[10px] text-[#b0aea5]">比較符號 (Operator)</span>
+                                    <select id="rule-operator" class="w-full bg-[#1a1a18] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-2 text-xs focus:outline-none focus:border-[#d97757]">
+                                        <option value=">">大於 (&gt;)</option>
+                                        <option value="<">小於 (&lt;)</option>
+                                        <option value=">=">大於等於 (&gt;=)</option>
+                                        <option value="<=">小於等於 (&lt;=)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2 mt-2">
+                                <div class="flex justify-between items-end">
+                                    <span class="text-[10px] text-[#b0aea5]">預設判定門檻 (Default Threshold)</span>
+                                    <span class="text-xs font-serif text-[#d97757] font-bold" id="builder-thresh-display">10%</span>
+                                </div>
+                                <input type="range" id="rule-threshold" min="1" max="100" value="10" 
+                                    oninput="document.getElementById('builder-thresh-display').textContent = this.value + '%'" 
+                                    class="w-full">
+                            </div>
+                        </div>
+
+                        <div class="bg-[#1a1a18] p-4 rounded-xl border border-[#b0aea5]/10 text-[10px] text-[#b0aea5] leading-relaxed space-y-1">
+                            <span class="font-bold text-[#faf9f5] block">邏輯提示 (Syntax Tips)：</span>
+                            <p>• <strong>低頭比例</strong>: 基於人臉網格，低頭時距離會縮短，一般設定為小於 <code>&lt;</code> -20% 等負值。</p>
+                            <p>• <strong>肩膀傾斜 / 軀幹搖晃</strong>: 正常時為 0，偏差越大數值越高，一般設定為大於 <code>&gt;</code> 10% 等正值。</p>
+                        </div>
+
+                        <button type="submit" 
+                            class="btn-anthropic-primary w-full py-3.5 text-xs font-bold uppercase tracking-[0.1em] rounded-xl flex justify-center items-center gap-2">
+                            建立並套用動作 (Deploy Custom Skill)
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -486,6 +552,38 @@
             }
         }
 
+        // --- Tabs Navigation ---
+        let activeTab = 'dashboard';
+
+        function switchTab(tabId) {
+            activeTab = tabId;
+            
+            // Hide all views
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-camera').classList.add('hidden');
+            document.getElementById('view-skills').classList.add('hidden');
+            
+            // Show selected view
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            
+            // Update tab button styles
+            const tabBtns = ['dashboard', 'camera', 'skills'];
+            tabBtns.forEach(btnId => {
+                const btn = document.getElementById(`tab-btn-${btnId}`);
+                if (btnId === tabId) {
+                    btn.classList.add('border-[#d97757]', 'text-[#faf9f5]');
+                    btn.classList.remove('border-transparent', 'text-[#b0aea5]');
+                } else {
+                    btn.classList.remove('border-[#d97757]', 'text-[#faf9f5]');
+                    btn.classList.add('border-transparent', 'text-[#b0aea5]');
+                }
+            });
+            
+            if (tabId === 'skills') {
+                loadSkills();
+            }
+        }
+
         // --- Logic ---
 
         const statusEl = document.getElementById('connection-status');
@@ -513,24 +611,6 @@
                 
                 const leanEl = document.getElementById('lean-value');
                 if (leanEl) leanEl.textContent = `${(data.lean_ratio * 100).toFixed(1)}%`;
-
-                // Sync Settings
-                if (!document.getElementById('threshold-slider').matches(':active')) {
-                    document.getElementById('thresh-val').textContent = `${data.threshold}%`;
-                    document.getElementById('threshold-slider').value = data.threshold;
-                }
-                if (!document.getElementById('yaw-slider').matches(':active')) {
-                    document.getElementById('yaw-val').textContent = `${data.yaw_tolerance}%`;
-                    document.getElementById('yaw-slider').value = data.yaw_tolerance;
-                }
-                if (!document.getElementById('sway-slider').matches(':active')) {
-                    document.getElementById('sway-val').textContent = `${data.sway_threshold}%`;
-                    document.getElementById('sway-slider').value = data.sway_threshold;
-                }
-                if (!document.getElementById('lean-slider').matches(':active')) {
-                    document.getElementById('lean-val').textContent = `${data.lean_threshold}%`;
-                    document.getElementById('lean-slider').value = data.lean_threshold;
-                }
 
                 const cameraSelect = document.getElementById('camera-source-select');
                 if (cameraSelect && !cameraSelect.matches(':focus')) {
@@ -568,7 +648,6 @@
                 const tunnelContainer = document.getElementById('tunnel-info-container');
                 if (tunnelContainer) {
                     if (data.public_url) {
-                        // 1. 本地 Wi-Fi 連結 (使用 HTTPS 8443 以符合 Secure Context 鏡頭權限規定)
                         const localIp = data.local_ip || '127.0.0.1';
                         const localMobileUrl = `https://${localIp}:8443/mobile`;
                         
@@ -579,7 +658,6 @@
                             document.getElementById('local-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(localMobileUrl)}`;
                         }
 
-                        // 2. 遠端公網隧道連結
                         const mobileUrl = `${data.public_url}/mobile`;
                         const linkEl = document.getElementById('tunnel-link');
                         if (linkEl.href !== mobileUrl) {
@@ -600,11 +678,6 @@
         }
 
         async function updateSetting(key, value) {
-            if (key === 'threshold') document.getElementById('thresh-val').textContent = `${value}%`;
-            if (key === 'yaw_tolerance') document.getElementById('yaw-val').textContent = `${value}%`;
-            if (key === 'sway_threshold') document.getElementById('sway-val').textContent = `${value}%`;
-            if (key === 'lean_threshold') document.getElementById('lean-val').textContent = `${value}%`;
-
             try {
                 await fetch('/settings', {
                     method: 'POST',
@@ -633,7 +706,6 @@
 
             try {
                 await fetch('/recalibrate', { method: 'POST' });
-                // Reset icon after 1s
                 setTimeout(() => {
                     icon.classList.remove('hidden');
                     spinner.classList.add('hidden');
@@ -645,7 +717,203 @@
             }
         }
 
-        // Fetch available local cameras and populate select element dynamically
+        // --- Skills Tab Actions ---
+        async function loadSkills() {
+            try {
+                const statusRes = await fetch('/status');
+                const statusData = await statusRes.json();
+                
+                const res = await fetch('/api/skills');
+                const skills = await res.json();
+                
+                const container = document.getElementById('skills-list-container');
+                if (!container) return;
+                
+                container.innerHTML = '';
+                
+                skills.forEach(skill => {
+                    const card = document.createElement('div');
+                    card.className = 'anthropic-card p-6 space-y-4';
+                    
+                    const isBuiltin = ['slouch', 'sway', 'lean'].includes(skill.name);
+                    const isEnabled = skill.enabled !== false;
+                    
+                    let reqHtml = '';
+                    if (skill.requirements.face_mesh) {
+                        reqHtml += '<span class="text-[8px] bg-[#6a9bcc]/20 text-[#6a9bcc] px-1.5 py-0.5 rounded font-mono font-bold">FACE MESH</span> ';
+                    }
+                    if (skill.requirements.pose) {
+                        reqHtml += '<span class="text-[8px] bg-[#d97757]/20 text-[#d97757] px-1.5 py-0.5 rounded font-mono font-bold">POSE</span> ';
+                    }
+                    
+                    let threshHtml = '';
+                    const defaultPrefs = skill.default_preferences || {};
+                    
+                    Object.keys(defaultPrefs).forEach(key => {
+                        const savedVal = statusData.prefs[key] !== undefined ? statusData.prefs[key] : defaultPrefs[key];
+                        const sliderVal = Math.round(savedVal * 100);
+                        
+                        threshHtml += `
+                            <div class="space-y-2 mt-3 pt-3 border-t border-[#b0aea5]/5">
+                                <div class="flex justify-between items-end">
+                                    <span class="text-[11px] text-[#b0aea5] font-medium font-sans">${key}</span>
+                                    <span class="text-xs font-serif italic text-[#d97757]" id="slider-val-${skill.name}-${key}">${sliderVal}%</span>
+                                </div>
+                                <input type="range" min="-100" max="100" value="${sliderVal}" 
+                                    oninput="updateSkillPreference('${skill.name}', '${key}', this.value)" 
+                                    class="w-full">
+                            </div>
+                        `;
+                    });
+                    
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2">
+                                    <h3 class="text-sm font-bold text-[#faf9f5] font-heading">${skill.name.toUpperCase()}</h3>
+                                    ${isBuiltin ? '<span class="text-[8px] bg-[#788c5d]/20 text-[#788c5d] px-1.5 py-0.5 rounded font-bold font-heading">內建核心</span>' : ''}
+                                </div>
+                                <p class="text-xs text-[#b0aea5]">${skill.description || ''}</p>
+                                <div class="mt-1 flex items-center gap-1.5">${reqHtml}</div>
+                            </div>
+                            
+                            <div class="flex items-center gap-3">
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer" ${isEnabled ? 'checked' : ''} 
+                                        onchange="toggleSkill('${skill.name}', this.checked)">
+                                    <div class="w-10 h-5 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#788c5d]"></div>
+                                </label>
+                                ${!isBuiltin ? `
+                                    <button onclick="deleteSkill('${skill.name}')" class="text-[#d97757] hover:text-red-400 text-xs transition-colors p-1">
+                                        刪除
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                        ${threshHtml}
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (err) {
+                console.error("Failed to load skills", err);
+            }
+        }
+
+        async function toggleSkill(name, enabled) {
+            try {
+                const res = await fetch('/api/skills/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, enabled })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    loadSkills();
+                } else {
+                    alert("Error: " + data.error);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function deleteSkill(name) {
+            if (!confirm(`確定要刪除自訂動作包 "${name}" 嗎？`)) return;
+            try {
+                const res = await fetch('/api/skills/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    loadSkills();
+                } else {
+                    alert("Error: " + data.error);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function updateSkillPreference(skillName, key, percentVal) {
+            const displayVal = document.getElementById(`slider-val-${skillName}-${key}`);
+            if (displayVal) displayVal.textContent = `${percentVal}%`;
+            
+            const decimalVal = parseFloat(percentVal) / 100.0;
+            try {
+                await fetch('/api/settings/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ [key]: decimalVal })
+                });
+            } catch (e) {
+                console.error("Failed to update skill preference", e);
+            }
+        }
+
+        async function submitCreateSkill(e) {
+            e.preventDefault();
+            const name = document.getElementById('skill-name').value.trim();
+            const desc = document.getElementById('skill-desc').value.trim();
+            const faceMesh = document.getElementById('req-face').checked;
+            const pose = document.getElementById('req-pose').checked;
+            
+            const feature = document.getElementById('rule-feature').value;
+            const operator = document.getElementById('rule-operator').value;
+            const thresholdVal = parseFloat(document.getElementById('rule-threshold').value) / 100.0;
+            
+            if (!name) {
+                alert("請填寫動作包名稱");
+                return;
+            }
+            if (!faceMesh && !pose) {
+                alert("請至少選擇一種演算法依賴 (Face Mesh 或 Pose)");
+                return;
+            }
+            
+            const rules = [
+                {
+                    "feature": feature,
+                    "operator": operator,
+                    "threshold_key": `${name}_threshold`
+                }
+            ];
+            
+            const defaultPrefs = {
+                [`${name}_threshold`]: thresholdVal
+            };
+            
+            const bodyData = {
+                name,
+                description: desc,
+                requirements: {
+                    face_mesh: faceMesh,
+                    pose: pose
+                },
+                rules,
+                default_preferences: defaultPrefs
+            };
+            
+            try {
+                const res = await fetch('/api/skills/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bodyData)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert("動作包載入成功！已套用至判定引擎。");
+                    document.getElementById('create-skill-form').reset();
+                    loadSkills();
+                } else {
+                    alert("建立失敗: " + data.error);
+                }
+            } catch (err) {
+                alert("連線錯誤: " + err);
+            }
+        }
+
         async function loadAvailableCameras() {
             try {
                 const res = await fetch('/api/cameras');
@@ -653,10 +921,8 @@
                 const select = document.getElementById('camera-source-select');
                 if (!select) return;
                 
-                // Get currently selected option
                 const currentValue = select.value;
                 
-                // Collect non-local options (phone, dual, etc.)
                 const nonLocalOptions = [];
                 for (let option of select.options) {
                     if (!option.value.startsWith('local_')) {
@@ -664,10 +930,8 @@
                     }
                 }
                 
-                // Clear and rebuild options
                 select.innerHTML = '';
                 
-                // Add dynamically found local cameras
                 cameras.forEach(index => {
                     const opt = document.createElement('option');
                     opt.value = `local_${index}`;
@@ -679,7 +943,6 @@
                     select.appendChild(opt);
                 });
                 
-                // Re-add non-local options
                 nonLocalOptions.forEach(optData => {
                     const opt = document.createElement('option');
                     opt.value = optData.value;
