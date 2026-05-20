@@ -12,3 +12,4 @@ dist/
 preferences.json
 .agent.pid
 .agent/
+.DS_Store
