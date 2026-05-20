@@ -30,6 +30,7 @@ class ActionEngine:
             return
 
         logger.info(f"Scanning directory {self.skills_dir} for action packages...")
+        self.detectors.clear()
         
         for item in os.listdir(self.skills_dir):
             item_path = os.path.join(self.skills_dir, item)

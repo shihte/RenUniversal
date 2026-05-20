@@ -254,6 +254,166 @@ def control():
     except ValidationError as e:
         return jsonify({"error": e.errors()}), 400
 
+import shutil
+
+@app.route('/api/skills', methods=['GET'])
+def list_skills():
+    try:
+        skills_dir = os.path.join(PROJECT_ROOT, 'skills')
+        if not os.path.exists(skills_dir):
+            os.makedirs(skills_dir, exist_ok=True)
+        results = []
+        for d in os.listdir(skills_dir):
+            cfg_path = os.path.join(skills_dir, d, 'config.json')
+            if os.path.exists(cfg_path):
+                try:
+                    with open(cfg_path, 'r', encoding='utf-8') as f:
+                        cfg = json.load(f)
+                        results.append(cfg)
+                except Exception as ex:
+                    logger.error(f"Error reading skill {d} config: {ex}")
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/skills/create', methods=['POST'])
+def create_skill():
+    try:
+        req_data = request.get_json()
+        name = req_data.get("name")
+        description = req_data.get("description", "")
+        requirements = req_data.get("requirements", {"face_mesh": True, "pose": False})
+        rules = req_data.get("rules", [])
+        default_prefs = req_data.get("default_preferences", {"threshold": 0.10})
+        
+        if not name:
+            return jsonify({"error": "Skill name is required"}), 400
+            
+        # Clean name to safe folder name
+        safe_name = "".join([c for c in name if c.isalnum() or c in ('_', '-')]).lower()
+        if not safe_name:
+            return jsonify({"error": "Invalid skill name"}), 400
+            
+        skills_dir = os.path.join(PROJECT_ROOT, 'skills')
+        target_dir = os.path.join(skills_dir, safe_name)
+        if os.path.exists(target_dir):
+            return jsonify({"error": f"Skill '{safe_name}' already exists"}), 400
+            
+        os.makedirs(target_dir, exist_ok=True)
+        
+        # Write config.json
+        cfg = {
+            "name": safe_name,
+            "description": description,
+            "enabled": True,
+            "requirements": requirements,
+            "default_preferences": default_prefs,
+            "rules": rules
+        }
+        with open(os.path.join(target_dir, 'config.json'), 'w', encoding='utf-8') as f:
+            json.dump(cfg, f, indent=2, ensure_ascii=False)
+            
+        # Copy template logic.py
+        template_src = os.path.join(BACKEND_DIR, 'core', 'skill_template.py')
+        shutil.copy(template_src, os.path.join(target_dir, 'logic.py'))
+        
+        # Trigger reload in action engine
+        pipeline = service_context.get("pipeline")
+        if pipeline and hasattr(pipeline, 'action_engine'):
+            pipeline.action_engine.load_action_skills()
+            
+        return jsonify({"success": True, "skill": cfg})
+    except Exception as e:
+        logger.error(f"Error creating skill: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/skills/toggle', methods=['POST'])
+def toggle_skill():
+    try:
+        req_data = request.get_json()
+        name = req_data.get("name")
+        enabled = req_data.get("enabled", True)
+        
+        if not name:
+            return jsonify({"error": "Skill name is required"}), 400
+            
+        skills_dir = os.path.join(PROJECT_ROOT, 'skills')
+        cfg_path = os.path.join(skills_dir, name, 'config.json')
+        if not os.path.exists(cfg_path):
+            return jsonify({"error": f"Skill '{name}' not found"}), 404
+            
+        with open(cfg_path, 'r', encoding='utf-8') as f:
+            cfg = json.load(f)
+            
+        cfg["enabled"] = enabled
+        
+        with open(cfg_path, 'w', encoding='utf-8') as f:
+            json.dump(cfg, f, indent=2, ensure_ascii=False)
+            
+        # Trigger reload in action engine
+        pipeline = service_context.get("pipeline")
+        if pipeline and hasattr(pipeline, 'action_engine'):
+            pipeline.action_engine.load_action_skills()
+            
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/skills/delete', methods=['POST'])
+def delete_skill():
+    try:
+        req_data = request.get_json()
+        name = req_data.get("name")
+        
+        if not name:
+            return jsonify({"error": "Skill name is required"}), 400
+            
+        # Protect default built-in skills from deletion
+        if name in ("slouch", "sway", "lean"):
+            return jsonify({"error": "Cannot delete built-in core skills"}), 400
+            
+        skills_dir = os.path.join(PROJECT_ROOT, 'skills')
+        target_dir = os.path.join(skills_dir, name)
+        if not os.path.exists(target_dir):
+            return jsonify({"error": f"Skill '{name}' not found"}), 404
+            
+        shutil.rmtree(target_dir)
+        
+        # Trigger reload in action engine
+        pipeline = service_context.get("pipeline")
+        if pipeline and hasattr(pipeline, 'action_engine'):
+            pipeline.action_engine.load_action_skills()
+            
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/settings/update', methods=['POST'])
+def api_update_settings():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No settings data provided"}), 400
+            
+        # Update state preferences directly
+        state.save_prefs(data)
+        
+        # Also update legacy/reviewer parameters if they are in the request
+        pipeline = service_context.get("pipeline")
+        if pipeline and hasattr(pipeline, 'reviewer'):
+            if "threshold_ratio" in data:
+                pipeline.reviewer.threshold_ratio = float(data["threshold_ratio"])
+            if "yaw_tolerance" in data:
+                pipeline.reviewer.yaw_tolerance = float(data["yaw_tolerance"])
+            if "sway_threshold" in data:
+                pipeline.reviewer.sway_threshold = float(data["sway_threshold"])
+            if "lean_threshold" in data:
+                pipeline.reviewer.lean_threshold = float(data["lean_threshold"])
+                
+        return jsonify({"success": True, "prefs": state.prefs})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 def main():
     parser = argparse.ArgumentParser(description='CTAR Agent-Powered Server')
     parser.add_argument('--port', type=int, default=8080)
