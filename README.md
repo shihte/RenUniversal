@@ -48,7 +48,8 @@
 *   **Python 版本**：**Python 3.8 至 Python 3.11** (因 MediaPipe 原生編譯二進制檔限制，不支援更高或更低版本)
 *   **硬體要求**：
     *   具備 UVC 協定的 USB 外接相機 或 整合式 Webcam。
-    *   如需使用行動裝置作為輸入，須確保行動裝置與主機在同一區域網路內（支援 IP Camera / RTSP 模式）。
+    *   **行動裝置協同 (Mobile Co-processor)**：無需額外下載 App，透過行動裝置瀏覽器掃描 QR Code 即可建立雙向 WebSocket/HTTP 視訊流通道，支援與主機鏡頭構成**雙鏡頭聯合偵測模式 (Dual-Camera Mode)**。
+*   **網路要求**：若使用行動裝置協同，需確保裝置與主機於同一區域網路，或透過系統內建的遠端公網穿透技術（支援跨網段/行動網路）。
 *   **系統套件** (Linux 用戶)：
     ```bash
     sudo apt-get update && sudo apt-get install -y python3-dev build-essential libgl1-mesa-glx

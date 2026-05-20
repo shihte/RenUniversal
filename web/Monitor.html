@@ -314,6 +314,18 @@
                     </p>
                 </div>
 
+                <!-- Mirror Preview Frame Option -->
+                <div class="flex items-center justify-between p-4 rounded-lg bg-[#1a1a18] border border-[#b0aea5]/10 mt-4">
+                    <div class="space-y-1">
+                        <span class="text-xs font-bold text-[#faf9f5]">鏡像翻轉預覽畫面 (Mirror Preview Frame)</span>
+                        <p class="text-[10px] text-[#b0aea5]">開啟後，預覽影像將水平翻轉（適合筆電前置鏡頭）；若使用手機後置鏡頭或 USB 外接相機，可關閉以取得正確方向。</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="flip-enabled-checkbox" class="sr-only peer" onchange="updateSetting('flip_enabled', this.checked)">
+                        <div class="w-10 h-5 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#788c5d]"></div>
+                    </label>
+                </div>
+
                 <!-- Dual connection info -->
                 <div id="tunnel-info-container" class="hidden space-y-4 bg-[#1d1d1b] p-6 rounded-xl border border-[#d97757]/20">
                     <div class="space-y-1">
@@ -366,7 +378,38 @@
         </div>
 
         <!-- Tab 3: Skills View -->
-        <div id="view-skills" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8 font-sans">
+        <div id="view-skills" class="hidden space-y-8 font-sans">
+            <!-- Full Width Onboarding Tutorial Box -->
+            <div class="anthropic-card p-6 bg-[#1a1a18] border border-[#788c5d]/20 rounded-xl space-y-4 col-span-12">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-[#788c5d]/10 text-[#788c5d]">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-bold text-[#faf9f5]">🧠 技能中心引導 (Posture Skills Onboarding)</h2>
+                        <p class="text-[11px] text-[#b0aea5]">引導如何啟用、調整與創建自訂動作偵測規則</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 text-[11px] leading-relaxed">
+                    <div class="p-3 rounded-lg bg-[#151513] border border-[#b0aea5]/5 space-y-2">
+                        <span class="font-bold text-[#788c5d]">1. 內建核心技能</span>
+                        <p class="text-[#b0aea5]">CTAR 預載了<b>駝背 (Slouch)</b>、<b>軀幹左右偏斜 (Sway)</b> 與<b>前傾 (Lean)</b> 三大核心判定包。您可以隨時調整各項敏感度閾值並即時儲存。</p>
+                    </div>
+                    <div class="p-3 rounded-lg bg-[#151513] border border-[#b0aea5]/5 space-y-2">
+                        <span class="font-bold text-[#6a9bcc]">2. 自訂判斷語法</span>
+                        <p class="text-[#b0aea5]">在右側建構器中輸入名稱與描述，然後添加檢測規則。如 <code>torso_sway > sway_threshold</code>，系統將會自動生成 Python 邏輯包。</p>
+                    </div>
+                    <div class="p-3 rounded-lg bg-[#151513] border border-[#b0aea5]/5 space-y-2">
+                        <span class="font-bold text-[#d97757]">3. 即時閾值微調</span>
+                        <p class="text-[#b0aea5]">創建後的技能會顯示在左側。拖動閾值拉條時，系統將即時通知後端更新，讓您在不需要重啟程式的情況下微調姿勢判定基準。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <!-- Left Column: Active Skills List -->
             <div class="lg:col-span-6 space-y-6">
                 <div class="flex justify-between items-center pb-2 border-b border-[#b0aea5]/10">
@@ -617,6 +660,11 @@
                     cameraSelect.value = data.camera_source || 'local_0';
                 }
 
+                const flipCheckbox = document.getElementById('flip-enabled-checkbox');
+                if (flipCheckbox && !flipCheckbox.matches(':active')) {
+                    flipCheckbox.checked = data.flip_enabled !== false;
+                }
+
                 // Sync Toggle
                 if (!toggleEl.matches(':active')) {
                     toggleEl.checked = data.is_active !== false; // Default true if undefined
@@ -679,10 +727,14 @@
 
         async function updateSetting(key, value) {
             try {
+                let parsedVal = value;
+                if (key !== 'camera_source' && key !== 'flip_enabled') {
+                    parsedVal = parseFloat(value);
+                }
                 await fetch('/settings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ [key]: (key === 'camera_source') ? value : parseFloat(value) })
+                    body: JSON.stringify({ [key]: parsedVal })
                 });
             } catch (e) { console.error("Failed to update settings", e); }
         }
@@ -750,8 +802,9 @@
                     const defaultPrefs = skill.default_preferences || {};
                     
                     Object.keys(defaultPrefs).forEach(key => {
-                        const savedVal = statusData.prefs[key] !== undefined ? statusData.prefs[key] : defaultPrefs[key];
+                        const savedVal = (statusData.prefs && statusData.prefs[key] !== undefined) ? statusData.prefs[key] : defaultPrefs[key];
                         const sliderVal = Math.round(savedVal * 100);
+                        const minRange = (defaultPrefs[key] < 0) ? -100 : 0;
                         
                         threshHtml += `
                             <div class="space-y-2 mt-3 pt-3 border-t border-[#b0aea5]/5">
@@ -759,7 +812,7 @@
                                     <span class="text-[11px] text-[#b0aea5] font-medium font-sans">${key}</span>
                                     <span class="text-xs font-serif italic text-[#d97757]" id="slider-val-${skill.name}-${key}">${sliderVal}%</span>
                                 </div>
-                                <input type="range" min="-100" max="100" value="${sliderVal}" 
+                                <input type="range" min="${minRange}" max="100" value="${sliderVal}" 
                                     oninput="updateSkillPreference('${skill.name}', '${key}', this.value)" 
                                     class="w-full">
                             </div>

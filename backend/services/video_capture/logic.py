@@ -36,6 +36,20 @@ class VideoCaptureSkill:
         
         if not self.grabbed:
             logger.warning(f"Initial frame grab failed for source {config.src}")
+            import platform
+            if platform.system() == "Darwin":
+                logger.warning(
+                    "\n========================================================================\n"
+                    "⚠️  CAMERA ACCESS WARNING (macOS detected):\n"
+                    "CTAR could not grab a frame from the local camera.\n"
+                    "Please ensure that:\n"
+                    "1. Your Terminal/IDE has 'Camera' access enabled in macOS Settings -> Privacy & Security -> Camera.\n"
+                    "2. The camera is not currently being used by another application (Zoom, FaceTime, etc.).\n"
+                    "3. Try launching the server directly from macOS Terminal instead of VS Code's integrated terminal.\n"
+                    "4. If using an external USB camera, check connection or change camera source to its index (e.g. index 1 or 2).\n"
+                    "5. Alternatively, use the WiFi Stream fallback by running CTAR on your phone (visit /mobile).\n"
+                    "========================================================================"
+                )
 
     def _configure_stream(self) -> None:
         """設定 OpenCV 攝像頭屬性。"""

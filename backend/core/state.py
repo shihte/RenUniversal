@@ -34,7 +34,8 @@ class SharedState:
             yaw_tolerance=float(self.prefs.get("yaw_tolerance", 0.10) * 100),
             sway_threshold=float(self.prefs.get("sway_threshold", 0.15) * 100),
             lean_threshold=float(self.prefs.get("lean_threshold", 0.10) * 100),
-            camera_source=self.prefs.get("camera_source", "local_0")
+            camera_source=self.prefs.get("camera_source", "local_0"),
+            flip_enabled=self.prefs.get("flip_enabled", True)
         )
         self.status_lock = threading.Lock()
         
@@ -49,7 +50,8 @@ class SharedState:
             "lean_threshold": 0.10,
             "username": "User",
             "last_baseline_eye": 0.0,
-            "camera_source": "local_0"
+            "camera_source": "local_0",
+            "flip_enabled": True
         }
         if self.prefs_path.exists():
             try:
@@ -60,12 +62,58 @@ class SharedState:
         return default_prefs
 
     def save_prefs(self, new_prefs: Dict[str, Any]) -> None:
-        """持久化儲存使用者偏好。"""
+        """持久化儲存使用者偏好並同步更新檢測狀態。"""
         self.prefs.update(new_prefs)
+        
+        with self.status_lock:
+            current_dict = self.status.model_dump()
+            
+            # 數值單位雙向轉換與映射
+            if "threshold" in new_prefs:
+                current_dict["threshold"] = float(new_prefs["threshold"])
+                self.prefs["threshold_ratio"] = float(new_prefs["threshold"]) / 100.0
+            elif "threshold_ratio" in new_prefs:
+                current_dict["threshold"] = float(new_prefs["threshold_ratio"]) * 100.0
+                
+            if "yaw_tolerance" in new_prefs:
+                val = float(new_prefs["yaw_tolerance"])
+                if val <= 1.0:
+                    current_dict["yaw_tolerance"] = val * 100.0
+                    self.prefs["yaw_tolerance"] = val
+                else:
+                    current_dict["yaw_tolerance"] = val
+                    self.prefs["yaw_tolerance"] = val / 100.0
+                    
+            if "sway_threshold" in new_prefs:
+                val = float(new_prefs["sway_threshold"])
+                if val <= 1.0:
+                    current_dict["sway_threshold"] = val * 100.0
+                    self.prefs["sway_threshold"] = val
+                else:
+                    current_dict["sway_threshold"] = val
+                    self.prefs["sway_threshold"] = val / 100.0
+                    
+            if "lean_threshold" in new_prefs:
+                val = float(new_prefs["lean_threshold"])
+                if val <= 1.0:
+                    current_dict["lean_threshold"] = val * 100.0
+                    self.prefs["lean_threshold"] = val
+                else:
+                    current_dict["lean_threshold"] = val
+                    self.prefs["lean_threshold"] = val / 100.0
+                    
+            if "camera_source" in new_prefs:
+                current_dict["camera_source"] = str(new_prefs["camera_source"])
+                
+            if "flip_enabled" in new_prefs:
+                current_dict["flip_enabled"] = bool(new_prefs["flip_enabled"])
+                
+            self.status = DetectorStatus(**current_dict)
+            
         try:
             with open(self.prefs_path, "w") as f:
                 json.dump(self.prefs, f, indent=4)
-            logger.info("Preferences saved successfully (Personalization)")
+            logger.info("Preferences saved and status synchronized successfully (Personalization)")
         except Exception as e:
             logger.error(f"Failed to save preferences: {e}")
 

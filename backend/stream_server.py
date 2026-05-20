@@ -152,14 +152,11 @@ def video_feed():
 def status():
     status_data = state.get_status().model_dump()
     status_data['local_ip'] = get_local_ip()
+    status_data['prefs'] = state.prefs
     return jsonify(status_data)
 
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
-    pipeline = service_context.get("pipeline")
-    if not pipeline:
-        return jsonify({"error": "Pipeline not initialized"}), 500
-
     if request.method == 'GET':
         s = state.get_status()
         return jsonify({
@@ -167,34 +164,28 @@ def settings():
             "yaw_tolerance": s.yaw_tolerance,
             "sway_threshold": s.sway_threshold,
             "lean_threshold": s.lean_threshold,
-            "camera_source": s.camera_source
+            "camera_source": s.camera_source,
+            "flip_enabled": s.flip_enabled
         })
     
     try:
         data = SettingsUpdate(**request.get_json())
+        update_dict = {}
         if data.threshold is not None:
-            pipeline.reviewer.threshold_ratio = data.threshold / 100.0
-            state.update_status(threshold=data.threshold)
-            state.save_prefs({"threshold_ratio": data.threshold / 100.0})
-            
+            update_dict["threshold"] = data.threshold
         if data.yaw_tolerance is not None:
-            pipeline.reviewer.yaw_tolerance = data.yaw_tolerance / 100.0
-            state.update_status(yaw_tolerance=data.yaw_tolerance)
-            state.save_prefs({"yaw_tolerance": data.yaw_tolerance / 100.0})
-            
+            update_dict["yaw_tolerance"] = data.yaw_tolerance
         if data.sway_threshold is not None:
-            pipeline.reviewer.sway_threshold = data.sway_threshold / 100.0
-            state.update_status(sway_threshold=data.sway_threshold)
-            state.save_prefs({"sway_threshold": data.sway_threshold / 100.0})
-            
+            update_dict["sway_threshold"] = data.sway_threshold
         if data.lean_threshold is not None:
-            pipeline.reviewer.lean_threshold = data.lean_threshold / 100.0
-            state.update_status(lean_threshold=data.lean_threshold)
-            state.save_prefs({"lean_threshold": data.lean_threshold / 100.0})
-            
+            update_dict["lean_threshold"] = data.lean_threshold
         if data.camera_source is not None:
-            state.update_status(camera_source=data.camera_source)
-            state.save_prefs({"camera_source": data.camera_source})
+            update_dict["camera_source"] = data.camera_source
+        if data.flip_enabled is not None:
+            update_dict["flip_enabled"] = data.flip_enabled
+            
+        if update_dict:
+            state.save_prefs(update_dict)
             
         return jsonify({"success": True})
     except ValidationError as e:
@@ -397,18 +388,6 @@ def api_update_settings():
             
         # Update state preferences directly
         state.save_prefs(data)
-        
-        # Also update legacy/reviewer parameters if they are in the request
-        pipeline = service_context.get("pipeline")
-        if pipeline and hasattr(pipeline, 'reviewer'):
-            if "threshold_ratio" in data:
-                pipeline.reviewer.threshold_ratio = float(data["threshold_ratio"])
-            if "yaw_tolerance" in data:
-                pipeline.reviewer.yaw_tolerance = float(data["yaw_tolerance"])
-            if "sway_threshold" in data:
-                pipeline.reviewer.sway_threshold = float(data["sway_threshold"])
-            if "lean_threshold" in data:
-                pipeline.reviewer.lean_threshold = float(data["lean_threshold"])
                 
         return jsonify({"success": True, "prefs": state.prefs})
     except Exception as e:

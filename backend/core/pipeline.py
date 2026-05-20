@@ -327,9 +327,9 @@ class AgentPipeline:
             
             if local_frame is not None and phone_frame is not None:
                 is_dual = True
-                # 預先對個別畫面進行鏡像翻轉，以利後續的左右一致性
-                local_frame = cv2.flip(local_frame, 1)
-                phone_frame = cv2.flip(phone_frame, 1)
+                # 電腦端畫面依據 flip_enabled 翻轉；手機畫面在客戶端(MobileCamera.html)已處理完畢，在此不予處理
+                if self.state.get_status().flip_enabled:
+                    local_frame = cv2.flip(local_frame, 1)
             else:
                 # Fallback to single frame (local or phone depending on what is available)
                 if local_frame is not None:
@@ -497,7 +497,10 @@ class AgentPipeline:
                 self.state.update_status(latency_ms=inference_time_ms)
                 
             self._annotate_frame(frame, landmarks, width, height, self.state.get_status(), pose_landmarks=pose_landmarks, draw_text=True)
-            return cv2.flip(frame, 1)
+            # 手機畫面在客戶端已處理完畢，不在此重複翻轉
+            if self.state.get_status().flip_enabled and not camera_source.startswith("phone"):
+                return cv2.flip(frame, 1)
+            return frame
 
     def stop(self) -> None:
         """安全停止流水線並釋放資源。"""
