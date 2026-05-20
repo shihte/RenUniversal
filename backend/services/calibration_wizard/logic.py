@@ -27,6 +27,9 @@ class CalibrationWizardSkill:
         self.start_time: Optional[float] = None
         self.samples_eye_distance: List[float] = []
         self.samples_nose_chin_distance: List[float] = []
+        self.samples_shoulder_width: List[float] = []
+        self.samples_shoulder_midpoint_x: List[float] = []
+        self.samples_shoulder_midpoint_y: List[float] = []
         self.is_complete = False
 
     def reset(self) -> None:
@@ -34,15 +37,26 @@ class CalibrationWizardSkill:
         self.start_time = None
         self.samples_eye_distance = []
         self.samples_nose_chin_distance = []
+        self.samples_shoulder_width = []
+        self.samples_shoulder_midpoint_x = []
+        self.samples_shoulder_midpoint_y = []
         self.is_complete = False
 
-    def process(self, current_eye_distance: float, current_nose_chin_distance: float) -> CalibrationResult:
+    def process(self, 
+                current_eye_distance: float, 
+                current_nose_chin_distance: float,
+                current_shoulder_width: float = 0.0,
+                current_shoulder_midpoint_x: float = 0.0,
+                current_shoulder_midpoint_y: float = 0.0) -> CalibrationResult:
         """
         處理當前的採樣數據並更新校準進度。
         
         Args:
             current_eye_distance (float): 當前幀的眼距。
             current_nose_chin_distance (float): 當前幀的鼻尖至下巴距離。
+            current_shoulder_width (float): 當前幀的肩膀寬度。
+            current_shoulder_midpoint_x (float): 當前幀的肩膀中點 X。
+            current_shoulder_midpoint_y (float): 當前幀的肩膀中點 Y。
             
         Returns:
             CalibrationResult: 包含進度、結果與導引訊息的狀態物件。
@@ -52,8 +66,11 @@ class CalibrationWizardSkill:
             return CalibrationResult(
                 is_complete=True, 
                 progress=100,
-                baseline_eye_dist=float(np.mean(self.samples_eye_distance)),
-                baseline_nc_dist=float(np.mean(self.samples_nose_chin_distance)),
+                baseline_eye_dist=float(np.mean(self.samples_eye_distance)) if self.samples_eye_distance else 0.0,
+                baseline_nc_dist=float(np.mean(self.samples_nose_chin_distance)) if self.samples_nose_chin_distance else 0.0,
+                baseline_shoulder_width=float(np.mean(self.samples_shoulder_width)) if self.samples_shoulder_width else 0.0,
+                baseline_shoulder_midpoint_x=float(np.mean(self.samples_shoulder_midpoint_x)) if self.samples_shoulder_midpoint_x else 0.0,
+                baseline_shoulder_midpoint_y=float(np.mean(self.samples_shoulder_midpoint_y)) if self.samples_shoulder_midpoint_y else 0.0,
                 message="Calibration complete"
             )
 
@@ -67,6 +84,10 @@ class CalibrationWizardSkill:
         # 收集樣本
         self.samples_eye_distance.append(current_eye_distance)
         self.samples_nose_chin_distance.append(current_nose_chin_distance)
+        if current_shoulder_width > 0:
+            self.samples_shoulder_width.append(current_shoulder_width)
+            self.samples_shoulder_midpoint_x.append(current_shoulder_midpoint_x)
+            self.samples_shoulder_midpoint_y.append(current_shoulder_midpoint_y)
         
         # 檢查是否達到結束時間
         if elapsed_time >= self.duration:
@@ -74,8 +95,11 @@ class CalibrationWizardSkill:
             return CalibrationResult(
                 is_complete=True, 
                 progress=100,
-                baseline_eye_dist=float(np.mean(self.samples_eye_distance)),
-                baseline_nc_dist=float(np.mean(self.samples_nose_chin_distance)),
+                baseline_eye_dist=float(np.mean(self.samples_eye_distance)) if self.samples_eye_distance else 0.0,
+                baseline_nc_dist=float(np.mean(self.samples_nose_chin_distance)) if self.samples_nose_chin_distance else 0.0,
+                baseline_shoulder_width=float(np.mean(self.samples_shoulder_width)) if self.samples_shoulder_width else 0.0,
+                baseline_shoulder_midpoint_x=float(np.mean(self.samples_shoulder_midpoint_x)) if self.samples_shoulder_midpoint_x else 0.0,
+                baseline_shoulder_midpoint_y=float(np.mean(self.samples_shoulder_midpoint_y)) if self.samples_shoulder_midpoint_y else 0.0,
                 message="Calibration finished successfully"
             )
         

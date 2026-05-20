@@ -18,7 +18,11 @@ if [ -f "$PID_FILE" ]; then
 fi
 
 # Activate venv and run in background
-source "$PROJECT_ROOT/venv/bin/activate"
+if [ -d "$PROJECT_ROOT/.venv" ]; then
+    source "$PROJECT_ROOT/.venv/bin/activate"
+elif [ -d "$PROJECT_ROOT/venv" ]; then
+    source "$PROJECT_ROOT/venv/bin/activate"
+fi
 export PYTHONPATH="$PROJECT_ROOT:$PYTHONPATH"
 nohup python3 "$PROJECT_ROOT/backend/stream_server.py" > "$PROJECT_ROOT/agent.log" 2>&1 &
 echo $! > "$PID_FILE"

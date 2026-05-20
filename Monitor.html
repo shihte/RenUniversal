@@ -5,8 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CTAR Posture Monitor</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <script src="/tailwind.js"></script>
     <style>
         :root {
             --bg-dark: #141413;
@@ -22,14 +21,14 @@
         }
 
         body {
-            font-family: 'Lora', serif;
+            font-family: Georgia, Cambria, "Times New Roman", Times, serif;
             background-color: var(--bg-dark);
             color: var(--text-light);
             -webkit-font-smoothing: antialiased;
         }
 
         h1, h2, h3, .font-heading {
-            font-family: 'Poppins', sans-serif;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
         .anthropic-card {
@@ -183,6 +182,18 @@
                                 <span class="text-xl">⚠️</span>
                                 <span class="tracking-widest" data-i18n="alert_turning">TURNING</span>
                             </div>
+                            <!-- SWAYING Alert -->
+                            <div id="swaying-alert"
+                                class="hidden px-5 py-3 bg-[#d97757]/90 backdrop-blur-xl rounded-2xl border border-[#faf9f5]/20 text-white font-bold animate-bounce flex items-center gap-3 shadow-2xl">
+                                <span class="text-xl">⚠️</span>
+                                <span class="tracking-widest" data-i18n="alert_swaying">TORSO SWAYING</span>
+                            </div>
+                            <!-- LEANING Alert -->
+                            <div id="leaning-alert"
+                                class="hidden px-5 py-3 bg-[#d97757]/90 backdrop-blur-xl rounded-2xl border border-[#faf9f5]/20 text-white font-bold animate-bounce flex items-center gap-3 shadow-2xl">
+                                <span class="text-xl">⚠️</span>
+                                <span class="tracking-widest" data-i18n="alert_leaning">LEANING FORWARD</span>
+                            </div>
                         </div>
 
                         <div class="px-4 py-2 glass-overlay rounded-xl">
@@ -205,6 +216,17 @@
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="text-[#6a9bcc]">
                                 <path d="M12 2v20M2 12h20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                             </svg>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="anthropic-card p-5">
+                            <div class="text-[#706e68] text-[10px] font-bold uppercase tracking-[0.15em] mb-1" data-i18n="sway_ratio">Torso Sway</div>
+                            <div class="text-2xl font-serif font-medium text-[#6a9bcc]" id="sway-value">0.0%</div>
+                        </div>
+                        <div class="anthropic-card p-5">
+                            <div class="text-[#706e68] text-[10px] font-bold uppercase tracking-[0.15em] mb-1" data-i18n="lean_ratio">Torso Lean</div>
+                            <div class="text-2xl font-serif font-medium text-[#6a9bcc]" id="lean-value">0.0%</div>
                         </div>
                     </div>
 
@@ -245,6 +267,93 @@
                         <input type="range" id="yaw-slider" min="5" max="50" value="10"
                             oninput="updateSetting('yaw_tolerance', this.value)">
                         <p class="text-[10px] text-[#706e68] leading-relaxed italic" data-i18n="yaw_desc">Define how much side-to-side movement is allowed.</p>
+                    </div>
+
+                    <!-- Sway Tolerance Slider -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-end">
+                            <label class="text-xs text-[#b0aea5] font-medium" data-i18n="sway_label">Sway Tolerance</label>
+                            <span class="text-sm font-serif italic text-[#d97757]" id="sway-val">15%</span>
+                        </div>
+                        <input type="range" id="sway-slider" min="5" max="50" value="15"
+                            oninput="updateSetting('sway_threshold', this.value)">
+                        <p class="text-[10px] text-[#706e68] leading-relaxed italic" data-i18n="sway_desc">Adjust tolerance for torso sway.</p>
+                    </div>
+
+                    <!-- Lean Tolerance Slider -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-end">
+                            <label class="text-xs text-[#b0aea5] font-medium" data-i18n="lean_label">Lean Tolerance</label>
+                            <span class="text-sm font-serif italic text-[#d97757]" id="lean-val">10%</span>
+                        </div>
+                        <input type="range" id="lean-slider" min="5" max="50" value="10"
+                            oninput="updateSetting('lean_threshold', this.value)">
+                        <p class="text-[10px] text-[#706e68] leading-relaxed italic" data-i18n="lean_desc">Adjust tolerance for leaning forward.</p>
+                    </div>
+
+                    <!-- Camera Source Selection -->
+                    <div class="space-y-4 pt-4 border-t border-[#b0aea5]/10">
+                        <div class="flex justify-between items-end">
+                            <label class="text-xs text-[#b0aea5] font-medium" data-i18n="camera_source_label">鏡頭輸入來源 (Camera Source)</label>
+                        </div>
+                        <select id="camera-source-select" class="w-full bg-[#1a1a18] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-3 text-xs focus:outline-none focus:border-[#d97757]" onchange="updateSetting('camera_source', this.value)">
+                            <option value="local_0">電腦預設鏡頭 (Local Camera 0)</option>
+                            <option value="local_1">電腦外接鏡頭 (Local Camera 1)</option>
+                            <option value="phone">手機網路串流 (Mobile WiFi Stream)</option>
+                            <option value="dual">雙鏡頭連線模式 (Dual-Camera: Face + Pose)</option>
+                        </select>
+                        <p class="text-[10px] text-[#706e68] leading-relaxed italic" data-i18n="camera_source_desc" id="camera-source-desc">
+                            在手機上開啟 <a href="/mobile" target="_blank" class="text-[#6a9bcc] underline">手機串流網頁</a> 發送畫面，並在此選擇「手機網路串流」或「雙鏡頭連線模式」。
+                        </p>
+                        
+                        <!-- Dual connection info -->
+                        <div id="tunnel-info-container" class="hidden space-y-4 bg-[#1d1d1b] p-4 rounded-xl border border-[#d97757]/20">
+                            <div class="space-y-1">
+                                <span class="text-[10px] font-bold text-[#d97757] uppercase tracking-[0.15em] block">
+                                    📱 手機連線配置 (Phone Connection Options)
+                                </span>
+                                <p class="text-[10px] text-[#b0aea5] leading-normal">
+                                    請確保手機與電腦連線配置正確，以獲得最佳串流體驗：
+                                </p>
+                            </div>
+                            
+                            <!-- Option A: Local Wi-Fi (Highly Recommended) -->
+                            <div class="space-y-2 p-2.5 rounded-lg bg-[#252523] border border-[#788c5d]/20">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[10px] font-bold text-[#788c5d]">選項 A：本地 Wi-Fi 連線 (極速低延遲 &lt;30ms)</span>
+                                    <span class="text-[8px] bg-[#788c5d]/20 text-[#788c5d] px-1.5 py-0.5 rounded font-bold">推薦</span>
+                                </div>
+                                <p class="text-[9px] text-[#706e68]">
+                                    手機必須與電腦連接到<strong>同一個 Wi-Fi</strong>。請掃描下方 QR Code 或輸入網址（請手動指定 http）：
+                                </p>
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-white p-1 rounded-lg shrink-0">
+                                        <img id="local-qr" src="" alt="Local QR" class="w-20 h-20" />
+                                    </div>
+                                    <div class="space-y-1 overflow-hidden min-w-0">
+                                        <a id="local-link" href="" target="_blank" class="text-[10px] text-[#788c5d] underline block truncate font-mono"></a>
+                                        <span class="text-[8px] text-[#706e68] block">⚠️ 如果手機未開 Wi-Fi 或連接不同網路，此連結會連不上。</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Option B: Public Tunnel -->
+                            <div class="space-y-2 p-2.5 rounded-lg bg-[#252523] border border-[#d97757]/20">
+                                <span class="text-[10px] font-bold text-[#d97757]">選項 B：遠端公網穿透連線 (延遲較高 1.5s+)</span>
+                                <p class="text-[9px] text-[#706e68]">
+                                    當手機使用行動網路 (4G/5G) 或跨網段時使用。請掃描下方 QR Code：
+                                </p>
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-white p-1 rounded-lg shrink-0">
+                                        <img id="tunnel-qr" src="" alt="Tunnel QR" class="w-20 h-20" />
+                                    </div>
+                                    <div class="space-y-1 overflow-hidden min-w-0">
+                                        <a id="tunnel-link" href="" target="_blank" class="text-[10px] text-[#d97757] underline block truncate font-mono"></a>
+                                        <span class="text-[8px] text-[#706e68] block">✈️ 資料需繞行海外轉機點，延遲較高。建議切換手機至極速模式。</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -298,18 +407,28 @@
                 'live': 'LIVE',
                 'alert_head_down': 'HEAD DOWN',
                 'alert_turning': 'TURNING',
+                'alert_swaying': 'TORSO SWAYING',
+                'alert_leaning': 'LEANING FORWARD',
                 'ratio': 'Ratio',
+                'sway_ratio': 'Torso Sway',
+                'lean_ratio': 'Torso Lean',
                 'down_count': 'Down Count',
                 'sensitivity_settings': 'Sensitivity Settings',
                 'threshold_label': 'Head Down Threshold',
                 'threshold_desc': 'Lower value = harder to detect head down',
                 'yaw_label': 'Head Turn Tolerance',
                 'yaw_desc': 'Higher value = allows more head turning',
+                'sway_label': 'Sway Tolerance',
+                'sway_desc': 'Adjust tolerance for torso sway.',
+                'lean_label': 'Lean Tolerance',
+                'lean_desc': 'Adjust tolerance for leaning forward.',
                 'actions': 'Actions',
                 'detection_active': 'Detection Active',
                 'recalibrate': 'Recalibrate Position',
                 'recalibrate_hint': 'Look straight ahead and click to reset baseline.',
-                'avg_latency': 'Average Latency'
+                'avg_latency': 'Average Latency',
+                'camera_source_label': 'Camera Input Source',
+                'camera_source_desc': 'Open the Mobile Stream page on your phone, then select Mobile WiFi Stream or Dual-Camera mode.'
             },
             'zh-TW': {
                 'monitor_dashboard': '監控儀表板',
@@ -317,18 +436,28 @@
                 'live': '即時影像',
                 'alert_head_down': '低頭警示',
                 'alert_turning': '轉頭中',
+                'alert_swaying': '軀幹搖晃',
+                'alert_leaning': '身體前傾',
                 'ratio': '比率',
+                'sway_ratio': '軀幹搖晃',
+                'lean_ratio': '身體前傾',
                 'down_count': '低頭次數',
                 'sensitivity_settings': '靈敏度設定',
                 'threshold_label': '低頭閥值 (Threshold)',
                 'threshold_desc': '數值越低，越難觸發低頭判定',
                 'yaw_label': '轉頭容忍度 (Tolerance)',
                 'yaw_desc': '數值越高，允許頭部轉動幅度越大',
+                'sway_label': '左右搖晃容許度 (Sway)',
+                'sway_desc': '調整軀幹左右搖晃的敏感門檻',
+                'lean_label': '身體前傾容忍度 (Lean)',
+                'lean_desc': '調整身體向前傾斜的敏感門檻',
                 'actions': '操作面板',
                 'detection_active': '啟用姿態偵測',
                 'recalibrate': '重新校準基準',
                 'recalibrate_hint': '請注視前方並點擊，以重設基準位置。',
-                'avg_latency': '平均延遲'
+                'avg_latency': '平均延遲',
+                'camera_source_label': '鏡頭輸入來源 (Camera Source)',
+                'camera_source_desc': '在手機上開啟手機串流網頁發送畫面，並在此選擇手機網路串流或雙鏡頭連線模式。'
             }
         };
 
@@ -378,6 +507,12 @@
                 document.getElementById('ratio-value').textContent = `${data.ratio}%`;
                 document.getElementById('down-count').textContent = data.down_count;
                 document.getElementById('latency-value').textContent = `${data.latency_ms}ms`;
+                
+                const swayEl = document.getElementById('sway-value');
+                if (swayEl) swayEl.textContent = `${(data.sway_ratio * 100).toFixed(1)}%`;
+                
+                const leanEl = document.getElementById('lean-value');
+                if (leanEl) leanEl.textContent = `${(data.lean_ratio * 100).toFixed(1)}%`;
 
                 // Sync Settings
                 if (!document.getElementById('threshold-slider').matches(':active')) {
@@ -388,6 +523,19 @@
                     document.getElementById('yaw-val').textContent = `${data.yaw_tolerance}%`;
                     document.getElementById('yaw-slider').value = data.yaw_tolerance;
                 }
+                if (!document.getElementById('sway-slider').matches(':active')) {
+                    document.getElementById('sway-val').textContent = `${data.sway_threshold}%`;
+                    document.getElementById('sway-slider').value = data.sway_threshold;
+                }
+                if (!document.getElementById('lean-slider').matches(':active')) {
+                    document.getElementById('lean-val').textContent = `${data.lean_threshold}%`;
+                    document.getElementById('lean-slider').value = data.lean_threshold;
+                }
+
+                const cameraSelect = document.getElementById('camera-source-select');
+                if (cameraSelect && !cameraSelect.matches(':focus')) {
+                    cameraSelect.value = data.camera_source || 'local_0';
+                }
 
                 // Sync Toggle
                 if (!toggleEl.matches(':active')) {
@@ -397,12 +545,53 @@
                 // Alerts
                 const headAlert = document.getElementById('posture-alert');
                 const turnAlert = document.getElementById('turning-alert');
+                const swayAlert = document.getElementById('swaying-alert');
+                const leanAlert = document.getElementById('leaning-alert');
 
                 if (data.is_bad_posture) headAlert.classList.remove('hidden');
                 else headAlert.classList.add('hidden');
 
                 if (data.is_turning) turnAlert.classList.remove('hidden');
                 else turnAlert.classList.add('hidden');
+
+                if (swayAlert) {
+                    if (data.is_swaying) swayAlert.classList.remove('hidden');
+                    else swayAlert.classList.add('hidden');
+                }
+
+                if (leanAlert) {
+                    if (data.is_leaning_forward) leanAlert.classList.remove('hidden');
+                    else leanAlert.classList.add('hidden');
+                }
+
+                // Sync Tunnel Connection Info
+                const tunnelContainer = document.getElementById('tunnel-info-container');
+                if (tunnelContainer) {
+                    if (data.public_url) {
+                        // 1. 本地 Wi-Fi 連結 (使用 HTTPS 8443 以符合 Secure Context 鏡頭權限規定)
+                        const localIp = data.local_ip || '127.0.0.1';
+                        const localMobileUrl = `https://${localIp}:8443/mobile`;
+                        
+                        const localLinkEl = document.getElementById('local-link');
+                        if (localLinkEl.href !== localMobileUrl) {
+                            localLinkEl.href = localMobileUrl;
+                            localLinkEl.textContent = localMobileUrl;
+                            document.getElementById('local-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(localMobileUrl)}`;
+                        }
+
+                        // 2. 遠端公網隧道連結
+                        const mobileUrl = `${data.public_url}/mobile`;
+                        const linkEl = document.getElementById('tunnel-link');
+                        if (linkEl.href !== mobileUrl) {
+                            linkEl.href = mobileUrl;
+                            linkEl.textContent = mobileUrl;
+                            document.getElementById('tunnel-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(mobileUrl)}`;
+                        }
+                        tunnelContainer.classList.remove('hidden');
+                    } else {
+                        tunnelContainer.classList.add('hidden');
+                    }
+                }
 
             } catch (e) {
                 console.error(e);
@@ -413,12 +602,14 @@
         async function updateSetting(key, value) {
             if (key === 'threshold') document.getElementById('thresh-val').textContent = `${value}%`;
             if (key === 'yaw_tolerance') document.getElementById('yaw-val').textContent = `${value}%`;
+            if (key === 'sway_threshold') document.getElementById('sway-val').textContent = `${value}%`;
+            if (key === 'lean_threshold') document.getElementById('lean-val').textContent = `${value}%`;
 
             try {
                 await fetch('/settings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ [key]: parseFloat(value) })
+                    body: JSON.stringify({ [key]: (key === 'camera_source') ? value : parseFloat(value) })
                 });
             } catch (e) { console.error("Failed to update settings", e); }
         }
