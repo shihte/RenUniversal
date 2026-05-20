@@ -1,101 +1,127 @@
-# 🚀 CTAR：次世代智慧姿態監控代理系統 (Next-Gen AI Posture Agent)
+# 🚀 CTAR：次世代分散式智慧姿態監控代理系統 (Next-Gen AI Posture Agent)
 
-[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-15-black.svg?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![Python](https://img.shields.io/badge/Python-3.8--3.11-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/)
 [![MediaPipe](https://img.shields.io/badge/MediaPipe-Latest-teal.svg?style=for-the-badge&logo=google)](https://mediapipe.dev/)
-[![License](https://img.shields.io/badge/Architecture-Agentic--Modular-orange.svg?style=for-the-badge)](https://github.com/shihte/CTAR)
+[![Architecture](https://img.shields.io/badge/Architecture-Agentic--Modular-orange.svg?style=for-the-badge)](https://github.com/shihte/CTAR)
+[![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 
-**CTAR (Cybernetic Tracking & Analysis Repository)** 是一套融合了電腦視覺邊緣運算與代理人（Agent）架構的生理姿態回饋系統。不同於傳統的線性偵測腳本，CTAR 採用 **Google ADK 生態系設計模式**，將「視覺感測」、「幾何推理」與「決策回饋」解構為高度自治的功能技能集（Skills）。
-
----
-
-## 💎 核心設計哲學：五大代理模式
-我們不只是在寫程式，我們在構建一個具備感官與記憶的數位實體。
-
-1.  **Reviewer Pattern (邏輯審查)**：實作 `PostureReviewerSkill`，透過非對稱式閾值（Asymmetric Thresholds）與磁滯補償（Hysteresis），過濾 99% 的環境雜訊與微小晃動。
-2.  **Tool Wrapper (硬體封裝)**：`VideoCaptureSkill` 封裝了複雜的 V4L2/AVFoundation 層，提供具備「自癒能力（Self-healing）」的影像擷取流。
-3.  **Inversion Pattern (反轉導引)**：校準精靈 `CalibrationWizardSkill` 將控制權反轉給使用者，透過主動採樣建立動態基準（Dynamic Baseline），實現個人化適配。
-4.  **Typed I/O (強型別交換)**：基於 Pydantic 2.0，所有技能間的通訊皆具備嚴格的 Schema 校驗，確保大規模併發下的數據完整性。
-5.  **State Isolation (狀態解耦)**：採用單向數據流架構，徹底分離影像渲染（Rendering）與邏輯推論（Inference）。
+**CTAR (Cybernetic Tracking & Analysis Repository)** 是一個基於電腦視覺邊緣運算（Edge Computing）與多代理人（Agent）架構的生理姿態回饋與即時監控系統。系統摒棄了傳統的硬編碼、線性判定邏輯，採用模組化插件架構（Agent Skills）、強型別幾何特徵交換協議以及雙執行緒非同步流水線，可在低耗能邊緣設備上實現高精度的三維頭部與軀幹姿態估算。
 
 ---
 
-## 🎨 儀表板視界 (Visual Intelligence)
-基於 **Next.js 15** 與 **Framer Motion** 打造的 Cyberpunk 戰情室介面，提供：
-*   **低延遲 MJPEG 串流**：經過優化的二進制分段傳輸，確保視覺回饋無感延遲。
-*   **即時統計圖譜**：動態追蹤低頭頻率、眼距變動與系統負載 FPS。
-*   **深色擬態設計**：優化長時間工作的視覺負擔，營造高級開發者環境感。
+## 🔬 核心技術與演算法設計
+
+### 1. 影像擷取線程與硬體抽象 (VideoCaptureService)
+*   **非同步雙緩衝 (Asymmetric Double Buffering)**：`VideoCaptureSkill` 透過獨立讀取線程運行，限制 OpenCV 內部緩衝區，配合 `threading.Lock` 確保 30Hz 串流讀取無 I/O 阻塞，降低延遲至微秒級。
+*   **自癒重連 (Self-Healing Recovery)**：內建指數退避（Exponential Backoff）與故障狀態檢測，當相機斷開或 USB 訊號中斷時，能自動釋放資源並於背景嘗試重新連接。
+
+### 2. 三維姿態幾何評估演算法 (Feature Vector Mathematics)
+系統利用 MediaPipe Landmark 模型提取的特徵座標進行三維空间向量投影，以量化人體生理姿態：
+
+*   **低頭比例 (Nose-Chin Ratio - 俯仰角估算)**：
+    評估頭部前傾程度，藉由鼻尖（Nose, Landmark 4）與下巴（Chin, Landmark 152）在投影面上的垂直長度比率變化估算：
+    $$\text{Ratio} = \frac{(y_{\text{chin}} - y_{\text{nose}}) - d_{\text{baseline}}}{d_{\text{baseline}}}$$
+    當頭部俯仰角增加（低頭），該比率將呈現負值偏離。
+
+*   **頭部偏轉比 (Yaw Deviation - 偏航角估算)**：
+    計算左右眼角外側（Landmarks 33, 263）相對於鼻尖的水平間距比率，以此估算左右擺頭角度：
+    $$\text{Yaw} = \frac{x_{\text{nose}} - x_{\text{left\_eye}}}{x_{\text{right\_eye}} - x_{\text{left\_eye}}} - 0.5$$
+
+*   **肩部傾斜度 (Shoulder Slope - 側傾角估算)**：
+    計算左右肩峰點（Pose Landmarks 11, 12）連線的斜率：
+    $$\text{Slope} = \frac{y_{\text{right\_shoulder}} - y_{\text{left\_shoulder}}}{x_{\text{right\_shoulder}} - x_{\text{left\_shoulder}}}$$
+
+*   **磁滯抗噪濾波器 (Hysteresis Filter)**：
+    為了防止臨界值狀態下的狀態震盪，系統對狀態變更實作了磁滯區間限制（邊界補償），降低高頻環境抖動引起的誤報率。
+
+### 3. 動態插件規則引擎 (Action Judgment Engine)
+*   **動態插件發現 (Dynamic Plugin Discovery)**：`ActionEngine` 會於運行時反射式掃描 `skills/` 底下的所有動作判斷包，加載其 `config.json` 設定，無需重寫編譯即可擴充新型態的姿態判定。
+*   **強型別 I/O 驗證**：利用 Pydantic 2.0 進行資料格式驗證，保證所有 Skills 在傳遞與接收姿態變數時的結構一致性。
 
 ---
 
-## ⚙️ 快速部署與工程指令
-我們提供完整的 `Makefile` 以實現開發環境的快速同步：
+## 🛠 開發先前條件 (Prerequisites)
 
-### 環境初始化
+在部署與運行本系統前，請確保您的主機環境符合以下規範：
+
+*   **作業系統**：macOS (12.0+), Linux (Ubuntu 20.04+), Windows 10/11
+*   **Python 版本**：**Python 3.8 至 Python 3.11** (因 MediaPipe 原生編譯二進制檔限制，不支援更高或更低版本)
+*   **硬體要求**：
+    *   具備 UVC 協定的 USB 外接相機 或 整合式 Webcam。
+    *   如需使用行動裝置作為輸入，須確保行動裝置與主機在同一區域網路內（支援 IP Camera / RTSP 模式）。
+*   **系統套件** (Linux 用戶)：
+    ```bash
+    sudo apt-get update && sudo apt-get install -y python3-dev build-essential libgl1-mesa-glx
+    ```
+
+---
+
+## 🚀 快速部署引導 (Cloning & Setup)
+
+### 1. 複製專案庫
 ```bash
-make setup  # 自動建立虛擬環境、安裝 pip/npm 依賴並配置環境變數
+git clone https://github.com/shihte/CTAR.git
+cd CTAR
 ```
 
-### 系統啟動 (Dual-Stack Start)
+### 2. 環境初始化與依賴安裝
+系統內建自動化語法檢查與環境配置。執行以下命令，Makefile 將自動偵測當前作業系統上的相容 Python 版本（3.8 - 3.11），建立虛擬環境，升級 pip，並安裝所有核心依賴：
 ```bash
-make start  # 同時調度 Python 偵測核心與 React 渲染前端
+make setup
 ```
 
-### 資源釋放
+### 3. 運行系統
+
+*   **前台偵錯模式**：
+    ```bash
+    make run
+    ```
+*   **背景守護進程模式** (將 PID 保存至 `.agent.pid`，日誌輸出至 `agent.log`)：
+    ```bash
+    make start
+    ```
+*   **終止背景服務**：
+    ```bash
+    make stop
+    ```
+
+### 4. 架構合規性測試
+執行單元測試以確保 Pydantic 結構體與 SharedState 模型狀態讀寫符合系統預期：
 ```bash
-make stop   # 優雅終止所有子進程，釋放攝像頭與端口資源
+make test
 ```
 
 ---
 
-## 📂 目錄結構
+## 📂 模組目錄架構與映射
+
 ```text
 .
-├── backend/            # Python 代理核心邏輯
-│   ├── core/           # 流水線 (Pipeline) 與狀態管理
-│   └── stream_server.py# Flask 串流服務器
-├── frontend/           # Next.js 監控儀表板
-├── skills/             # 獨立的功能模組 (Agent Skills)
-│   ├── video_capture/  # 影像擷取技能
-│   ├── posture_reviewer/# 姿勢審查技能
-│   └── calibration_wizard/# 校準引導技能
-├── scripts/            # 自動化運維腳本
-└── Makefile            # 專案管理指令集
+├── Makefile                # 統一入口編排（含 Python 版本相容性自適應檢查）
+├── backend/                # 偵測代理後端核心
+│   ├── core/               # 核心資料處理流水線與狀態管理
+│   │   ├── action_engine.py# 動態規則匹配與熱載入引擎
+│   │   ├── pipeline.py     # 影像特徵提取、座標幾何轉換與 MediaPipe 驅動
+│   │   ├── schema.py       # Pydantic 數據模型與強型別 I/O 驗證
+│   │   └── state.py        # 線程安全共用狀態隔離器
+│   ├── services/           # 基礎硬體控制與校準引導
+│   │   ├── video_capture/  # 支援 USB/行動端外接攝像頭自癒串流模組
+│   │   └── calibration_wizard/ # 控制反轉 (IoC) 平均採樣校準演算法
+│   └── stream_server.py    # Flask RESTful API & MJPEG 視訊串流伺服器
+├── skills/                 # 動態自定義動作判斷包目錄 (AJP)
+│   ├── slouch/             # 駝背判定包
+│   ├── sway/               # 左右搖晃判定包
+│   └── lean/               # 前傾判定包
+├── docs/                   # 系統設計決策與詳細規格文件
+└── web/                    # 靜態 HTML5 / CSS3 / VanillaJS 高效戰情儀表板
 ```
 
 ---
 
-## 🛡 技術規範與指標
-*   **推論引擎**：MediaPipe BlazeFace Mesh (468+ 關鍵點)
-*   **數據頻率**：30Hz 恆定採樣
-*   **前端框架**：Next.js 15 (Turbopack Enabled)
-*   **狀態持久化**：JSON-based Personalization Memory
+## 🛡 系統技術指標
 
----
-
-## 👨‍💻 貢獻與開發
-CTAR 的願景是透過 AI 提升知識工作者的健康品質。我們歡迎所有關於「感測器融合」或「多模態提醒」的建議。
-
-*   **Repository**: [shihte/CTAR](https://github.com/shihte/CTAR)
-*   **Architect**: Antigravity AI Agent
-
----
-
-## ⚖️ 開源授權與第三方聲明 (License & Credits)
-
-### 本專案授權
-本專案採用 **[MIT License](LICENSE)** 進行授權。這意味著您可以自由地使用、修改及分發本程式碼，唯須保留原作者的版權聲明。
-
-### 第三方技術聲明 (Third-party Attribution)
-本專案的核心視覺偵測技術基於 **Google MediaPipe**：
-*   **MediaPipe**: 採用 **[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)** 授權。
-*   **使用規範**: 根據 Apache 2.0 條款，本專案在分發時已保留相關著作權聲明，並遵循其開源合規要求。
-*   **商標說明**: MediaPipe 為 Google LLC 之註冊商標。
-
-其他主要依賴：
-*   **Next.js**: MIT License
-*   **Flask**: BSD-3-Clause License
-*   **OpenCV**: Apache 2 License
-
----
-*© 2026 CTAR Intelligent Systems. Built for the Future of Work.*
+*   **三維面部網格**：468 點面部幾何拓撲點
+*   **身體姿態追蹤**：33 點全身骨架關節點
+*   **採樣頻率**：30Hz 恆定硬體捕獲與分析頻率
+*   **通訊協議**：MJPEG (影像) + RESTful / JSON (狀態與參數設定)
+*   **儲存持久化**：JSON 本地輕量化狀態紀錄器 (`preferences.json`)
