@@ -13,7 +13,11 @@ def main():
     ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
     
     # Check for venv python or fallback to system python
-    VENV_PYTHON = os.path.join(ROOT_DIR, "venv", "bin", "python")
+    VENV_PYTHON = os.path.join(ROOT_DIR, ".venv", "bin", "python")
+    if not os.path.exists(VENV_PYTHON):
+        # Fallback to legacy venv
+        VENV_PYTHON = os.path.join(ROOT_DIR, "venv", "bin", "python")
+
     if not os.path.exists(VENV_PYTHON):
         print("Virtualenv not found, trying system 'python3'...")
         PYTHON_EXEC = "python3"

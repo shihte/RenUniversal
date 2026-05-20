@@ -2,10 +2,22 @@ import { NextResponse } from "next/server";
 import { exec, spawn } from "child_process";
 import { promisify } from "util";
 
+import { existsSync } from "fs";
+import { join } from "path";
+
 const execAsync = promisify(exec);
 
+const ROOT_DIR = "/Users/shihte.hsiao/Downloads/CTAR";
+const getPythonPath = () => {
+    const dotVenv = join(ROOT_DIR, ".venv", "bin", "python");
+    if (existsSync(dotVenv)) {
+        return dotVenv;
+    }
+    return join(ROOT_DIR, "venv", "bin", "python");
+};
+
 // Path to the Python environment and script
-const PYTHON_PATH = "/Users/shihte.hsiao/Downloads/CTAR/venv/bin/python";
+const PYTHON_PATH = getPythonPath();
 const SCRIPT_PATH = "/Users/shihte.hsiao/Downloads/CTAR/backend/stream_server.py";
 const PORT = 5001;
 
