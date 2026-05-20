@@ -2,6 +2,9 @@ import os
 import time
 import argparse
 import threading
+import socket
+import subprocess
+import re
 from flask import Flask, Response, jsonify, request, send_from_directory
 from flask_cors import CORS
 import cv2
@@ -11,6 +14,39 @@ from pydantic import ValidationError
 from core import SharedState
 from core.pipeline import AgentPipeline
 from core.schema import SettingsUpdate, ControlCommand
+
+def get_local_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(('10.255.255.255', 1))
+        ip = s.getsockname()[0]
+    except Exception:
+        ip = '127.0.0.1'
+    finally:
+        s.close()
+    return ip
+
+def start_tunnel(port=8080):
+    """
+    啟動內網穿透服務 (localhost.run)，將本地服務曝露至公網，以便手機在不同網路環境下連線。
+    """
+    def run():
+        cmd = ["ssh", "-o", "StrictHostKeyChecking=no", "-o", "ServerAliveInterval=30", "-R", f"80:localhost:{port}", "nokey@localhost.run"]
+        logger.info("Initializing intranet tunnel via localhost.run...")
+        try:
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+            for line in proc.stdout:
+                match = re.search(r'https://[a-zA-Z0-9-.]+\.lhr\.life', line)
+                if match:
+                    public_url = match.group(0)
+                    logger.success(f"Intranet Tunnel established successfully!")
+                    logger.success(f"Public Link: {public_url}")
+                    logger.success(f"Mobile Public Link: {public_url}/mobile")
+                    state.update_status(public_url=public_url)
+        except Exception as e:
+            logger.error(f"Failed to start intranet tunnel: {e}")
+
+    threading.Thread(target=run, daemon=True).start()
 
 app = Flask(__name__)
 CORS(app)
@@ -102,6 +138,10 @@ def index():
 def serve_game():
     return send_from_directory(PROJECT_ROOT, 'Game.html')
 
+@app.route('/tailwind.js')
+def serve_tailwind():
+    return send_from_directory(PROJECT_ROOT, 'tailwind.js')
+
 @app.route('/live')
 @app.route('/video_feed')
 def video_feed():
@@ -109,7 +149,9 @@ def video_feed():
 
 @app.route('/status')
 def status():
-    return jsonify(state.get_status().model_dump())
+    status_data = state.get_status().model_dump()
+    status_data['local_ip'] = get_local_ip()
+    return jsonify(status_data)
 
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
@@ -121,7 +163,10 @@ def settings():
         s = state.get_status()
         return jsonify({
             "threshold": s.threshold,
-            "yaw_tolerance": s.yaw_tolerance
+            "yaw_tolerance": s.yaw_tolerance,
+            "sway_threshold": s.sway_threshold,
+            "lean_threshold": s.lean_threshold,
+            "camera_source": s.camera_source
         })
     
     try:
@@ -136,9 +181,44 @@ def settings():
             state.update_status(yaw_tolerance=data.yaw_tolerance)
             state.save_prefs({"yaw_tolerance": data.yaw_tolerance / 100.0})
             
+        if data.sway_threshold is not None:
+            pipeline.reviewer.sway_threshold = data.sway_threshold / 100.0
+            state.update_status(sway_threshold=data.sway_threshold)
+            state.save_prefs({"sway_threshold": data.sway_threshold / 100.0})
+            
+        if data.lean_threshold is not None:
+            pipeline.reviewer.lean_threshold = data.lean_threshold / 100.0
+            state.update_status(lean_threshold=data.lean_threshold)
+            state.save_prefs({"lean_threshold": data.lean_threshold / 100.0})
+            
+        if data.camera_source is not None:
+            state.update_status(camera_source=data.camera_source)
+            state.save_prefs({"camera_source": data.camera_source})
+            
         return jsonify({"success": True})
     except ValidationError as e:
         return jsonify({"error": e.errors()}), 400
+
+@app.route('/mobile')
+def serve_mobile():
+    return send_from_directory(PROJECT_ROOT, 'MobileCamera.html')
+
+@app.route('/upload_frame', methods=['POST'])
+def upload_frame():
+    try:
+        data = request.data
+        if not data:
+            return jsonify({"error": "No image data"}), 400
+        import numpy as np
+        nparr = np.frombuffer(data, np.uint8)
+        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if frame is None:
+            return jsonify({"error": "Invalid image format"}), 400
+        state.update_network_frame(frame)
+        return jsonify({"success": True})
+    except Exception as e:
+        logger.error(f"Error processing uploaded frame: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/recalibrate', methods=['POST'])
 def recalibrate():
@@ -167,7 +247,23 @@ def main():
     thread = threading.Thread(target=capture_loop, daemon=True)
     thread.start()
     
+    local_ip = get_local_ip()
+    
+    # 啟動 HTTPS 背景伺服器 (以支援手機端瀏覽器的 Secure Context)
+    def run_https():
+        try:
+            logger.info("Starting HTTPS Server on port 8443 for Secure Context (Local Wi-Fi)...")
+            app.run(host='0.0.0.0', port=8443, ssl_context='adhoc', threaded=True)
+        except Exception as e:
+            logger.error(f"Failed to start HTTPS server: {e}")
+            
+    https_thread = threading.Thread(target=run_https, daemon=True)
+    https_thread.start()
+    
     logger.info(f"CTAR Agent Server starting on http://localhost:{args.port}")
+    logger.info(f"Mobile Access URL (HTTP): http://{local_ip}:{args.port}/mobile")
+    logger.info(f"Mobile Access URL (HTTPS Local): https://{local_ip}:8443/mobile")
+    start_tunnel(args.port)
     app.run(host='0.0.0.0', port=args.port, threaded=True)
 
 if __name__ == "__main__":
