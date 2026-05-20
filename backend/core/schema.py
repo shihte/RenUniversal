@@ -28,6 +28,7 @@ class DetectorStatus(BaseModel):
     lean_ratio: float = Field(0.0, description="Torso lean ratio percentage")
     camera_source: str = Field("local_0", description="Selected camera source (local_0, local_1, phone, dual)")
     public_url: Optional[str] = Field(None, description="Public intranet tunnel URL")
+    flip_enabled: bool = Field(True, description="Whether preview flipping is enabled")
 
 class SettingsUpdate(BaseModel):
     """
@@ -38,6 +39,7 @@ class SettingsUpdate(BaseModel):
     sway_threshold: Optional[float] = None
     lean_threshold: Optional[float] = None
     camera_source: Optional[str] = None
+    flip_enabled: Optional[bool] = None
 
 class ControlCommand(BaseModel):
     """
