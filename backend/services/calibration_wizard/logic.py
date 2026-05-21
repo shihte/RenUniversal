@@ -40,6 +40,8 @@ class CalibrationWizardSkill:
         self.samples_shoulder_width = []
         self.samples_shoulder_midpoint_x = []
         self.samples_shoulder_midpoint_y = []
+        self.last_face_landmarks = None
+        self.last_pose_landmarks = None
         self.is_complete = False
 
     def process(self, 
@@ -47,7 +49,9 @@ class CalibrationWizardSkill:
                 current_nose_chin_distance: float,
                 current_shoulder_width: float = 0.0,
                 current_shoulder_midpoint_x: float = 0.0,
-                current_shoulder_midpoint_y: float = 0.0) -> CalibrationResult:
+                current_shoulder_midpoint_y: float = 0.0,
+                face_landmarks: Optional[List[dict]] = None,
+                pose_landmarks: Optional[List[dict]] = None) -> CalibrationResult:
         """
         處理當前的採樣數據並更新校準進度。
         
@@ -71,6 +75,8 @@ class CalibrationWizardSkill:
                 baseline_shoulder_width=float(np.mean(self.samples_shoulder_width)) if self.samples_shoulder_width else 0.0,
                 baseline_shoulder_midpoint_x=float(np.mean(self.samples_shoulder_midpoint_x)) if self.samples_shoulder_midpoint_x else 0.0,
                 baseline_shoulder_midpoint_y=float(np.mean(self.samples_shoulder_midpoint_y)) if self.samples_shoulder_midpoint_y else 0.0,
+                baseline_face_landmarks=self.last_face_landmarks,
+                baseline_pose_landmarks=self.last_pose_landmarks,
                 message="Calibration complete"
             )
 
@@ -88,6 +94,11 @@ class CalibrationWizardSkill:
             self.samples_shoulder_width.append(current_shoulder_width)
             self.samples_shoulder_midpoint_x.append(current_shoulder_midpoint_x)
             self.samples_shoulder_midpoint_y.append(current_shoulder_midpoint_y)
+            
+        if face_landmarks:
+            self.last_face_landmarks = face_landmarks
+        if pose_landmarks:
+            self.last_pose_landmarks = pose_landmarks
         
         # 檢查是否達到結束時間
         if elapsed_time >= self.duration:
@@ -100,6 +111,8 @@ class CalibrationWizardSkill:
                 baseline_shoulder_width=float(np.mean(self.samples_shoulder_width)) if self.samples_shoulder_width else 0.0,
                 baseline_shoulder_midpoint_x=float(np.mean(self.samples_shoulder_midpoint_x)) if self.samples_shoulder_midpoint_x else 0.0,
                 baseline_shoulder_midpoint_y=float(np.mean(self.samples_shoulder_midpoint_y)) if self.samples_shoulder_midpoint_y else 0.0,
+                baseline_face_landmarks=self.last_face_landmarks,
+                baseline_pose_landmarks=self.last_pose_landmarks,
                 message="Calibration finished successfully"
             )
         
