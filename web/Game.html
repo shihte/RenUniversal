@@ -191,11 +191,10 @@
          * 姿態偵測控制器 - 連接後端 API，低頭觸發跳躍
          */
         const PostureController = {
-            apiUrl: '/status',  // Use relative path for single server architecture
-            pollInterval: 100,  // 100ms polling
+            apiUrl: '/status',
+            pollInterval: 100,
             isConnected: false,
-            wasHeadDown: false,  // 用於偵測狀態變化（邊緣觸發）
-            lastDownCount: 0,    // 追蹤低頭次數變化
+            lastTriggerCount: 0,
             intervalId: null,
 
             init() {
@@ -217,49 +216,45 @@
                     if (!res.ok) throw new Error('Not OK');
 
                     const data = await res.json();
+                    
+                    let currentTriggerCount = 0;
+                    if (data.trigger_counts) {
+                        currentTriggerCount = Object.values(data.trigger_counts).reduce((a, b) => a + b, 0);
+                    } else if (data.down_count !== undefined) {
+                        currentTriggerCount = data.down_count;
+                    }
 
                     if (!this.isConnected) {
                         this.isConnected = true;
-                        this.lastDownCount = data.down_count;
+                        this.lastTriggerCount = currentTriggerCount;
                     }
 
-                    // 校準中
                     if (data.calibrating) {
                         this.updateUI(true, `Calibrating ${data.calibration_progress}%`);
                         return;
                     }
 
-                    // 轉頭中
-                    if (data.is_turning) {
-                        this.updateUI(true, 'Turning...');
-                        return;
+                    let activeNames = [];
+                    if (data.active_events) {
+                        Object.entries(data.active_events).forEach(([name, active]) => {
+                            if (active) activeNames.push(name.toUpperCase());
+                        });
                     }
-
-                    let statusText = `Ratio: ${data.ratio}%`;
-                    if (data.is_bad_posture) {
-                        statusText = '👇 HEAD DOWN';
-                    }
-                    
-                    let extraAlerts = [];
-                    if (data.is_swaying) {
-                        extraAlerts.push('↔️ SWAYING');
-                    }
-                    if (data.is_leaning_forward) {
-                        extraAlerts.push('🔍 LEANING');
+                    if (data.active_skills) {
+                        Object.entries(data.active_skills).forEach(([name, active]) => {
+                            if (active && !activeNames.includes(name.toUpperCase())) {
+                                activeNames.push(name.toUpperCase());
+                            }
+                        });
                     }
                     
-                    if (extraAlerts.length > 0) {
-                        statusText = `${statusText} (${extraAlerts.join(' + ')})`;
-                    }
+                    let statusText = activeNames.length > 0 ? activeNames.join(' + ') : 'IDLE';
 
-                    // 偵測低頭次數變化（邊緣觸發）
-                    if (data.down_count > this.lastDownCount) {
-                        // 低頭次數增加 = 觸發跳躍
+                    if (currentTriggerCount > this.lastTriggerCount) {
                         this.triggerJump();
-                        this.lastDownCount = data.down_count;
-                        this.updateUI(true, `👇 HEAD DOWN! | ${data.latency_ms}ms`);
+                        this.lastTriggerCount = currentTriggerCount;
+                        this.updateUI(true, `⚡ ACTION! (${statusText}) | ${data.latency_ms}ms`);
                     } else {
-                        // Show ratio, extra alerts, and latency
                         this.updateUI(true, `${statusText} | ${data.latency_ms}ms`);
                     }
 
