@@ -1,6 +1,5 @@
 import re
 import os
-import shutil
 
 # Read the original file
 with open('web/Monitor_backup.html', 'r', encoding='utf-8') as f:
@@ -39,7 +38,7 @@ def build_nav(active_tab):
 # The tabs content blocks
 def extract_tab_content(tab_idx):
     if tab_idx == 4:
-        regex = r'(<!-- Tab 4.*?)(?=<!-- Edit Modal)'
+        regex = r'(<!-- Tab 4.*?)(?=<!-- ════════)'
     else:
         regex = rf'(<!-- Tab {tab_idx}.*?)(?=<!-- Tab {tab_idx+1}:)'
     match = re.search(regex, content, re.DOTALL)
@@ -53,7 +52,7 @@ tab_contents = {
 }
 
 # Also need to extract the Edit Modals
-modals_regex = r'(<!-- Edit Modal.*?)<script>'
+modals_regex = r'(<!-- ════════.*?)<script>'
 modals_match = re.search(modals_regex, content, re.DOTALL)
 modals_html = modals_match.group(1) if modals_match else ""
 
