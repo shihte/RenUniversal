@@ -673,7 +673,7 @@
                 if (tunnelContainer) {
                     // Always render Local QR
                     const localIp = data.local_ip || '127.0.0.1';
-                    const localMobileUrl = `http://${localIp}:8080/mobile`; 
+                    const localMobileUrl = `https://${localIp}:8443/mobile`; 
                     
                     const localLinkEl = document.getElementById('local-link');
                     if (localLinkEl) {
@@ -697,7 +697,7 @@
                     } else {
                         if (linkEl) {
                             linkEl.href = "#";
-                            linkEl.textContent = "未啟動 (Ngrok Not Running)";
+                            linkEl.textContent = "未啟動 (Localhost.run 隧道未連線)";
                             document.getElementById('tunnel-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=NotConnected`;
                         }
                     }
