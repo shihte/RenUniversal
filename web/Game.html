@@ -218,8 +218,8 @@
                     const data = await res.json();
                     
                     let currentTriggerCount = 0;
-                    if (data.trigger_counts) {
-                        currentTriggerCount = Object.values(data.trigger_counts).reduce((a, b) => a + b, 0);
+                    if (data.trigger_counts && data.trigger_counts['ctar_tuck'] !== undefined) {
+                        currentTriggerCount = data.trigger_counts['ctar_tuck'];
                     } else if (data.down_count !== undefined) {
                         currentTriggerCount = data.down_count;
                     }
