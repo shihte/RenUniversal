@@ -158,185 +158,157 @@
 
         <!-- Tabs Navigation -->
         <div class="flex border-b border-[#b0aea5]/10 mb-8 font-heading">
-            <a href="/" class="px-6 py-3 text-sm font-semibold border-b-2 border-[#d97757] text-[#faf9f5] transition-all duration-200">
+            <a href="/" class="px-6 py-3 text-sm font-semibold border-b-2 border-transparent text-[#b0aea5] hover:text-[#faf9f5] transition-all duration-200">
                 即時監控 (Monitor)
             </a>
             <a href="/camera" class="px-6 py-3 text-sm font-semibold border-b-2 border-transparent text-[#b0aea5] hover:text-[#faf9f5] transition-all duration-200">
                 相機設定 (Camera)
             </a>
-            <a href="/skills" class="px-6 py-3 text-sm font-semibold border-b-2 border-transparent text-[#b0aea5] hover:text-[#faf9f5] transition-all duration-200">
+            <a href="/skills" class="px-6 py-3 text-sm font-semibold border-b-2 border-[#d97757] text-[#faf9f5] transition-all duration-200">
                 技能中心 (Skills Hub)
             </a>
             <a href="/events" class="px-6 py-3 text-sm font-semibold border-b-2 border-transparent text-[#b0aea5] hover:text-[#faf9f5] transition-all duration-200">
                 事件處理 (Events)
             </a>
         </div>
-<!-- Tab 1: Dashboard View -->
-        <div id="view-dashboard" class="grid grid-cols-1 lg:grid-cols-12 gap-8 font-sans">
-            <!-- Main Video Stream -->
-            <div class="lg:col-span-8 space-y-6">
-                <div class="relative aspect-video bg-[#0a0a09] rounded-[24px] overflow-hidden border border-[#b0aea5]/10 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.6)]">
-                    <img src="/live" class="w-full h-full object-contain" alt="Live Stream">
-
-                    <!-- Overlay Status -->
-                    <div class="absolute top-6 left-6 glass-overlay px-4 py-2 rounded-full flex items-center gap-3">
-                        <div class="w-2 h-2 rounded-full bg-[#d97757] animate-pulse" id="live-indicator"></div>
-                        <span class="text-[10px] font-bold tracking-widest text-[#faf9f5]/90" data-i18n="live">LIVE</span>
+<!-- Tab 3: Skills View -->
+        <div id="view-skills" class="space-y-8 font-sans">
+            <!-- Full Width Onboarding Tutorial Box -->
+            <div class="anthropic-card p-6 bg-[#1a1a18] border border-[#788c5d]/20 rounded-xl space-y-4 col-span-12">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-[#788c5d]/10 text-[#788c5d]">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                        </svg>
                     </div>
-
-                    <div class="absolute bottom-6 left-6 right-6 flex justify-between items-end">
-                        <div class="flex flex-col gap-3" id="dynamic-alerts-container">
-                            <!-- Loaded dynamically -->
-                        </div>
-
-                        <div class="px-4 py-2 glass-overlay rounded-xl">
-                            <span class="text-[11px] font-mono tracking-tighter text-[#faf9f5]/70" id="fps-display">FPS: 0</span>
-                        </div>
+                    <div>
+                        <h2 class="text-sm font-bold text-[#faf9f5]">🧠 技能中心引導 (Posture Skills Onboarding)</h2>
+                        <p class="text-[11px] text-[#b0aea5]">引導如何啟用、調整與創建自訂動作偵測規則</p>
                     </div>
                 </div>
                 
-                <!-- NEW EVENTS TABLE -->
-                <div class="bg-[#0a0a09] rounded-[24px] border border-[#b0aea5]/10 p-6 shadow-xl">
-                    <h2 class="text-[#faf9f5] text-lg font-bold tracking-tight mb-4 flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-[#6a9bcc]"></span>
-                        作用中事件監控表 (Active Events)
-                    </h2>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-[#b0aea5] border-collapse">
-                            <thead>
-                                <tr class="border-b border-[#b0aea5]/10 text-xs uppercase tracking-wider text-[#706e68]">
-                                    <th class="py-3 px-4 font-semibold">事件名稱 (Event Name)</th>
-                                    <th class="py-3 px-4 font-semibold text-right">狀態 (Status)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="active-events-tbody">
-                                <!-- Dynamically populated by JS -->
-                                <tr>
-                                    <td colspan="2" class="py-6 text-center text-[#706e68] text-xs">正在載入事件...</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 text-[11px] leading-relaxed">
+                    <div class="p-3 rounded-lg bg-[#151513] border border-[#b0aea5]/5 space-y-2">
+                        <span class="font-bold text-[#788c5d]">1. 內建核心技能</span>
+                        <p class="text-[#b0aea5]">CTAR 預載了<b>駝背 (Slouch)</b>、<b>軀幹左右偏斜 (Sway)</b> 與<b>前傾 (Lean)</b> 三大核心判定包。您可以隨時調整各項敏感度閾值並即時儲存。</p>
                     </div>
-                </div>
-
-                <!-- NEW SKILLS TABLE -->
-                <div class="bg-[#0a0a09] rounded-[24px] border border-[#b0aea5]/10 p-6 shadow-xl mt-6">
-                    <h2 class="text-[#faf9f5] text-lg font-bold tracking-tight mb-4 flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-[#73a373]"></span>
-                        作用中技能監控表 (Active Skills)
-                    </h2>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-[#b0aea5] border-collapse">
-                            <thead>
-                                <tr class="border-b border-[#b0aea5]/10 text-xs uppercase tracking-wider text-[#706e68]">
-                                    <th class="py-3 px-4 font-semibold">技能名稱 (Skill Name)</th>
-                                    <th class="py-3 px-4 font-semibold text-right">狀態 (Status)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="active-skills-tbody">
-                                <!-- Dynamically populated by JS -->
-                                <tr>
-                                    <td colspan="2" class="py-6 text-center text-[#706e68] text-xs">正在載入技能...</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="p-3 rounded-lg bg-[#151513] border border-[#b0aea5]/5 space-y-2">
+                        <span class="font-bold text-[#6a9bcc]">2. 自訂判斷語法</span>
+                        <p class="text-[#b0aea5]">在右側建構器中輸入名稱與描述，然後添加檢測規則。如 <code>torso_sway > sway_threshold</code>，系統將會自動生成 Python 邏輯包。</p>
+                    </div>
+                    <div class="p-3 rounded-lg bg-[#151513] border border-[#b0aea5]/5 space-y-2">
+                        <span class="font-bold text-[#d97757]">3. 即時閾值微調</span>
+                        <p class="text-[#b0aea5]">創建後的技能會顯示在左側。拖動閾值拉條時，系統將即時通知後端更新，讓您在不需要重啟程式的情況下微調姿勢判定基準。</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Sidebar Controls & Stats -->
-            <div class="lg:col-span-4 space-y-8">
-                <!-- Status Cards -->
-                <div class="grid grid-cols-1 gap-4">
-                    <div class="anthropic-card p-6 flex items-center justify-between">
-                        <div>
-                            <div class="text-[#706e68] text-[10px] font-bold uppercase tracking-[0.15em] mb-1" data-i18n="ratio">Posture Ratio</div>
-                            <div class="text-4xl font-serif font-medium text-[#6a9bcc]" id="ratio-value">0%</div>
-                        </div>
-                        <div class="p-3 bg-[#6a9bcc]/10 rounded-xl">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="text-[#6a9bcc]">
-                                <path d="M12 2v20M2 12h20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                        </div>
-                    </div>
-
-                    <!-- Dynamic Metrics Container -->
-                    <div id="dynamic-metrics-container" class="grid grid-cols-2 gap-4">
-                        <!-- Loaded dynamically -->
-                    </div>
-
-                    <!-- Dynamic Counts Container -->
-                    <div id="dynamic-counts-container" class="grid grid-cols-2 gap-4">
-                        <!-- Loaded dynamically -->
-                    </div>
-
-                    <!-- Static System Metrics -->
-                    <div class="grid grid-cols-1 gap-4">
-                        <div class="anthropic-card p-5 flex justify-between items-center">
-                            <span class="text-[#706e68] text-[10px] font-bold uppercase tracking-[0.15em]" data-i18n="avg_latency">Latency</span>
-                            <span class="text-xl font-serif font-medium text-[#788c5d]" id="latency-value">0ms</span>
-                        </div>
-                    </div>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Left Column: Active Skills List -->
+            <div class="lg:col-span-6 space-y-6">
+                <div class="flex justify-between items-center pb-2 border-b border-[#b0aea5]/10">
+                    <h2 class="text-sm font-bold text-[#faf9f5] uppercase tracking-[0.15em]">作用中的動作判斷包</h2>
+                    <button onclick="loadSkills()" class="text-[#6a9bcc] hover:underline text-xs">重新整理</button>
                 </div>
+                <div id="skills-list-container" class="space-y-6">
+                    <!-- Dynamic active skills items list here -->
+                </div>
+            </div>
 
-                <!-- Quick Actions -->
-                <div class="anthropic-card p-8 space-y-6">
-                    <h2 class="text-xs font-bold text-[#faf9f5] uppercase tracking-[0.2em] border-b border-[#b0aea5]/10 pb-4" data-i18n="actions">
-                        System Control</h2>
+            <!-- Right Column: Create Skill Builder Form -->
+            <div class="lg:col-span-6 space-y-6">
+                <div class="pb-2 border-b border-[#b0aea5]/10">
+                    <h2 class="text-sm font-bold text-[#faf9f5] uppercase tracking-[0.15em]">自訂動作語法建構器</h2>
+                </div>
+                <div class="anthropic-card p-6 space-y-6">
+                    <form id="create-skill-form" onsubmit="submitCreateSkill(event)" class="space-y-5">
+                        <div class="space-y-2">
+                            <label class="text-xs text-[#b0aea5] font-semibold block">動作包系統名稱 (ID)*</label>
+                            <input type="text" id="skill-name" required placeholder="例如: shoulder_tilt" 
+                                class="w-full bg-[#1a1a18] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#d97757] font-mono">
+                            <p class="text-[9px] text-[#706e68]">限小寫英文、數字與底線，不可與現有動作包重名。</p>
+                        </div>
 
-                    <!-- Backend Toggle -->
-                    <div class="flex items-center justify-between bg-[#232321] p-4 rounded-xl border border-[#b0aea5]/5">
-                        <span class="text-xs font-semibold text-[#faf9f5]/80" data-i18n="detection_active">Active Monitoring</span>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="detection-toggle" class="sr-only peer"
-                                onchange="toggleDetection(this.checked)">
-                            <div
-                                class="w-12 h-6 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#788c5d]">
+                        <div class="space-y-2">
+                            <label class="text-xs text-[#b0aea5] font-semibold block">中文描述名稱</label>
+                            <input type="text" id="skill-desc" placeholder="例如: 肩部高低傾斜偵測" 
+                                class="w-full bg-[#1a1a18] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#d97757]">
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-xs text-[#b0aea5] font-semibold block">演算法依賴 (Requirements)</label>
+                            <div class="flex gap-6 mt-1">
+                                <label class="flex items-center gap-2 text-xs text-[#faf9f5] cursor-pointer">
+                                    <input type="checkbox" id="req-face" checked class="rounded border-[#b0aea5]/20 bg-[#1a1a18] text-[#d97757] focus:ring-0">
+                                    人臉網格 (Face Mesh)
+                                </label>
+                                <label class="flex items-center gap-2 text-xs text-[#faf9f5] cursor-pointer">
+                                    <input type="checkbox" id="req-pose" class="rounded border-[#b0aea5]/20 bg-[#1a1a18] text-[#d97757] focus:ring-0">
+                                    骨骼姿態 (Pose)
+                                </label>
                             </div>
-                        </label>
-                    </div>
-
-                    <button onclick="recalibrate()"
-                        class="btn-anthropic-secondary w-full py-4 text-[11px] font-bold uppercase tracking-[0.1em] rounded-xl flex justify-center items-center gap-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                            class="animate-spin hidden" id="calib-spinner" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
-                        </svg>
-
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                            id="calib-icon" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                            stroke-linejoin="round">
-                            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" />
-                        </svg>
-                        <span data-i18n="recalibrate">Recalibrate Workspace</span>
-                    </button>
-                    <p class="text-[10px] text-[#706e68] text-center italic" data-i18n="recalibrate_hint">
-                        Reset the baseline while maintaining a neutral posture.
-                    </p>
-                </div>
-
-                <!-- Active Actions & Events Status Card -->
-                <div class="anthropic-card p-6 space-y-4">
-                    <h2 class="text-xs font-bold text-[#faf9f5] uppercase tracking-[0.2em] border-b border-[#b0aea5]/10 pb-4">
-                        即時判定狀態 (Actions & Events)
-                    </h2>
-                    
-                    <div class="space-y-3">
-                        <div class="text-[10px] font-bold text-[#706e68] uppercase tracking-wider">動作判定 (Active Actions)</div>
-                        <div id="active-skills-badges" class="flex flex-wrap gap-1.5">
-                            <span class="text-[10px] text-[#706e68] italic">無動作判定中</span>
                         </div>
-                    </div>
-                    
-                                                <div class="space-y-3 pt-3 border-t border-[#b0aea5]/10">
-                        <div class="text-[10px] font-bold text-[#706e68] uppercase tracking-wider">複合事件 (Active Events)</div>
-                        <div id="active-events-badges" class="flex flex-wrap gap-1.5">
-                            <span class="text-[10px] text-[#706e68] italic">無事件觸發</span>
+
+                        <!-- ── 點位 ID 建構器 ────────────────────────────────── -->
+                        <div class="space-y-3 pt-3 border-t border-[#b0aea5]/10">
+                            <div class="flex items-center justify-between">
+                                <label class="text-xs text-[#b0aea5] font-semibold">偵測點位 ID 建構器</label>
+                                <button type="button" onclick="toggleSkillLandmarkRef()" class="text-[9px] text-[#6a9bcc] hover:underline">📋 點位 ID 對照表</button>
+                            </div>
+
+                            <!-- Landmark Reference Panel -->
+                            <div id="skill-landmark-ref" class="bg-[#151513] p-3 rounded-lg border border-[#b0aea5]/10 text-[10px] space-y-2 max-h-40 overflow-y-auto">
+                                <div class="grid grid-cols-2 gap-3 text-[#b0aea5]">
+                                    <div>
+                                        <span class="font-bold text-[#6a9bcc] block mb-1">🧍 身體 Pose (p前綴)</span>
+                                        <ul class="space-y-0.5 list-disc list-inside">
+                                            <li><code class="text-[#d97757]">p0</code>: 鼻尖</li>
+                                            <li><code class="text-[#d97757]">p11</code>: 左肩</li>
+                                            <li><code class="text-[#d97757]">p12</code>: 右肩</li>
+                                            <li><code class="text-[#d97757]">p13</code>: 左肘</li>
+                                            <li><code class="text-[#d97757]">p14</code>: 右肘</li>
+                                            <li><code class="text-[#d97757]">p15</code>: 左手腕</li>
+                                            <li><code class="text-[#d97757]">p16</code>: 右手腕</li>
+                                            <li><code class="text-[#d97757]">p23</code>: 左髖</li>
+                                            <li><code class="text-[#d97757]">p24</code>: 右髖</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <span class="font-bold text-[#788c5d] block mb-1">👤 臉部 Face Mesh (f前綴)</span>
+                                        <ul class="space-y-0.5 list-disc list-inside">
+                                            <li><code class="text-[#d97757]">f1</code>: 鼻尖</li>
+                                            <li><code class="text-[#d97757]">f152</code>: 下巴</li>
+                                            <li><code class="text-[#d97757]">f33</code>: 左眼外角</li>
+                                            <li><code class="text-[#d97757]">f263</code>: 右眼外角</li>
+                                            <li><code class="text-[#d97757]">f133</code>: 左眼內角</li>
+                                            <li><code class="text-[#d97757]">f362</code>: 右眼內角</li>
+                                            <li><code class="text-[#d97757]">f13</code>: 上唇中點</li>
+                                            <li><code class="text-[#d97757]">f14</code>: 下唇中點</li>
+                                            <li><code class="text-[#d97757]">f4</code>: 鼻梁</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="text-[9px] text-[#706e68] border-t border-[#b0aea5]/5 pt-1">💡 f = 臉部 (0-467)，p = 身體骨骼 (0-32)</div>
+                            </div>
+
+                            <!-- Generated Syntax Preview -->
+                        <div class="space-y-1">
+                            <label class="text-[10px] text-[#b0aea5] font-semibold block">觸發邏輯語法 (Rule Syntax) <span class="text-[#d97757]">*</span></label>
+                            <input type="text" id="rule-syntax" 
+                                class="w-full bg-[#1a1a18] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#d97757] font-mono"
+                                placeholder="例如: f1,f152 >< num=20% 或 torso_lean > lean_threshold">
+                            <p class="text-[9px] text-[#706e68]">格式：<code>f1,f152 &gt;&lt; num=20%</code>　說明：點位1,點位2 方向 num=閾值%</p>
                         </div>
-                    </div>
+
+                        <button type="submit" 
+                            class="btn-anthropic-primary w-full py-3.5 text-xs font-bold uppercase tracking-[0.1em] rounded-xl flex justify-center items-center gap-2">
+                            建立並套用動作 (Deploy Custom Skill)
+                        </button>
+                    </form>
                 </div>
             </div>
+        </div>
+        </div>
         </div>
 
         
