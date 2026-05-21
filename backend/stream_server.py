@@ -137,7 +137,19 @@ def generate_mjpeg_stream():
 
 @app.route('/')
 def index():
-    return send_from_directory(WEB_DIR, 'Monitor.html')
+    return send_from_directory(WEB_DIR, 'monitor.html')
+
+@app.route('/camera')
+def serve_camera():
+    return send_from_directory(WEB_DIR, 'camera.html')
+
+@app.route('/skills')
+def serve_skills():
+    return send_from_directory(WEB_DIR, 'skills.html')
+
+@app.route('/events')
+def serve_events():
+    return send_from_directory(WEB_DIR, 'events.html')
 
 @app.route('/game')
 def serve_game():

@@ -158,10 +158,10 @@
 
         <!-- Tabs Navigation -->
         <div class="flex border-b border-[#b0aea5]/10 mb-8 font-heading">
-            <a href="/" class="px-6 py-3 text-sm font-semibold border-b-2 border-[#d97757] text-[#faf9f5] transition-all duration-200">
+            <a href="/" class="px-6 py-3 text-sm font-semibold border-b-2 border-transparent text-[#b0aea5] hover:text-[#faf9f5] transition-all duration-200">
                 即時監控 (Monitor)
             </a>
-            <a href="/camera" class="px-6 py-3 text-sm font-semibold border-b-2 border-transparent text-[#b0aea5] hover:text-[#faf9f5] transition-all duration-200">
+            <a href="/camera" class="px-6 py-3 text-sm font-semibold border-b-2 border-[#d97757] text-[#faf9f5] transition-all duration-200">
                 相機設定 (Camera)
             </a>
             <a href="/skills" class="px-6 py-3 text-sm font-semibold border-b-2 border-transparent text-[#b0aea5] hover:text-[#faf9f5] transition-all duration-200">
@@ -171,168 +171,82 @@
                 事件處理 (Events)
             </a>
         </div>
-<!-- Tab 1: Dashboard View -->
-        <div id="view-dashboard" class="grid grid-cols-1 lg:grid-cols-12 gap-8 font-sans">
-            <!-- Main Video Stream -->
-            <div class="lg:col-span-8 space-y-6">
-                <div class="relative aspect-video bg-[#0a0a09] rounded-[24px] overflow-hidden border border-[#b0aea5]/10 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.6)]">
-                    <img src="/live" class="w-full h-full object-contain" alt="Live Stream">
+<!-- Tab 2: Camera View -->
+        <div id="view-camera" class="max-w-3xl mx-auto space-y-8 font-sans">
+            <div class="anthropic-card p-8 space-y-8">
+                <h2 class="text-xs font-bold text-[#faf9f5] uppercase tracking-[0.2em] border-b border-[#b0aea5]/10 pb-4"
+                    data-i18n="camera_source_label">鏡頭輸入來源 (Camera Source)</h2>
 
-                    <!-- Overlay Status -->
-                    <div class="absolute top-6 left-6 glass-overlay px-4 py-2 rounded-full flex items-center gap-3">
-                        <div class="w-2 h-2 rounded-full bg-[#d97757] animate-pulse" id="live-indicator"></div>
-                        <span class="text-[10px] font-bold tracking-widest text-[#faf9f5]/90" data-i18n="live">LIVE</span>
-                    </div>
-
-                    <div class="absolute bottom-6 left-6 right-6 flex justify-between items-end">
-                        <div class="flex flex-col gap-3" id="dynamic-alerts-container">
-                            <!-- Loaded dynamically -->
-                        </div>
-
-                        <div class="px-4 py-2 glass-overlay rounded-xl">
-                            <span class="text-[11px] font-mono tracking-tighter text-[#faf9f5]/70" id="fps-display">FPS: 0</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- NEW EVENTS TABLE -->
-                <div class="bg-[#0a0a09] rounded-[24px] border border-[#b0aea5]/10 p-6 shadow-xl">
-                    <h2 class="text-[#faf9f5] text-lg font-bold tracking-tight mb-4 flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-[#6a9bcc]"></span>
-                        作用中事件監控表 (Active Events)
-                    </h2>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-[#b0aea5] border-collapse">
-                            <thead>
-                                <tr class="border-b border-[#b0aea5]/10 text-xs uppercase tracking-wider text-[#706e68]">
-                                    <th class="py-3 px-4 font-semibold">事件名稱 (Event Name)</th>
-                                    <th class="py-3 px-4 font-semibold text-right">狀態 (Status)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="active-events-tbody">
-                                <!-- Dynamically populated by JS -->
-                                <tr>
-                                    <td colspan="2" class="py-6 text-center text-[#706e68] text-xs">正在載入事件...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- NEW SKILLS TABLE -->
-                <div class="bg-[#0a0a09] rounded-[24px] border border-[#b0aea5]/10 p-6 shadow-xl mt-6">
-                    <h2 class="text-[#faf9f5] text-lg font-bold tracking-tight mb-4 flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-[#73a373]"></span>
-                        作用中技能監控表 (Active Skills)
-                    </h2>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-[#b0aea5] border-collapse">
-                            <thead>
-                                <tr class="border-b border-[#b0aea5]/10 text-xs uppercase tracking-wider text-[#706e68]">
-                                    <th class="py-3 px-4 font-semibold">技能名稱 (Skill Name)</th>
-                                    <th class="py-3 px-4 font-semibold text-right">狀態 (Status)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="active-skills-tbody">
-                                <!-- Dynamically populated by JS -->
-                                <tr>
-                                    <td colspan="2" class="py-6 text-center text-[#706e68] text-xs">正在載入技能...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sidebar Controls & Stats -->
-            <div class="lg:col-span-4 space-y-8">
-                <!-- Status Cards -->
-                <div class="grid grid-cols-1 gap-4">
-                    <div class="anthropic-card p-6 flex items-center justify-between">
-                        <div>
-                            <div class="text-[#706e68] text-[10px] font-bold uppercase tracking-[0.15em] mb-1" data-i18n="ratio">Posture Ratio</div>
-                            <div class="text-4xl font-serif font-medium text-[#6a9bcc]" id="ratio-value">0%</div>
-                        </div>
-                        <div class="p-3 bg-[#6a9bcc]/10 rounded-xl">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="text-[#6a9bcc]">
-                                <path d="M12 2v20M2 12h20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                        </div>
-                    </div>
-
-                    <!-- Dynamic Metrics Container -->
-                    <div id="dynamic-metrics-container" class="grid grid-cols-2 gap-4">
-                        <!-- Loaded dynamically -->
-                    </div>
-
-                    <!-- Dynamic Counts Container -->
-                    <div id="dynamic-counts-container" class="grid grid-cols-2 gap-4">
-                        <!-- Loaded dynamically -->
-                    </div>
-
-                    <!-- Static System Metrics -->
-                    <div class="grid grid-cols-1 gap-4">
-                        <div class="anthropic-card p-5 flex justify-between items-center">
-                            <span class="text-[#706e68] text-[10px] font-bold uppercase tracking-[0.15em]" data-i18n="avg_latency">Latency</span>
-                            <span class="text-xl font-serif font-medium text-[#788c5d]" id="latency-value">0ms</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Quick Actions -->
-                <div class="anthropic-card p-8 space-y-6">
-                    <h2 class="text-xs font-bold text-[#faf9f5] uppercase tracking-[0.2em] border-b border-[#b0aea5]/10 pb-4" data-i18n="actions">
-                        System Control</h2>
-
-                    <!-- Backend Toggle -->
-                    <div class="flex items-center justify-between bg-[#232321] p-4 rounded-xl border border-[#b0aea5]/5">
-                        <span class="text-xs font-semibold text-[#faf9f5]/80" data-i18n="detection_active">Active Monitoring</span>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="detection-toggle" class="sr-only peer"
-                                onchange="toggleDetection(this.checked)">
-                            <div
-                                class="w-12 h-6 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#788c5d]">
-                            </div>
-                        </label>
-                    </div>
-
-                    <button onclick="recalibrate()"
-                        class="btn-anthropic-secondary w-full py-4 text-[11px] font-bold uppercase tracking-[0.1em] rounded-xl flex justify-center items-center gap-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                            class="animate-spin hidden" id="calib-spinner" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
-                        </svg>
-
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                            id="calib-icon" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                            stroke-linejoin="round">
-                            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" />
-                        </svg>
-                        <span data-i18n="recalibrate">Recalibrate Workspace</span>
-                    </button>
-                    <p class="text-[10px] text-[#706e68] text-center italic" data-i18n="recalibrate_hint">
-                        Reset the baseline while maintaining a neutral posture.
+                <div class="space-y-4">
+                    <label class="text-xs text-[#b0aea5] font-medium">請選擇作用中的鏡頭裝置：</label>
+                    <select id="camera-source-select" class="w-full bg-[#1a1a18] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-3 text-xs focus:outline-none focus:border-[#d97757]" onchange="updateSetting('camera_source', this.value)">
+                        <option value="local_0">電腦預設鏡頭 (Local Camera 0)</option>
+                        <option value="local_1">電腦外接鏡頭 (Local Camera 1)</option>
+                        <option value="phone">手機網路串流 (Mobile WiFi Stream)</option>
+                        <option value="dual">雙鏡頭連線模式 (Dual-Camera: Face + Pose)</option>
+                    </select>
+                    <p class="text-[10px] text-[#706e68] leading-relaxed italic" data-i18n="camera_source_desc" id="camera-source-desc">
+                        在手機上開啟手機串流網頁發送畫面，並在此選擇手機網路串流或雙鏡頭連線模式。
                     </p>
                 </div>
 
-                <!-- Active Actions & Events Status Card -->
-                <div class="anthropic-card p-6 space-y-4">
-                    <h2 class="text-xs font-bold text-[#faf9f5] uppercase tracking-[0.2em] border-b border-[#b0aea5]/10 pb-4">
-                        即時判定狀態 (Actions & Events)
-                    </h2>
+                <!-- Mirror Preview Frame Option -->
+                <div class="flex items-center justify-between p-4 rounded-lg bg-[#1a1a18] border border-[#b0aea5]/10 mt-4">
+                    <div class="space-y-1">
+                        <span class="text-xs font-bold text-[#faf9f5]">鏡像翻轉預覽畫面 (Mirror Preview Frame)</span>
+                        <p class="text-[10px] text-[#b0aea5]">開啟後，預覽影像將水平翻轉（適合筆電前置鏡頭）；若使用手機後置鏡頭或 USB 外接相機，可關閉以取得正確方向。</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="flip-enabled-checkbox" class="sr-only peer" onchange="updateSetting('flip_enabled', this.checked)">
+                        <div class="w-10 h-5 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#788c5d]"></div>
+                    </label>
+                </div>
+
+                <!-- Dual connection info -->
+                <div id="tunnel-info-container" class="space-y-4 bg-[#1d1d1b] p-6 rounded-xl border border-[#d97757]/20">
+                    <div class="space-y-1">
+                        <span class="text-xs font-bold text-[#d97757] uppercase tracking-[0.15em] block">
+                            📱 手機連線配置 (Phone Connection Options)
+                        </span>
+                        <p class="text-[11px] text-[#b0aea5] leading-normal">
+                            請使用手機掃描以下 QR Code 開啟前置相機進行高精度人臉與姿態辨識：
+                        </p>
+                    </div>
                     
-                    <div class="space-y-3">
-                        <div class="text-[10px] font-bold text-[#706e68] uppercase tracking-wider">動作判定 (Active Actions)</div>
-                        <div id="active-skills-badges" class="flex flex-wrap gap-1.5">
-                            <span class="text-[10px] text-[#706e68] italic">無動作判定中</span>
+                    <!-- Option A: Local Wi-Fi (Highly Recommended) -->
+                    <div class="space-y-2 p-4 rounded-lg bg-[#252523] border border-[#788c5d]/20">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-[#788c5d]">選項 A：本地 Wi-Fi 連線 (極速低延遲 &lt;30ms)</span>
+                            <span class="text-[8px] bg-[#788c5d]/20 text-[#788c5d] px-1.5 py-0.5 rounded font-bold">推薦</span>
+                        </div>
+                        <p class="text-[10px] text-[#706e68]">
+                            手機必須與電腦連接到<strong>同一個 Wi-Fi</strong>。請掃描下方 QR Code 或輸入網址（請手動指定 http）：
+                        </p>
+                        <div class="flex items-center gap-4 mt-2">
+                            <div class="bg-white p-2 rounded-lg shrink-0">
+                                <img id="local-qr" src="" alt="Local QR" class="w-24 h-24" />
+                            </div>
+                            <div class="space-y-2 overflow-hidden min-w-0">
+                                <a id="local-link" href="" target="_blank" class="text-xs text-[#788c5d] underline block truncate font-mono"></a>
+                                <span class="text-[9px] text-[#706e68] block">⚠️ 如果手機未開 Wi-Fi 或連接不同網路，此連結會連不上。</span>
+                            </div>
                         </div>
                     </div>
                     
-                                                <div class="space-y-3 pt-3 border-t border-[#b0aea5]/10">
-                        <div class="text-[10px] font-bold text-[#706e68] uppercase tracking-wider">複合事件 (Active Events)</div>
-                        <div id="active-events-badges" class="flex flex-wrap gap-1.5">
-                            <span class="text-[10px] text-[#706e68] italic">無事件觸發</span>
+                    <!-- Option B: Public Tunnel -->
+                    <div class="space-y-2 p-4 rounded-lg bg-[#252523] border border-[#d97757]/20">
+                        <span class="text-xs font-bold text-[#d97757]">選項 B：遠端公網穿透連線 (延遲較高 1.5s+)</span>
+                        <p class="text-[10px] text-[#706e68]">
+                            當手機使用行動網路 (4G/5G) 或跨網段時使用。請掃描下方 QR Code：
+                        </p>
+                        <div class="flex items-center gap-4 mt-2">
+                            <div class="bg-white p-2 rounded-lg shrink-0">
+                                <img id="tunnel-qr" src="" alt="Tunnel QR" class="w-24 h-24" />
+                            </div>
+                            <div class="space-y-2 overflow-hidden min-w-0">
+                                <a id="tunnel-link" href="" target="_blank" class="text-xs text-[#d97757] underline block truncate font-mono"></a>
+                                <span class="text-[9px] text-[#706e68] block">✈️ 資料需繞行海外轉機點，延遲較高。建議切換手機至極速模式。</span>
+                            </div>
                         </div>
                     </div>
                 </div>
