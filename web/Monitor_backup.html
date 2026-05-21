@@ -403,7 +403,7 @@
                     </div>
                     
                     <!-- Option B: Public Tunnel -->
-                    <div class="space-y-2 p-4 rounded-lg bg-[#252523] border border-[#d97757]/20">
+                    <div id="public-tunnel-block" class="space-y-2 p-4 rounded-lg bg-[#252523] border border-[#d97757]/20">
                         <span class="text-xs font-bold text-[#d97757]">選項 B：遠端公網穿透連線 (延遲較高 1.5s+)</span>
                         <p class="text-[10px] text-[#706e68]">
                             當手機使用行動網路 (4G/5G) 或跨網段時使用。請掃描下方 QR Code：
@@ -950,8 +950,8 @@
 
                 // Update Badge Colors
                 const colorClass = data.connected ? 'bg-green-500' : 'bg-red-500';
-                if (statusEl) statusEl.className = `w-3 h-3 rounded-full animate-pulse ${colorClass}`;
-                if (liveIndicator) liveIndicator.className = `w-2 h-2 rounded-full ${colorClass}`;
+                if (statusEl) if (statusEl) statusEl.className = `w-3 h-3 rounded-full animate-pulse ${colorClass}`;
+                if (liveIndicator) if (liveIndicator) liveIndicator.className = `w-2 h-2 rounded-full ${colorClass}`;
 
                 // Update Stats
                 const fpsEl = document.getElementById('fps-display'); if (fpsEl) fpsEl.textContent = `FPS: ${data.fps}`;
@@ -1089,9 +1089,9 @@
                             linkEl.textContent = mobileUrl;
                             document.getElementById('tunnel-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(mobileUrl)}`;
                         }
-                        tunnelContainer.classList.remove('hidden');
+                        const ptb = document.getElementById('public-tunnel-block'); if(ptb) ptb.classList.remove('hidden');
                     } else {
-                        tunnelContainer.classList.add('hidden');
+                        const ptb = document.getElementById('public-tunnel-block'); if(ptb) ptb.classList.add('hidden');
                     }
                 }
 
@@ -1139,7 +1139,7 @@
 
             } catch (e) {
                 console.error(e);
-                if (statusEl) statusEl.className = 'w-3 h-3 rounded-full bg-gray-500';
+                if (statusEl) if (statusEl) statusEl.className = 'w-3 h-3 rounded-full bg-gray-500';
             }
         }
 
