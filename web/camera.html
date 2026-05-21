@@ -234,7 +234,7 @@
                     </div>
                     
                     <!-- Option B: Public Tunnel -->
-                    <div class="space-y-2 p-4 rounded-lg bg-[#252523] border border-[#d97757]/20">
+                    <div id="public-tunnel-block" class="space-y-2 p-4 rounded-lg bg-[#252523] border border-[#d97757]/20">
                         <span class="text-xs font-bold text-[#d97757]">選項 B：遠端公網穿透連線 (延遲較高 1.5s+)</span>
                         <p class="text-[10px] text-[#706e68]">
                             當手機使用行動網路 (4G/5G) 或跨網段時使用。請掃描下方 QR Code：
@@ -254,7 +254,38 @@
         </div>
 
         
+<!-- ═══════════════════════════════════════════════════════════════
+         GLOBAL EDIT MODAL  — 點擊作用中項目之後展開
+    ═══════════════════════════════════════════════════════════════ -->
+    <div id="edit-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/70 backdrop-blur-sm">
+        <div class="bg-[#1a1a18] border border-[#b0aea5]/20 rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-5 mx-4">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h3 id="modal-title" class="text-sm font-bold text-[#faf9f5]"></h3>
+                    <p id="modal-subtitle" class="text-[10px] text-[#706e68] mt-0.5"></p>
+                </div>
+                <button onclick="closeEditModal()" class="text-[#706e68] hover:text-[#faf9f5] text-xl leading-none">&times;</button>
+            </div>
 
+            <!-- 語法顯示與編輯區 -->
+            <div class="space-y-2">
+                <label class="text-[10px] text-[#b0aea5] font-semibold block">目前語法 (Syntax)</label>
+                <textarea id="modal-syntax" rows="3"
+                    class="w-full bg-[#151513] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-3 text-xs font-mono focus:outline-none focus:border-[#d97757] resize-none"></textarea>
+                <p class="text-[9px] text-[#706e68]">可直接編輯語法，支持 AND / OR / NOT 及點位 ID 語法。</p>
+            </div>
+
+                        
+
+            <!-- 操作按鈕 -->
+            <div class="flex gap-3 pt-2">
+                <button onclick="closeEditModal()" class="flex-1 bg-[#2a2a28] hover:bg-[#3a3a38] text-[#b0aea5] text-xs py-2.5 rounded-xl font-semibold">取消</button>
+                <button id="modal-save-btn" onclick="saveModalEdit()" class="flex-1 btn-anthropic-primary text-xs py-2.5 rounded-xl font-bold">儲存並套用</button>
+            </div>
+        </div>
+    </div>
+
+    
 <script>
 
         // ─────────────────────────────────────────────────────────────────────────
@@ -519,8 +550,8 @@
 
                 // Update Badge Colors
                 const colorClass = data.connected ? 'bg-green-500' : 'bg-red-500';
-                if (statusEl) statusEl.className = `w-3 h-3 rounded-full animate-pulse ${colorClass}`;
-                if (liveIndicator) liveIndicator.className = `w-2 h-2 rounded-full ${colorClass}`;
+                if (statusEl) if (statusEl) statusEl.className = `w-3 h-3 rounded-full animate-pulse ${colorClass}`;
+                if (liveIndicator) if (liveIndicator) liveIndicator.className = `w-2 h-2 rounded-full ${colorClass}`;
 
                 // Update Stats
                 const fpsEl = document.getElementById('fps-display'); if (fpsEl) fpsEl.textContent = `FPS: ${data.fps}`;
@@ -658,9 +689,9 @@
                             linkEl.textContent = mobileUrl;
                             document.getElementById('tunnel-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(mobileUrl)}`;
                         }
-                        tunnelContainer.classList.remove('hidden');
+                        const ptb = document.getElementById('public-tunnel-block'); if(ptb) ptb.classList.remove('hidden');
                     } else {
-                        tunnelContainer.classList.add('hidden');
+                        const ptb = document.getElementById('public-tunnel-block'); if(ptb) ptb.classList.add('hidden');
                     }
                 }
 
@@ -708,7 +739,7 @@
 
             } catch (e) {
                 console.error(e);
-                if (statusEl) statusEl.className = 'w-3 h-3 rounded-full bg-gray-500';
+                if (statusEl) if (statusEl) statusEl.className = 'w-3 h-3 rounded-full bg-gray-500';
             }
         }
 
