@@ -950,13 +950,13 @@
 
                 // Update Badge Colors
                 const colorClass = data.connected ? 'bg-green-500' : 'bg-red-500';
-                statusEl.className = `w-3 h-3 rounded-full animate-pulse ${colorClass}`;
-                liveIndicator.className = `w-2 h-2 rounded-full ${colorClass}`;
+                if (statusEl) statusEl.className = `w-3 h-3 rounded-full animate-pulse ${colorClass}`;
+                if (liveIndicator) liveIndicator.className = `w-2 h-2 rounded-full ${colorClass}`;
 
                 // Update Stats
-                document.getElementById('fps-display').textContent = `FPS: ${data.fps}`;
-                document.getElementById('ratio-value').textContent = `${data.ratio}%`;
-                document.getElementById('latency-value').textContent = `${data.latency_ms}ms`;
+                const fpsEl = document.getElementById('fps-display'); if (fpsEl) fpsEl.textContent = `FPS: ${data.fps}`;
+                const ratioEl = document.getElementById('ratio-value'); if (ratioEl) ratioEl.textContent = `${data.ratio}%`;
+                const latencyEl = document.getElementById('latency-value'); if (latencyEl) latencyEl.textContent = `${data.latency_ms}ms`;
                 
                 // Update Active Events Table
                 const eventsTbody = document.getElementById('active-events-tbody');
@@ -1064,7 +1064,7 @@
                 }
 
                 // Sync Toggle
-                if (!toggleEl.matches(':active')) {
+                if (toggleEl && !toggleEl.matches(':active')) {
                     toggleEl.checked = data.is_active !== false; // Default true if undefined
                 }
 
@@ -1139,7 +1139,7 @@
 
             } catch (e) {
                 console.error(e);
-                statusEl.className = 'w-3 h-3 rounded-full bg-gray-500';
+                if (statusEl) statusEl.className = 'w-3 h-3 rounded-full bg-gray-500';
             }
         }
 
