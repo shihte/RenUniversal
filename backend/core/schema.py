@@ -29,6 +29,10 @@ class DetectorStatus(BaseModel):
     camera_source: str = Field("local_0", description="Selected camera source (local_0, local_1, phone, dual)")
     public_url: Optional[str] = Field(None, description="Public intranet tunnel URL")
     flip_enabled: bool = Field(True, description="Whether preview flipping is enabled")
+    active_skills: dict = Field(default_factory=dict, description="States of all evaluated skills (e.g. {name: bool})")
+    active_events: dict = Field(default_factory=dict, description="States of all evaluated compound event rules")
+    metrics: dict = Field(default_factory=dict, description="Generic metrics calculated by active skills (e.g. {skill_name: float})")
+    trigger_counts: dict = Field(default_factory=dict, description="Alert counts for all skills and events")
 
 class SettingsUpdate(BaseModel):
     """

@@ -27,7 +27,9 @@ class VideoCaptureSkill:
             config (CaptureConfig): 擷取配置，包含來源索引與解析度設定。
         """
         self.config = config
-        self.stream = cv2.VideoCapture(config.src)
+        import platform
+        self.backend = cv2.CAP_AVFOUNDATION if platform.system() == "Darwin" else cv2.CAP_ANY
+        self.stream = cv2.VideoCapture(config.src, self.backend)
         self._configure_stream()
         
         self.grabbed, self.frame = self.stream.read()
@@ -86,7 +88,7 @@ class VideoCaptureSkill:
                 time.sleep(retry_delay)
                 
                 # 重新初始化串流
-                self.stream = cv2.VideoCapture(self.config.src)
+                self.stream = cv2.VideoCapture(self.config.src, self.backend)
                 self._configure_stream()
                 
                 # 更新重試延遲

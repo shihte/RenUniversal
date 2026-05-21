@@ -16,6 +16,7 @@ from backend.services.video_capture.logic import VideoCaptureSkill
 from backend.services.video_capture.schema import CaptureConfig
 from backend.services.calibration_wizard.logic import CalibrationWizardSkill
 from .action_engine import ActionEngine
+from .event_engine import EventEngine
 
 class AgentPipeline:
     """
@@ -37,6 +38,7 @@ class AgentPipeline:
         # 1. 初始化各項技能 (Skill Initialization)
         self.capture = VideoCaptureSkill(CaptureConfig(src=0)).start()
         self.action_engine = ActionEngine(skills_dir="skills")
+        self.event_engine = EventEngine(events_dir="events")
         self.wizard = CalibrationWizardSkill()
         
         # 2. MediaPipe 模型設定
@@ -56,14 +58,17 @@ class AgentPipeline:
             min_tracking_confidence=0.5
         )
         
-        # 3. 運行時基礎數據
         self.baseline_eye_distance = 0.0
         self.baseline_nose_chin_distance = 0.0
         self.baseline_shoulder_width = 0.0
         self.baseline_shoulder_midpoint_x = 0.0
         self.baseline_shoulder_midpoint_y = 0.0
+        self.baseline_face_landmarks = None
+        self.baseline_pose_landmarks = None
         self.is_calibrated = False
         self.is_down_previously = False
+        self.previous_states = {}
+        self.trigger_counts = {}
         
         logger.info("AgentPipeline initialized and ready for execution")
 
@@ -76,46 +81,85 @@ class AgentPipeline:
             "nose_chin_distance": self.baseline_nose_chin_distance,
             "shoulder_width": self.baseline_shoulder_width,
             "shoulder_midpoint_x": self.baseline_shoulder_midpoint_x,
-            "shoulder_midpoint_y": self.baseline_shoulder_midpoint_y
+            "shoulder_midpoint_y": self.baseline_shoulder_midpoint_y,
+            "face_landmarks": self.baseline_face_landmarks,
+            "pose_landmarks": self.baseline_pose_landmarks
         }
         
         status = self.state.get_status()
-        state_history = {
-            "is_bad_posture": status.is_bad_posture,
-            "is_swaying": status.is_swaying,
-            "is_leaning_forward": status.is_leaning_forward
-        }
+        # state_history 完全通用：反映所有當前觸發中的技能狀態
+        state_history = {name: val for name, val in status.active_skills.items()}
+        # 向後相容性 key
+        state_history.setdefault("is_bad_posture", status.is_bad_posture)
+        state_history.setdefault("is_swaying", status.is_swaying)
+        state_history.setdefault("is_leaning_forward", status.is_leaning_forward)
         
-        # 執行動作引擎評估
+        # 執行動作引擎評估（完全動態，不寫死技能名稱）
         results = self.action_engine.evaluate_all(
             landmarks, pose_landmarks, face_dim, body_dim, baselines, self.state.prefs, state_history
         )
         
-        # 提取各模組結果
-        is_bad_posture, nc_ratio, slouch_debug = results.get("slouch", (False, 0.0, {}))
-        is_swaying, sway_ratio, sway_debug = results.get("sway", (False, 0.0, {}))
-        is_leaning_forward, lean_ratio, lean_debug = results.get("lean", (False, 0.0, {}))
+        # 整理 active_skills 與 metrics 字典
+        active_skills = {}
+        metrics = {}
+        for name, data in results.items():
+            active_skills[name] = bool(data[0])
+            metrics[name] = float(data[1])
+            
+        # 提取當前特徵供複合事件引擎計算
+        cur_eye_dist = 0.0
+        if landmarks and face_dim[0] > 0 and face_dim[1] > 0:
+            cur_eye_dist, _ = self._extract_physical_features(landmarks, face_dim[0], face_dim[1])
+            
+        cur_sh_width = 0.0
+        if pose_landmarks and body_dim[0] > 0 and body_dim[1] > 0:
+            cur_sh_width, _, _ = self._extract_shoulder_features(pose_landmarks, body_dim[0], body_dim[1])
+            
+        # 2. 透過 EventEngine 評估複合事件規則
+        active_events = self.event_engine.evaluate(
+            active_skills,
+            landmarks=landmarks,
+            pose_landmarks=pose_landmarks,
+            baselines=baselines,
+            current_eye_distance=cur_eye_dist,
+            current_shoulder_width=cur_sh_width,
+            face_dim=face_dim,
+            body_dim=body_dim
+        )
         
-        is_turning = slouch_debug.get("is_turning", False)
-        
-        # 計算低頭次數
-        current_down_count = status.down_count
-        if is_bad_posture and not self.is_down_previously:
-            current_down_count += 1
-        self.is_down_previously = is_bad_posture
-        
+        # 3. 動態更新各項技能與事件的警報計數
+        for name, triggered in active_skills.items():
+            if name not in self.trigger_counts:
+                self.trigger_counts[name] = 0
+            prev = self.previous_states.get(name, False)
+            if triggered and not prev:
+                self.trigger_counts[name] += 1
+            self.previous_states[name] = triggered
+            
+        for name, triggered in active_events.items():
+            if name not in self.trigger_counts:
+                self.trigger_counts[name] = 0
+            prev = self.previous_states.get(name, False)
+            if triggered and not prev:
+                self.trigger_counts[name] += 1
+            self.previous_states[name] = triggered
+            
         # 更新共享狀態
         self.state.update_status(
-            ratio=float(round(nc_ratio * 100, 1)),
-            is_bad_posture=is_bad_posture,
-            is_turning=is_turning,
-            down_count=current_down_count,
+            ratio=0.0, # Kept for backward compatibility but default to 0
+            is_bad_posture=any(active_skills.values()),
+            is_turning=False,
+            down_count=0,
             latency_ms=inference_time_ms,
             calibrating=False,
-            is_swaying=is_swaying,
-            is_leaning_forward=is_leaning_forward,
-            sway_ratio=float(round(sway_ratio, 3)),
-            lean_ratio=float(round(lean_ratio, 3))
+            is_swaying=False,
+            is_leaning_forward=False,
+            sway_ratio=0.0,
+            lean_ratio=0.0,
+            active_skills=active_skills,
+            active_events=active_events,
+            metrics=metrics,
+            trigger_counts=self.trigger_counts
         )
 
     def _extract_physical_features(self, landmarks: Any, width: int, height: int) -> Tuple[float, float]:
@@ -166,12 +210,12 @@ class AgentPipeline:
 
     def _annotate_frame(self, frame: np.ndarray, landmarks: Any, width: int, height: int, status: Any, pose_landmarks: Any = None, draw_text: bool = True) -> None:
         """
-        在畫面上繪製追蹤點與狀態資訊。
+        在畫面上繪製 CTAR 核心追蹤點（雙眼、鼻、下巴、雙肩），以及額外啟用的 Skills 追蹤點。
         """
         NOSE_INDEX, CHIN_INDEX = 1, 152
         LEFT_EYE_INDEX, RIGHT_EYE_INDEX = 33, 263
         
-        # 1. 繪製面部追蹤點
+        # 1. 繪製 CTAR 基礎面部追蹤點 (雙眼、鼻子、下巴)
         if landmarks is not None:
             points = [
                 (landmarks.landmark[NOSE_INDEX], (255, 100, 0), "Nose"),      # 藍色 (BGR)
@@ -184,7 +228,7 @@ class AgentPipeline:
                 cv2.circle(frame, (cx, cy), 5, color, -1)
                 cv2.circle(frame, (cx, cy), 7, (255, 255, 255), 1)
 
-            # 2. 繪製鼻尖到下巴的連線 (姿勢參考線)
+            # 繪製鼻尖到下巴的連線 (CTAR 核心：下巴內收參考線)
             nose = landmarks.landmark[NOSE_INDEX]
             chin = landmarks.landmark[CHIN_INDEX]
             cv2.line(frame, 
@@ -192,7 +236,7 @@ class AgentPipeline:
                      (int(chin.x * width), int(chin.y * height)), 
                      (255, 255, 255), 1, cv2.LINE_AA)
 
-        # 3. 繪製肩膀與連結線
+        # 2. 繪製 CTAR 基礎身體追蹤點 (雙肩)
         if pose_landmarks:
             left_shoulder = pose_landmarks.landmark[11]
             right_shoulder = pose_landmarks.landmark[12]
@@ -201,73 +245,96 @@ class AgentPipeline:
             rs_x, rs_y = int(right_shoulder.x * width), int(right_shoulder.y * height)
             
             # 判斷顏色：若有任何肩膀不良姿勢（搖晃或前傾），顯示紅色，否則顯示綠色
-            sh_color = (0, 0, 255) if (status.is_swaying or status.is_leaning_forward) else (0, 255, 0)
+            sh_color = (0, 0, 255) if (getattr(status, 'is_swaying', False) or getattr(status, 'is_leaning_forward', False)) else (0, 255, 0)
             
             cv2.circle(frame, (ls_x, ls_y), 6, sh_color, -1)
             cv2.circle(frame, (rs_x, rs_y), 6, sh_color, -1)
             cv2.circle(frame, (ls_x, ls_y), 8, (255, 255, 255), 1)
             cv2.circle(frame, (rs_x, rs_y), 8, (255, 255, 255), 1)
-            
-            # 連接肩膀
             cv2.line(frame, (ls_x, ls_y), (rs_x, rs_y), sh_color, 2, cv2.LINE_AA)
-            
-            # 繪製肩膀中點
-            mid_x, mid_y = int((ls_x + rs_x) / 2), int((ls_y + rs_y) / 2)
-            cv2.circle(frame, (mid_x, mid_y), 4, (255, 255, 255), -1)
-        elif landmarks:
-            # 繪製虛擬預估肩膀 (使用半透明/Cyan 藍繪製，提供使用者直觀的視覺回饋)
-            left_eye_l = landmarks.landmark[LEFT_EYE_INDEX]
-            right_eye_l = landmarks.landmark[RIGHT_EYE_INDEX]
-            left_eye_p = (left_eye_l.x * width, left_eye_l.y * height)
-            right_eye_p = (right_eye_l.x * width, right_eye_l.y * height)
-            
-            eye_dist = abs(right_eye_p[0] - left_eye_p[0])
-            face_center_x = (left_eye_p[0] + right_eye_p[0]) / 2.0
-            face_center_y = (left_eye_p[1] + right_eye_p[1]) / 2.0
-            
-            if self.is_calibrated and self.baseline_eye_distance > 0 and self.baseline_shoulder_width > 0:
-                ratio = self.baseline_shoulder_width / self.baseline_eye_distance
-                sh_width = eye_dist * ratio
-            else:
-                sh_width = eye_dist * 4.5
-                
-            sh_mid_x = face_center_x
-            sh_mid_y = face_center_y + eye_dist * 3.0
-            
-            ls_x, ls_y = int(sh_mid_x - sh_width / 2.0), int(sh_mid_y)
-            rs_x, rs_y = int(sh_mid_x + sh_width / 2.0), int(sh_mid_y)
-            
-            # 虛擬肩膀顏色：搖晃或前傾時顯示橘紅，否則顯示青藍色 (BGR 格式)
-            sh_color = (0, 140, 255) if (status.is_swaying or status.is_leaning_forward) else (255, 191, 0)
-            
-            cv2.circle(frame, (ls_x, ls_y), 4, sh_color, -1)
-            cv2.circle(frame, (rs_x, rs_y), 4, sh_color, -1)
-            cv2.line(frame, (ls_x, ls_y), (rs_x, rs_y), sh_color, 1, cv2.LINE_AA)
-            
-            mid_x, mid_y = int((ls_x + rs_x) / 2), int((ls_y + rs_y) / 2)
-            cv2.circle(frame, (mid_x, mid_y), 3, (255, 255, 255), -1)
 
-        # 4. 繪製狀態文字 (如果啟用)
-        if draw_text:
-            status_text = "CALIBRATING..." if status.calibrating else f"RATIO: {status.ratio}%"
-            color = (255, 255, 255)
-            if not status.calibrating:
-                alerts = []
-                if status.is_bad_posture:
-                    alerts.append("BAD POSTURE")
-                if status.is_turning:
-                    alerts.append("TURNING")
-                if status.is_swaying:
-                    alerts.append("SWAYING")
-                if status.is_leaning_forward:
-                    alerts.append("LEAN FORWARD")
-                    
-                if alerts:
-                    status_text += " [" + " | ".join(alerts) + "]"
-                    color = (0, 0, 255) if (status.is_bad_posture or status.is_swaying or status.is_leaning_forward) else (0, 255, 255)
+        # 3. 收集並繪製「非預設」的自訂 Skills 點位
+        active_points = set()
+        for detector in self.action_engine.detectors.values():
+            if hasattr(detector, "get_used_points"):
+                active_points.update(detector.get_used_points())
+                
+        default_pts = {'f1', 'f152', 'f33', 'f263', 'p11', 'p12'}
+        custom_points = active_points - default_pts
+        
+        for pt_id in custom_points:
+            try:
+                pt_id = str(pt_id).strip().lower()
+                is_pose = False
+                idx_str = pt_id
+                if pt_id.startswith('p'):
+                    is_pose = True
+                    idx_str = pt_id[1:]
+                elif pt_id.startswith('f'):
+                    is_pose = False
+                    idx_str = pt_id[1:]
                 else:
-                    status_text += " [GOOD]"
-                    color = (0, 255, 0)
+                    v = int(pt_id)
+                    is_pose = (v <= 32)
+                    idx_str = str(v)
+                
+                idx = int(idx_str)
+                if is_pose and pose_landmarks and hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
+                    lm = pose_landmarks.landmark[idx]
+                elif not is_pose and landmarks and hasattr(landmarks, 'landmark') and idx < len(landmarks.landmark):
+                    lm = landmarks.landmark[idx]
+                else:
+                    continue
+                    
+                cx, cy = int(lm.x * width), int(lm.y * height)
+                # 自訂點位使用紫色/粉紅色顯示以區分
+                cv2.circle(frame, (cx, cy), 5, (255, 0, 255), -1)
+                cv2.circle(frame, (cx, cy), 7, (255, 255, 255), 1)
+            except Exception:
+                pass
+
+        # 4. 繪製自訂 Skills 的點位連線
+        active_pairs = []
+        for name, detector in self.action_engine.detectors.items():
+            if hasattr(detector, "get_point_pairs"):
+                triggered = getattr(status, 'active_skills', {}).get(name, False)
+                for p1, p2 in detector.get_point_pairs():
+                    active_pairs.append((p1, p2, triggered))
+
+        for p1_id, p2_id, triggered in active_pairs:
+            try:
+                def get_pt(pt_id):
+                    pt_id = str(pt_id).strip().lower()
+                    if pt_id.startswith('p'):
+                        idx = int(pt_id[1:])
+                        if pose_landmarks and hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
+                            return pose_landmarks.landmark[idx]
+                    elif pt_id.startswith('f'):
+                        idx = int(pt_id[1:])
+                        if landmarks and hasattr(landmarks, 'landmark') and idx < len(landmarks.landmark):
+                            return landmarks.landmark[idx]
+                    else:
+                        idx = int(pt_id)
+                        if idx <= 32 and pose_landmarks and hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
+                            return pose_landmarks.landmark[idx]
+                    return None
+
+                lm1 = get_pt(p1_id)
+                lm2 = get_pt(p2_id)
+                if lm1 and lm2:
+                    cx1, cy1 = int(lm1.x * width), int(lm1.y * height)
+                    cx2, cy2 = int(lm2.x * width), int(lm2.y * height)
+                    
+                    # 預設藍色，觸發變紅 (BGR 格式)
+                    color = (0, 0, 255) if triggered else (255, 100, 0)
+                    cv2.line(frame, (cx1, cy1), (cx2, cy2), color, 2, cv2.LINE_AA)
+            except Exception:
+                pass
+
+        # 3. 繪製狀態文字 (如果啟用)
+        if draw_text:
+            status_text = "CALIBRATING..." if status.calibrating else "SYSTEM RUNNING"
+            color = (0, 255, 0) if not status.calibrating else (255, 255, 255)
             
             # 陰影文字增加可讀性
             display_y = 40
@@ -275,11 +342,11 @@ class AgentPipeline:
             cv2.putText(frame, status_text, (20, display_y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 1, cv2.LINE_AA)
             
             # 顯示延遲與計數及肩膀比例
-            info_parts = [f"Lat: {status.latency_ms}ms", f"Down: {status.down_count}"]
+            info_parts = [f"Lat: {status.latency_ms}ms"]
             if not status.calibrating:
-                info_parts.append(f"Sway: {status.sway_ratio*100:.1f}%")
-                info_parts.append(f"Lean: {status.lean_ratio*100:.1f}%")
-            info_text = " | ".join(info_parts)
+                for name, val in status.metrics.items():
+                    info_parts.append(f"{name}: {val:.2f}")
+            info_text = " | ".join(info_parts[:5]) # 限制最多顯示 5 個防爆
             
             cv2.putText(frame, info_text, (20, height - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
             cv2.putText(frame, info_text, (20, height - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1, cv2.LINE_AA)
@@ -403,11 +470,16 @@ class AgentPipeline:
                 
                 # 決策邏輯
                 if not self.is_calibrated:
+                    face_dict_list = [{"x": l.x, "y": l.y} for l in landmarks.landmark] if landmarks else None
+                    pose_dict_list = [{"x": l.x, "y": l.y} for l in pose_landmarks.landmark] if pose_landmarks else None
+                    
                     calibration_result = self.wizard.process(
                         eye_dist, nc_dist,
                         current_shoulder_width=sh_width,
                         current_shoulder_midpoint_x=sh_mid_x,
-                        current_shoulder_midpoint_y=sh_mid_y
+                        current_shoulder_midpoint_y=sh_mid_y,
+                        face_landmarks=face_dict_list,
+                        pose_landmarks=pose_dict_list
                     )
                     self.state.update_status(
                         calibrating=True,
@@ -419,6 +491,18 @@ class AgentPipeline:
                         self.baseline_shoulder_width = calibration_result.baseline_shoulder_width
                         self.baseline_shoulder_midpoint_x = calibration_result.baseline_shoulder_midpoint_x
                         self.baseline_shoulder_midpoint_y = calibration_result.baseline_shoulder_midpoint_y
+                        self.baseline_face_landmarks = calibration_result.baseline_face_landmarks
+                        self.baseline_pose_landmarks = calibration_result.baseline_pose_landmarks
+                        
+                        # Store in global state for action engine
+                        self.baselines = {
+                            "eye_distance": self.baseline_eye_distance,
+                            "nose_chin_distance": self.baseline_nose_chin_distance,
+                            "shoulder_width": self.baseline_shoulder_width,
+                            "face_landmarks": self.baseline_face_landmarks,
+                            "pose_landmarks": self.baseline_pose_landmarks
+                        }
+                        
                         self.is_calibrated = True
                         self.state.update_status(baseline_eye_dist=self.baseline_eye_distance)
                         logger.success(f"Calibration successful (Dual): Baseline NC Dist = {self.baseline_nose_chin_distance:.1f}, Shoulder Width = {self.baseline_shoulder_width:.1f}")
@@ -472,11 +556,16 @@ class AgentPipeline:
                     sh_mid_y = face_center_y + eye_dist * 3.0
                     
                 if not self.is_calibrated:
+                    face_dict_list = [{"x": l.x, "y": l.y} for l in landmarks.landmark] if landmarks else None
+                    pose_dict_list = [{"x": l.x, "y": l.y} for l in pose_landmarks.landmark] if pose_landmarks else None
+
                     calibration_result = self.wizard.process(
                         eye_dist, nc_dist,
                         current_shoulder_width=sh_width,
                         current_shoulder_midpoint_x=sh_mid_x,
-                        current_shoulder_midpoint_y=sh_mid_y
+                        current_shoulder_midpoint_y=sh_mid_y,
+                        face_landmarks=face_dict_list,
+                        pose_landmarks=pose_dict_list
                     )
                     self.state.update_status(
                         calibrating=True,
@@ -488,6 +577,17 @@ class AgentPipeline:
                         self.baseline_shoulder_width = calibration_result.baseline_shoulder_width
                         self.baseline_shoulder_midpoint_x = calibration_result.baseline_shoulder_midpoint_x
                         self.baseline_shoulder_midpoint_y = calibration_result.baseline_shoulder_midpoint_y
+                        self.baseline_face_landmarks = calibration_result.baseline_face_landmarks
+                        self.baseline_pose_landmarks = calibration_result.baseline_pose_landmarks
+                        
+                        self.baselines = {
+                            "eye_distance": self.baseline_eye_distance,
+                            "nose_chin_distance": self.baseline_nose_chin_distance,
+                            "shoulder_width": self.baseline_shoulder_width,
+                            "face_landmarks": self.baseline_face_landmarks,
+                            "pose_landmarks": self.baseline_pose_landmarks
+                        }
+                        
                         self.is_calibrated = True
                         self.state.update_status(baseline_eye_dist=self.baseline_eye_distance)
                         logger.success(f"Calibration successful: Baseline NC Dist = {self.baseline_nose_chin_distance:.1f}, Shoulder Width = {self.baseline_shoulder_width:.1f}")
