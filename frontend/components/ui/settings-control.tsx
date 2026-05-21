@@ -10,23 +10,25 @@ interface SettingsControlProps {
 }
 
 export function SettingsControl({ className }: SettingsControlProps) {
-    const [threshold, setThreshold] = useState(30);
-    const [yawTolerance, setYawTolerance] = useState(20);
+    const [prefs, setPrefs] = useState<Record<string, number>>({});
     const [isSaving, setIsSaving] = useState(false);
     const [isRecalibrating, setIsRecalibrating] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
+    const [skills, setSkills] = useState<any[]>([]);
 
-    // Fetch current settings on mount
     const fetchSettings = useCallback(async () => {
         try {
-            const res = await fetch("http://localhost:5001/settings");
+            const res = await fetch("http://localhost:5001/status");
+            const skillsRes = await fetch("http://localhost:5001/api/skills");
             if (res.ok) {
                 const data = await res.json();
-                setThreshold(data.threshold);
-                setYawTolerance(data.yaw_tolerance);
+                setPrefs(data.prefs || {});
+            }
+            if (skillsRes.ok) {
+                const s = await skillsRes.json();
+                setSkills(s);
             }
         } catch {
-            // Ignore errors
         }
     }, []);
 
@@ -34,14 +36,18 @@ export function SettingsControl({ className }: SettingsControlProps) {
         fetchSettings();
     }, [fetchSettings]);
 
+    const handlePrefChange = (key: string, val: number) => {
+        setPrefs(p => ({ ...p, [key]: val }));
+    };
+
     const saveSettings = async () => {
         setIsSaving(true);
         setMessage(null);
         try {
-            const res = await fetch("http://localhost:5001/settings", {
+            const res = await fetch("http://localhost:5001/api/settings/update", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ threshold, yaw_tolerance: yawTolerance }),
+                body: JSON.stringify(prefs),
             });
             if (res.ok) {
                 setMessage("設定已儲存");
@@ -72,81 +78,45 @@ export function SettingsControl({ className }: SettingsControlProps) {
 
     return (
         <div className={cn("space-y-4", className)}>
-            {/* Threshold Slider */}
-            <div>
-                <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm text-slate-400 flex items-center gap-2">
-                        <Sliders className="w-4 h-4" />
-                        低頭偵測靈敏度
-                    </label>
-                    <span className="text-sm font-mono text-white">{threshold}%</span>
+            {skills.map(skill => (
+                <div key={skill.name} className="space-y-2 mb-4 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                    <h3 className="text-xs font-bold text-slate-300 uppercase">{skill.name} 靈敏度</h3>
+                    {Object.keys(skill.default_preferences || {}).map(key => {
+                        const val = prefs[key] !== undefined ? prefs[key] : skill.default_preferences[key];
+                        const sliderVal = Math.round(val * 100);
+                        const minRange = (skill.default_preferences[key] < 0) ? -100 : 0;
+                        return (
+                            <div key={key}>
+                                <div className="flex justify-between items-center mb-1">
+                                    <label className="text-xs text-slate-400">{key}</label>
+                                    <span className="text-xs font-mono text-white">{sliderVal}%</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min={minRange}
+                                    max="100"
+                                    value={sliderVal}
+                                    onChange={(e) => handlePrefChange(key, Number(e.target.value) / 100)}
+                                    className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-violet-500"
+                                />
+                            </div>
+                        );
+                    })}
                 </div>
-                <input
-                    type="range"
-                    min="10"
-                    max="60"
-                    value={threshold}
-                    onChange={(e) => setThreshold(Number(e.target.value))}
-                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-violet-500"
-                />
-                <div className="flex justify-between mt-1 text-[10px] text-slate-500">
-                    <span>敏感</span>
-                    <span>寬鬆</span>
-                </div>
-            </div>
+            ))}
 
-            {/* Yaw Tolerance Slider */}
-            <div>
-                <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm text-slate-400">轉頭容忍度</label>
-                    <span className="text-sm font-mono text-white">{yawTolerance}%</span>
-                </div>
-                <input
-                    type="range"
-                    min="10"
-                    max="40"
-                    value={yawTolerance}
-                    onChange={(e) => setYawTolerance(Number(e.target.value))}
-                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
-                />
-                <div className="flex justify-between mt-1 text-[10px] text-slate-500">
-                    <span>嚴格</span>
-                    <span>寬鬆</span>
-                </div>
-            </div>
-
-            {/* Buttons */}
             <div className="flex gap-2 pt-2">
-                <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={saveSettings}
-                    disabled={isSaving}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors disabled:opacity-50"
-                >
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={saveSettings} disabled={isSaving} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors disabled:opacity-50">
                     <Save className="w-4 h-4" />
                     {isSaving ? "儲存中..." : "套用設定"}
                 </motion.button>
-
-                <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={triggerRecalibrate}
-                    disabled={isRecalibrating}
-                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-medium transition-colors disabled:opacity-50"
-                >
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={triggerRecalibrate} disabled={isRecalibrating} className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-medium transition-colors disabled:opacity-50">
                     <RotateCcw className={cn("w-4 h-4", isRecalibrating && "animate-spin")} />
                     重新校準
                 </motion.button>
             </div>
-
-            {/* Message */}
             {message && (
-                <motion.p
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-center text-sm text-emerald-400"
-                >
+                <motion.p initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="text-center text-sm text-emerald-400">
                     {message}
                 </motion.p>
             )}

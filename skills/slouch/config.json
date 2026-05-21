@@ -1,13 +1,13 @@
 {
   "name": "slouch",
-  "description": "駝背/低頭偵測 (基於鼻尖至下巴距離縮短)",
+  "description": "鼻子、下巴檢測縮短（低頭）",
   "enabled": true,
   "requirements": {
     "face_mesh": true,
     "pose": false
   },
+  "rule_syntax": "f1,f152 >< num=20%",
   "default_preferences": {
-    "threshold_ratio": 0.20,
-    "yaw_tolerance": 0.10
+    "slouch_threshold": 0.2
   }
 }

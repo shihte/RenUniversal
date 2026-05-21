@@ -1,0 +1,13 @@
+{
+  "name": "turn",
+  "description": "兩眼檢測縮短（轉頭）",
+  "enabled": true,
+  "requirements": {
+    "face_mesh": true,
+    "pose": false
+  },
+  "rule_syntax": "f33,f263 >< num=20%",
+  "default_preferences": {
+    "turn_threshold": 0.2
+  }
+}

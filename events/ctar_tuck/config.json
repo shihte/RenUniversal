@@ -1,0 +1,7 @@
+{
+  "name": "ctar_tuck",
+  "description": "有效下巴內收 (低頭且未轉頭、未前傾)",
+  "enabled": true,
+  "rule_syntax": "slouch AND (NOT turn) AND (NOT lean)",
+  "default_preferences": {}
+}

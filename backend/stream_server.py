@@ -5,6 +5,7 @@ import threading
 import socket
 import subprocess
 import re
+import json
 from flask import Flask, Response, jsonify, request, send_from_directory
 from flask_cors import CORS
 import cv2
@@ -118,8 +119,11 @@ def generate_mjpeg_stream():
     while True:
         frame = state.get_frame()
         if frame is None:
-            time.sleep(0.1)
-            continue
+            # Generate a black placeholder image with text
+            import numpy as np
+            frame = np.zeros((480, 640, 3), dtype=np.uint8)
+            cv2.putText(frame, "CAMERA OFFLINE OR LOADING...", (50, 240), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            time.sleep(1.0) # Slow down placeholder streaming
             
         ret, buf = cv2.imencode('.jpg', frame)
         if not ret:
@@ -276,6 +280,7 @@ def create_skill():
         requirements = req_data.get("requirements", {"face_mesh": True, "pose": False})
         rules = req_data.get("rules", [])
         default_prefs = req_data.get("default_preferences", {"threshold": 0.10})
+        is_update = req_data.get("is_update", False)
         
         if not name:
             return jsonify({"error": "Skill name is required"}), 400
@@ -287,7 +292,7 @@ def create_skill():
             
         skills_dir = os.path.join(PROJECT_ROOT, 'skills')
         target_dir = os.path.join(skills_dir, safe_name)
-        if os.path.exists(target_dir):
+        if os.path.exists(target_dir) and not is_update:
             return jsonify({"error": f"Skill '{safe_name}' already exists"}), 400
             
         os.makedirs(target_dir, exist_ok=True)
@@ -359,9 +364,7 @@ def delete_skill():
         if not name:
             return jsonify({"error": "Skill name is required"}), 400
             
-        # Protect default built-in skills from deletion
-        if name in ("slouch", "sway", "lean"):
-            return jsonify({"error": "Cannot delete built-in core skills"}), 400
+        # Removing built-in specific skill protection to support generic architecture
             
         skills_dir = os.path.join(PROJECT_ROOT, 'skills')
         target_dir = os.path.join(skills_dir, name)
@@ -374,6 +377,134 @@ def delete_skill():
         pipeline = service_context.get("pipeline")
         if pipeline and hasattr(pipeline, 'action_engine'):
             pipeline.action_engine.load_action_skills()
+            
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/events', methods=['GET'])
+def list_events():
+    try:
+        events_dir = os.path.join(PROJECT_ROOT, 'events')
+        if not os.path.exists(events_dir):
+            os.makedirs(events_dir, exist_ok=True)
+        results = []
+        for d in os.listdir(events_dir):
+            cfg_path = os.path.join(events_dir, d, 'config.json')
+            if os.path.exists(cfg_path):
+                try:
+                    with open(cfg_path, 'r', encoding='utf-8') as f:
+                        cfg = json.load(f)
+                        results.append(cfg)
+                except Exception as ex:
+                    logger.error(f"Error reading event {d} config: {ex}")
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/events/create', methods=['POST'])
+def create_event():
+    try:
+        req_data = request.get_json()
+        name = req_data.get("name")
+        description = req_data.get("description", "")
+        rule_syntax = req_data.get("rule_syntax", "")
+        rules = req_data.get("rules", [])
+        is_update = req_data.get("is_update", False)
+        
+        # Backwards compatibility fallback: extract rule_syntax from rules list if empty
+        if not rule_syntax:
+            if isinstance(rules, list) and len(rules) > 0:
+                rule_syntax = rules[0]
+            elif isinstance(rules, str):
+                rule_syntax = rules
+                
+        if not name:
+            return jsonify({"error": "Event name is required"}), 400
+        if not rule_syntax:
+            return jsonify({"error": "Rule syntax is required"}), 400
+            
+        safe_name = "".join([c for c in name if c.isalnum() or c in ('_', '-')]).lower()
+        if not safe_name:
+            return jsonify({"error": "Invalid event name"}), 400
+            
+        events_dir = os.path.join(PROJECT_ROOT, 'events')
+        target_dir = os.path.join(events_dir, safe_name)
+        if os.path.exists(target_dir) and not is_update:
+            return jsonify({"error": f"Event rule '{safe_name}' already exists"}), 400
+            
+        os.makedirs(target_dir, exist_ok=True)
+        
+        cfg = {
+            "name": safe_name,
+            "description": description,
+            "enabled": True,
+            "rule_syntax": rule_syntax,
+            "rules": [rule_syntax]  # Keep rules list for frontend display
+        }
+        with open(os.path.join(target_dir, 'config.json'), 'w', encoding='utf-8') as f:
+            json.dump(cfg, f, indent=2, ensure_ascii=False)
+            
+        # Trigger reload in event engine
+        pipeline = service_context.get("pipeline")
+        if pipeline and hasattr(pipeline, 'event_engine'):
+            pipeline.event_engine.reload()
+            
+        return jsonify({"success": True, "event": cfg})
+    except Exception as e:
+        logger.error(f"Error creating event: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/events/toggle', methods=['POST'])
+def toggle_event():
+    try:
+        req_data = request.get_json()
+        name = req_data.get("name")
+        enabled = req_data.get("enabled", True)
+        
+        if not name:
+            return jsonify({"error": "Event name is required"}), 400
+            
+        events_dir = os.path.join(PROJECT_ROOT, 'events')
+        cfg_path = os.path.join(events_dir, name, 'config.json')
+        if not os.path.exists(cfg_path):
+            return jsonify({"error": f"Event '{name}' not found"}), 404
+            
+        with open(cfg_path, 'r', encoding='utf-8') as f:
+            cfg = json.load(f)
+            
+        cfg["enabled"] = enabled
+        
+        with open(cfg_path, 'w', encoding='utf-8') as f:
+            json.dump(cfg, f, indent=2, ensure_ascii=False)
+            
+        pipeline = service_context.get("pipeline")
+        if pipeline and hasattr(pipeline, 'event_engine'):
+            pipeline.event_engine.reload()
+            
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/events/delete', methods=['POST'])
+def delete_event():
+    try:
+        req_data = request.get_json()
+        name = req_data.get("name")
+        
+        if not name:
+            return jsonify({"error": "Event name is required"}), 400
+            
+        events_dir = os.path.join(PROJECT_ROOT, 'events')
+        target_dir = os.path.join(events_dir, name)
+        if not os.path.exists(target_dir):
+            return jsonify({"error": f"Event '{name}' not found"}), 404
+            
+        shutil.rmtree(target_dir)
+        
+        pipeline = service_context.get("pipeline")
+        if pipeline and hasattr(pipeline, 'event_engine'):
+            pipeline.event_engine.reload()
             
         return jsonify({"success": True})
     except Exception as e:

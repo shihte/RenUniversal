@@ -309,7 +309,15 @@
                     <span class="metric-val" id="fpsVal">0 FPS</span>
                 </div>
                 <div class="metric-item">
-                    <span style        const video = document.getElementById('video');
+                    <span style="color: var(--text-muted);">傳送延遲</span>
+                    <span class="metric-val" id="latencyVal">0 ms</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
         const cameraSelect = document.getElementById('cameraSelect');
         const mirrorStream = document.getElementById('mirrorStream');
         const streamBtn = document.getElementById('streamBtn');

@@ -38,7 +38,7 @@ class ActionEngine:
                 config_path = os.path.join(item_path, "config.json")
                 logic_path = os.path.join(item_path, "logic.py")
                 
-                if os.path.exists(config_path) and os.path.exists(logic_path):
+                if os.path.exists(config_path):
                     try:
                         with open(config_path, "r", encoding="utf-8") as f:
                             config = json.load(f)
@@ -47,21 +47,27 @@ class ActionEngine:
                             logger.info(f"Action skill {item} is disabled in config.")
                             continue
 
-                        # 動態載入 Python 模組
-                        module_name = f"skills_{item}"
-                        spec = importlib.util.spec_from_file_location(module_name, logic_path)
-                        if spec is None or spec.loader is None:
-                            continue
-                            
-                        module = importlib.util.module_from_spec(spec)
-                        spec.loader.exec_module(module)
+                        if os.path.exists(logic_path):
+                            # 動態載入 Python 模組
+                            module_name = f"skills_{item}"
+                            spec = importlib.util.spec_from_file_location(module_name, logic_path)
+                            if spec is None or spec.loader is None:
+                                continue
+                                
+                            module = importlib.util.module_from_spec(spec)
+                            spec.loader.exec_module(module)
 
-                        if hasattr(module, "ActionDetector"):
-                            detector_class = getattr(module, "ActionDetector")
-                            self.detectors[item] = detector_class(config)
-                            logger.success(f"Successfully loaded Action Judgment Package: {config.get('name', item)} ({item})")
+                            if hasattr(module, "ActionDetector"):
+                                detector_class = getattr(module, "ActionDetector")
+                                self.detectors[item] = detector_class(config)
+                                logger.success(f"Successfully loaded Action Judgment Package: {config.get('name', item)} ({item})")
+                            else:
+                                logger.error(f"Module {item} logic.py does not define 'ActionDetector' class.")
                         else:
-                            logger.error(f"Module {item} logic.py does not define 'ActionDetector' class.")
+                            # Use generic skill detector for UI created skills
+                            from backend.core.generic_skill_detector import GenericActionDetector
+                            self.detectors[item] = GenericActionDetector(config)
+                            logger.success(f"Successfully loaded Generic Action Judgment Package: {config.get('name', item)} ({item})")
                     except Exception as e:
                         logger.error(f"Failed to dynamically load action package {item}: {e}")
 
