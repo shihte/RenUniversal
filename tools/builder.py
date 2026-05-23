@@ -64,7 +64,7 @@ def main():
                 continue
             basename = os.path.basename(os.path.normpath(event_path))
             dst = os.path.join(out_dir, "events", basename)
-            shutil.copy2(event_path, dst)
+            shutil.copytree(event_path, dst)
             manifest["events"].append(f"events/{basename}")
             print(f"    -> 加入: {event_path}")
 
