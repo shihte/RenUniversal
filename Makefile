@@ -56,6 +56,7 @@ help:
 	@echo "  make test     — 執行架構驗證測試"
 	@echo "  make clean    — 清除快取、日誌與 PID 檔案"
 	@echo "  make install PATH=<dir> — 安裝 .renuniversal 外掛套件"
+	@echo "  make build --name <N> --skills <S> --events <E> --apps <A> — 打包自訂外掛"
 	@echo ""
 
 # ============================================================
@@ -397,3 +398,15 @@ install:
 		echo "✗ 找不到虛擬環境。執行 'make setup'。"; exit 1; \
 	fi
 	@$(VENV_PYTHON) tools/installer.py "$(PATH)"
+
+# ============================================================
+# BUILD PLUGIN
+# ============================================================
+build:
+	@if [ -z "$(NAME)" ]; then \
+		echo "✗ 請提供外掛名稱，例如：make build NAME=MyPlugin SKILLS=skills/lean"; exit 1; \
+	fi
+	@if [ ! -f "$(VENV_PYTHON)" ]; then \
+		echo "✗ 找不到虛擬環境。執行 'make setup'。"; exit 1; \
+	fi
+	@$(VENV_PYTHON) tools/builder.py --name "$(NAME)" --skills $(SKILLS) --events $(EVENTS) --apps $(APPS)
