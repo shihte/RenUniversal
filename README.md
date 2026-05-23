@@ -1,44 +1,29 @@
-# 🚀 CTAR：次世代分散式智慧姿態監控代理系統 (Next-Gen AI Posture Agent)
+# 🚀 CTAR：智慧下巴內縮抗阻力復健監控系統 (AI Chin-tuck Against Resistance Monitor)
 
 [![Python](https://img.shields.io/badge/Python-3.8--3.11-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/)
 [![MediaPipe](https://img.shields.io/badge/MediaPipe-Latest-teal.svg?style=for-the-badge&logo=google)](https://mediapipe.dev/)
 [![Architecture](https://img.shields.io/badge/Architecture-Agentic--Modular-orange.svg?style=for-the-badge)](https://github.com/shihte/CTAR)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 
-**CTAR (Cybernetic Tracking & Analysis Repository)** 是一個基於電腦視覺邊緣運算（Edge Computing）與多代理人（Agent）架構的生理姿態回饋與即時監控系統。系統摒棄了傳統的硬編碼、線性判定邏輯，採用模組化插件架構（Agent Skills）、強型別幾何特徵交換協議以及雙執行緒非同步流水線，可在低耗能邊緣設備上實現高精度的三維頭部與軀幹姿態估算。
+**CTAR（Chin-tuck Against Resistance，下巴內縮抗阻力運動）** 是一種專業的吞嚥復健訓練。透過對抗阻力，能有效強化舌骨上肌群，改善喉部上提不足及上食道括約肌運動，幫助吞嚥障礙患者恢復由口進食。
+
+本專案是一個基於電腦視覺邊緣運算（Edge Computing）的 **AI 生理姿態回饋與即時監控系統**，專為輔助患者在進行 CTAR 訓練（如夾球等長與等動運動）時，提供正確的頭部、下巴及軀幹姿態即時評估。
+
+系統摒棄了傳統的硬編碼與線性判定邏輯，導入了高度模組化與高通用性的 **多代理人技能架構（Agent Skills Architecture）**，使臨床人員或開發者能輕易抽換、擴充不同的姿態判定邏輯。
 
 ---
 
-## 🔬 核心技術與演算法設計
+## 🔬 核心技術與模組化通用架構 (Modularity & Generalizability)
 
-### 1. 影像擷取線程與硬體抽象 (VideoCaptureService)
-*   **非同步雙緩衝 (Asymmetric Double Buffering)**：`VideoCaptureSkill` 透過獨立讀取線程運行，限制 OpenCV 內部緩衝區，配合 `threading.Lock` 確保 30Hz 串流讀取無 I/O 阻塞，降低延遲至微秒級。
-*   **自癒重連 (Self-Healing Recovery)**：內建指數退避（Exponential Backoff）與故障狀態檢測，當相機斷開或 USB 訊號中斷時，能自動釋放資源並於背景嘗試重新連接。
+### 1. 動態插件規則引擎 (Action & Event Engine)
+本系統的極致通用性建立在其**「技能模組化 (Skills Modularity)」**與**「事件分離 (Event Pipeline)」**設計上：
+*   **熱插拔技能 (Hot-Pluggable Agent Skills)**：`ActionEngine` 於運行時會動態反射式掃描 `skills/` 目錄下的判定包（例如：低頭 `lean`、駝背 `slouch`、轉頭 `turn` 等）。開發者只需繼承統一的 `SkillTemplate` 介面新增目錄，無需重寫編譯核心框架，即可為系統擴充全新的身體動作特徵判定。
+*   **高階事件組合 (Event Engine)**：底層偵測到的單一動作特徵（如：低頭達標、無代償轉頭等），會被傳遞給 Event Engine 進行高階邏輯判定。這種底層「特徵 (Skills)」與高層「事件 (Events)」解耦的設計，讓系統不再侷限於 CTAR，可以輕易泛化 (Generalize) 應用於各類復健運動評估。
 
 ### 2. 三維姿態幾何評估演算法 (Feature Vector Mathematics)
-系統利用 MediaPipe Landmark 模型提取的特徵座標進行三維空间向量投影，以量化人體生理姿態：
+系統利用 MediaPipe Landmark 提取特徵座標進行三維向量投影，量化人體生理姿態（例如計算鼻尖與下巴的垂直比例變化來判定低頭角度，或是肩峰點連線斜率以偵測軀幹代償偏移）。同時內建**磁滯抗噪濾波器 (Hysteresis Filter)**，防止臨界狀態震盪，大幅降低高頻環境抖動引起的誤報。
 
-*   **低頭比例 (Nose-Chin Ratio - 俯仰角估算)**：
-    評估頭部前傾程度，藉由鼻尖（Nose, Landmark 4）與下巴（Chin, Landmark 152）在投影面上的垂直長度比率變化估算：
-    $$\text{Ratio} = \frac{(y_{\text{chin}} - y_{\text{nose}}) - d_{\text{baseline}}}{d_{\text{baseline}}}$$
-    當頭部俯仰角增加（低頭），該比率將呈現負值偏離。
-
-*   **頭部偏轉比 (Yaw Deviation - 偏航角估算)**：
-    計算左右眼角外側（Landmarks 33, 263）相對於鼻尖的水平間距比率，以此估算左右擺頭角度：
-    $$\text{Yaw} = \frac{x_{\text{nose}} - x_{\text{left\_eye}}}{x_{\text{right\_eye}} - x_{\text{left\_eye}}} - 0.5$$
-
-*   **肩部傾斜度 (Shoulder Slope - 側傾角估算)**：
-    計算左右肩峰點（Pose Landmarks 11, 12）連線的斜率：
-    $$\text{Slope} = \frac{y_{\text{right\_shoulder}} - y_{\text{left\_shoulder}}}{x_{\text{right\_shoulder}} - x_{\text{left\_shoulder}}}$$
-
-*   **磁滯抗噪濾波器 (Hysteresis Filter)**：
-    為了防止臨界值狀態下的狀態震盪，系統對狀態變更實作了磁滯區間限制（邊界補償），降低高頻環境抖動引起的誤報率。
-
-### 3. 動態插件規則引擎 (Action Judgment Engine)
-*   **動態插件發現 (Dynamic Plugin Discovery)**：`ActionEngine` 會於運行時反射式掃描 `skills/` 底下的所有動作判斷包，加載其 `config.json` 設定，無需重寫編譯即可擴充新型態的姿態判定。
-*   **強型別 I/O 驗證**：利用 Pydantic 2.0 進行資料格式驗證，保證所有 Skills 在傳遞與接收姿態變數時的結構一致性。
-
----
+### 3. 影像擷取線程與硬體抽象 (VideoCaptureService)
 
 ## 🛠 開發先前條件 (Prerequisites)
 
