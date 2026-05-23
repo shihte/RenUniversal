@@ -144,9 +144,14 @@ def serve_skills():
 def serve_events():
     return send_from_directory(WEB_DIR, 'events.html')
 
-@app.route('/game')
-def serve_game():
-    return send_from_directory(WEB_DIR, 'Game.html')
+@app.route('/apps')
+def serve_apps_launcher():
+    return send_from_directory(WEB_DIR, 'apps_launcher.html')
+
+@app.route('/app/<filename>')
+def serve_app(filename):
+    safe_filename = "".join(c for c in filename if c.isalnum() or c in ('_', '-'))
+    return send_from_directory(os.path.join(WEB_DIR, 'apps'), f"{safe_filename}.html")
 
 @app.route('/tailwind.js')
 def serve_tailwind():
@@ -523,6 +528,45 @@ def delete_event():
             pipeline.event_engine.reload()
             
         return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/apps', methods=['GET'])
+def list_apps():
+    try:
+        apps_dir = os.path.join(WEB_DIR, 'apps')
+        if not os.path.exists(apps_dir):
+            os.makedirs(apps_dir, exist_ok=True)
+            
+        results = []
+        for file in os.listdir(apps_dir):
+            if file.endswith('.html'):
+                file_path = os.path.join(apps_dir, file)
+                app_id = file[:-5]
+                title = app_id
+                description = "無說明 / No description"
+                
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                        
+                        t_match = re.search(r'<title>(.*?)</title>', content, re.IGNORECASE | re.DOTALL)
+                        if t_match:
+                            title = t_match.group(1).strip()
+                            
+                        d_match = re.search(r'<meta\s+name=["\']description["\']\s+content=["\']([^"\']+)["\']', content, re.IGNORECASE)
+                        if d_match:
+                            description = d_match.group(1).strip()
+                except Exception as ex:
+                    logger.error(f"Error reading app {file}: {ex}")
+                    
+                results.append({
+                    "id": app_id,
+                    "title": title,
+                    "description": description
+                })
+                
+        return jsonify(results)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
