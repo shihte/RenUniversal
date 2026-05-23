@@ -1,13 +1,13 @@
-# 🚀 CTAR：智慧下巴內縮抗阻力復健監控系統 (AI Chin-tuck Against Resistance Monitor)
+# 🚀 RenUniversal：智慧下巴內縮抗阻力復健監控系統 (AI Chin-tuck Against Resistance Monitor)
 
 [![Python](https://img.shields.io/badge/Python-3.8--3.11-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/)
 [![MediaPipe](https://img.shields.io/badge/MediaPipe-Latest-teal.svg?style=for-the-badge&logo=google)](https://mediapipe.dev/)
-[![Architecture](https://img.shields.io/badge/Architecture-Agentic--Modular-orange.svg?style=for-the-badge)](https://github.com/shihte/CTAR)
+[![Architecture](https://img.shields.io/badge/Architecture-Agentic--Modular-orange.svg?style=for-the-badge)](https://github.com/shihte/RenUniversal)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 
-**CTAR（Chin-tuck Against Resistance，下巴內縮抗阻力運動）** 是一種專業的吞嚥復健訓練。透過對抗阻力，能有效強化舌骨上肌群，改善喉部上提不足及上食道括約肌運動，幫助吞嚥障礙患者恢復由口進食。
+**RenUniversal（Chin-tuck Against Resistance，下巴內縮抗阻力運動）** 是一種專業的吞嚥復健訓練。透過對抗阻力，能有效強化舌骨上肌群，改善喉部上提不足及上食道括約肌運動，幫助吞嚥障礙患者恢復由口進食。
 
-本專案是一個基於電腦視覺邊緣運算（Edge Computing）的 **AI 生理姿態回饋與即時監控系統**，專為輔助患者在進行 CTAR 訓練（如夾球等長與等動運動）時，提供正確的頭部、下巴及軀幹姿態即時評估。
+本專案是一個基於電腦視覺邊緣運算（Edge Computing）的 **AI 生理姿態回饋與即時監控系統**，專為輔助患者在進行 RenUniversal 訓練（如夾球等長與等動運動）時，提供正確的頭部、下巴及軀幹姿態即時評估。
 
 系統摒棄了傳統的硬編碼與線性判定邏輯，導入了高度模組化與高通用性的 **多代理人技能架構（Agent Skills Architecture）**，使臨床人員或開發者能輕易抽換、擴充不同的姿態判定邏輯。
 
@@ -18,7 +18,7 @@
 ### 1. 動態插件規則引擎 (Action & Event Engine)
 本系統的極致通用性建立在其**「技能模組化 (Skills Modularity)」**與**「事件分離 (Event Pipeline)」**設計上：
 *   **熱插拔技能 (Hot-Pluggable Agent Skills)**：`ActionEngine` 於運行時會動態反射式掃描 `skills/` 目錄下的判定包（例如：低頭 `lean`、駝背 `slouch`、轉頭 `turn` 等）。開發者只需繼承統一的 `SkillTemplate` 介面新增目錄，無需重寫編譯核心框架，即可為系統擴充全新的身體動作特徵判定。
-*   **高階事件組合 (Event Engine)**：底層偵測到的單一動作特徵（如：低頭達標、無代償轉頭等），會被傳遞給 Event Engine 進行高階邏輯判定。這種底層「特徵 (Skills)」與高層「事件 (Events)」解耦的設計，讓系統不再侷限於 CTAR，可以輕易泛化 (Generalize) 應用於各類復健運動評估。
+*   **高階事件組合 (Event Engine)**：底層偵測到的單一動作特徵（如：低頭達標、無代償轉頭等），會被傳遞給 Event Engine 進行高階邏輯判定。這種底層「特徵 (Skills)」與高層「事件 (Events)」解耦的設計，讓系統不再侷限於 RenUniversal，可以輕易泛化 (Generalize) 應用於各類復健運動評估。
 
 ### 2. 三維姿態幾何評估演算法 (Feature Vector Mathematics)
 系統利用 MediaPipe Landmark 提取特徵座標進行三維向量投影，量化人體生理姿態（例如計算鼻尖與下巴的垂直比例變化來判定低頭角度，或是肩峰點連線斜率以偵測軀幹代償偏移）。同時內建**磁滯抗噪濾波器 (Hysteresis Filter)**，防止臨界狀態震盪，大幅降低高頻環境抖動引起的誤報。
@@ -46,8 +46,8 @@
 
 ### 1. 複製專案庫
 ```bash
-git clone https://github.com/shihte/CTAR.git
-cd CTAR
+git clone https://github.com/shihte/RenUniversal.git
+cd RenUniversal
 ```
 
 ### 2. 環境初始化與依賴安裝
@@ -64,12 +64,12 @@ make setup
     *   終止背景服務：`make stop`
     *   架構合規性測試：`make test`
 
-*   **Windows 用戶 (使用 ctar.bat)**：
-    Windows 原生環境對 Makefile 支援較差，請改用專屬的 `ctar.bat` 腳本：
-    1.  初始化環境與安裝：在命令提示字元 (cmd) 執行 `ctar.bat setup`
-    2.  啟動伺服器：執行 `ctar.bat run`
-    3.  執行測試：執行 `ctar.bat test`
-    4.  清除暫存：執行 `ctar.bat clean`
+*   **Windows 用戶 (使用 renuniversal.bat)**：
+    Windows 原生環境對 Makefile 支援較差，請改用專屬的 `renuniversal.bat` 腳本：
+    1.  初始化環境與安裝：在命令提示字元 (cmd) 執行 `renuniversal.bat setup`
+    2.  啟動伺服器：執行 `renuniversal.bat run`
+    3.  執行測試：執行 `renuniversal.bat test`
+    4.  清除暫存：執行 `renuniversal.bat clean`
 
 ---
 
