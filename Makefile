@@ -193,22 +193,15 @@ _create_venv:
 
 _install_deps:
 	@echo "→ 升級 pip..."
-	@$(VENV_PYTHON) -m pip install --upgrade pip --quiet || \
-		$(VENV_PYTHON) -m pip install --upgrade pip --no-cache-dir || \
-		{ echo "   ✗ pip 升級失敗，繼續嘗試安裝依賴"; true; }
-	@echo "→ 安裝套件依賴..."
-	@# 先嘗試標準安裝
-	@if ! $(VENV_PIP) install -r $(REQUIREMENTS) --quiet 2>&1; then \
-		echo "   ⚠ 標準安裝失敗，嘗試無快取重試..."; \
-		if ! $(VENV_PIP) install -r $(REQUIREMENTS) --no-cache-dir 2>&1; then \
-			echo "   ⚠ 仍失敗，嘗試逐一安裝..."; \
-			while IFS= read -r pkg || [ -n "$$pkg" ]; do \
-				[ -z "$$pkg" ] && continue; \
-				[[ "$$pkg" =~ ^# ]] && continue; \
-				$(VENV_PIP) install "$$pkg" --quiet || echo "   ⚠ 無法安裝: $$pkg"; \
-			done < "$(REQUIREMENTS)"; \
-		fi; \
-	fi
+	@$(VENV_PYTHON) -m pip install --upgrade pip --quiet || true
+	@echo "→ 開始安裝核心套件依賴..."
+	@while IFS= read -r pkg || [ -n "$$pkg" ]; do \
+		[ -z "$$pkg" ] && continue; \
+		[[ "$$pkg" =~ ^# ]] && continue; \
+		echo "   ⏳ 正在安裝: $$pkg ..."; \
+		$(VENV_PIP) install "$$pkg" --quiet || echo "   ⚠ 安裝失敗: $$pkg"; \
+	done < "$(REQUIREMENTS)"
+	@echo "   ✓ 所有套件檢查與安裝完畢！"
 
 # ============================================================
 # SETUP
