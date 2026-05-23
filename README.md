@@ -126,3 +126,7 @@ make test
 *   **採樣頻率**：30Hz 恆定硬體捕獲與分析頻率
 *   **通訊協議**：MJPEG (影像) + RESTful / JSON (狀態與參數設定)
 *   **儲存持久化**：JSON 本地輕量化狀態紀錄器 (`preferences.json`)
+
+### 新增功能 (Latest Updates)
+*   **Dual-Camera Mobile WiFi Streaming**: 支援同時接收電腦預設鏡頭 (Local Camera) 與手機網路串流 (Mobile WiFi Stream)，並透過 `cv2.hconcat` 於邊緣端自動進行畫面縫合 (Stitching)，達到一鏡負責臉部特徵 (FaceMesh)、一鏡負責身體骨架 (Pose) 的進階雙相機評估架構。
+*   **UI 穩定性優化**: 修復前端相機選擇器 (Camera Sources) 的狀態覆寫問題，確保勾選操作流暢並自動連動校準程序。

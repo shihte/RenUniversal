@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union, List
 
 class DetectorStatus(BaseModel):
     """
@@ -26,7 +26,7 @@ class DetectorStatus(BaseModel):
     is_leaning_forward: bool = Field(False, description="Whether the user is leaning forward")
     sway_ratio: float = Field(0.0, description="Torso sway ratio percentage")
     lean_ratio: float = Field(0.0, description="Torso lean ratio percentage")
-    camera_source: str = Field("local_0", description="Selected camera source (local_0, local_1, phone, dual)")
+    camera_source: Union[str, List[str]] = Field("local_0", description="Selected camera source (local_0, local_1, phone, dual)")
     public_url: Optional[str] = Field(None, description="Public intranet tunnel URL")
     flip_enabled: bool = Field(True, description="Whether preview flipping is enabled")
     active_skills: dict = Field(default_factory=dict, description="States of all evaluated skills (e.g. {name: bool})")
@@ -42,7 +42,7 @@ class SettingsUpdate(BaseModel):
     yaw_tolerance: Optional[float] = None
     sway_threshold: Optional[float] = None
     lean_threshold: Optional[float] = None
-    camera_source: Optional[str] = None
+    camera_source: Optional[Union[str, List[str]]] = None
     flip_enabled: Optional[bool] = None
 
 class ControlCommand(BaseModel):

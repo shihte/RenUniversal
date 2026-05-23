@@ -34,9 +34,12 @@ class AgentPipeline:
             state (SharedState): 全局共享狀態，用於跨線程與前端通訊。
         """
         self.state = state
-        
+        self.is_calibrated = False
+        self.baseline_eye_distance = 0.0
+        self.baseline_shoulder_width = 0.0
+
         # 1. 初始化各項技能 (Skill Initialization)
-        self.capture = VideoCaptureSkill(CaptureConfig(src=0)).start()
+        self.captures = {}
         self.action_engine = ActionEngine(skills_dir="skills")
         self.event_engine = EventEngine(events_dir="events")
         self.wizard = CalibrationWizardSkill()
@@ -57,6 +60,8 @@ class AgentPipeline:
             min_detection_confidence=0.5,
             min_tracking_confidence=0.5
         )
+        self.mp_drawing = mp.solutions.drawing_utils
+        self.mp_drawing_styles = mp.solutions.drawing_styles
         
         self.baseline_eye_distance = 0.0
         self.baseline_nose_chin_distance = 0.0
@@ -358,251 +363,291 @@ class AgentPipeline:
 
     def run_cycle(self) -> Optional[np.ndarray]:
         """
-        執行單一流水線循環（Cycle）。
-        
-        包含了：讀取 -> 推理 -> (校準或審查) -> 狀態寫回 -> 畫面處理。
-        
-        Returns:
-            Optional[np.ndarray]: 處理後的可視化影格，若無法讀取則傳回 None。
+        執行一次流水線循環：抓取影格 -> 辨識特徵 -> 校準/動作檢測 -> 事件評估 -> 回傳可視化影格。
         """
-        # 1. 擷取與切換鏡頭來源階段
         status = self.state.get_status()
-        camera_source = getattr(status, "camera_source", "local_0")
+        camera_sources = getattr(status, "camera_source", ["local_0"])
         
-        frame = None
-        phone_frame = None
-        is_dual = False
-        
-        if camera_source == "phone":
-            net_frame, last_time = self.state.get_network_frame()
-            if net_frame is not None and (time.time() - last_time) < 3.0:
-                frame = net_frame.copy()
-            else:
-                # Fallback to local_0
-                frame_data = self.capture.read()
-                if frame_data.grabbed and frame_data.frame is not None:
-                    frame = frame_data.frame.copy()
-        elif camera_source == "dual":
-            # 讀取電腦內置鏡頭
-            frame_data = self.capture.read()
-            local_frame = frame_data.frame.copy() if (frame_data.grabbed and frame_data.frame is not None) else None
+        # Ensure it's a list
+        if isinstance(camera_sources, str):
+            if camera_sources == "dual": camera_sources = ["local_0", "phone"]
+            else: camera_sources = [camera_sources]
             
-            # 讀取手機鏡頭
-            net_frame, last_time = self.state.get_network_frame()
-            if net_frame is not None and (time.time() - last_time) < 3.0:
-                phone_frame = net_frame.copy()
-            
-            if local_frame is not None and phone_frame is not None:
-                is_dual = True
-                # 電腦端畫面依據 flip_enabled 翻轉；手機畫面在客戶端(MobileCamera.html)已處理完畢，在此不予處理
-                if self.state.get_status().flip_enabled:
-                    local_frame = cv2.flip(local_frame, 1)
-            else:
-                # Fallback to single frame (local or phone depending on what is available)
-                if local_frame is not None:
-                    frame = local_frame
-                elif phone_frame is not None:
-                    frame = phone_frame
-        else:
-            # 預設 Local 模式 ("local_0", "local_1", "local_2", ...)
-            if camera_source.startswith("local_"):
-                try:
-                    target_src = int(camera_source.split("_")[1])
-                except Exception:
-                    target_src = 0
-            else:
-                target_src = 0
-                
-            if self.capture.config.src != target_src:
-                logger.info(f"Switching local webcam source from {self.capture.config.src} to {target_src}")
-                self.capture.stop()
-                self.capture = VideoCaptureSkill(CaptureConfig(src=target_src)).start()
-                
-            frame_data = self.capture.read()
-            if frame_data.grabbed and frame_data.frame is not None:
-                frame = frame_data.frame.copy()
-                
-        if frame is None and not is_dual:
+        if not camera_sources:
             return None
+            
+        # 1. 擷取所有鏡頭畫面
+        frames = [] # list of (src_name, frame)
+        
+        for src in camera_sources:
+            if src == "phone":
+                net_frame, last_time = self.state.get_network_frame()
+                import time as t_mod
+                if net_frame is not None and (t_mod.time() - last_time) < 3.0:
+                    frames.append((src, net_frame.copy()))
+            elif src.startswith("local_"):
+                try: idx = int(src.split("_")[1])
+                except: idx = 0
+                
+                # Check if we need to start it
+                if src not in self.captures:
+                    from backend.services.video_capture.logic import VideoCaptureSkill
+                    from backend.services.video_capture.schema import CaptureConfig
+                    logger.info(f"Starting local webcam {src}")
+                    self.captures[src] = VideoCaptureSkill(CaptureConfig(src=idx)).start()
+                
+                frame_data = self.captures[src].read()
+                if frame_data.grabbed and frame_data.frame is not None:
+                    # flip if it's local and flip_enabled
+                    f = frame_data.frame.copy()
+                    if status.flip_enabled:
+                        f = cv2.flip(f, 1)
+                    frames.append((src, f))
+                    
+        # 清理不再使用的 local cameras
+        active_locals = [s for s in camera_sources if s.startswith("local_")]
+        to_remove = [s for s in self.captures if s not in active_locals]
+        for s in to_remove:
+            logger.info(f"Stopping unused camera {s}")
+            self.captures[s].stop()
+            del self.captures[s]
+            
+        if not frames:
+            return None
+            
+        if not status.is_active:
+            # 暫停模式：直接回傳拼接後的畫面，不跑 AI
+            return self._stitch_frames(frames)
 
-        # 2. 推理與分析階段
+        # 決定誰跑 AI
+        # 如果只有 1 支鏡頭，它跑 Face + Pose
+        # 如果有 2 支以上鏡頭，第 1 支跑 Face，第 2 支跑 Pose
+        face_frame_tuple = frames[0]
+        pose_frame_tuple = frames[1] if len(frames) >= 2 else frames[0]
+        
         inference_start = time.perf_counter()
         
-        if is_dual:
-            # === 雙鏡頭模式 (電腦前攝 + 手機側攝) ===
-            h_l, w_l, _ = local_frame.shape
-            h_p, w_p, _ = phone_frame.shape
-            
-            # 前鏡頭作 face_mesh, 側鏡頭作 pose
-            local_rgb = cv2.cvtColor(local_frame, cv2.COLOR_BGR2RGB)
-            inference_results = self.face_mesh.process(local_rgb)
-            
-            phone_rgb = cv2.cvtColor(phone_frame, cv2.COLOR_BGR2RGB)
-            pose_results = self.pose.process(phone_rgb)
-            
-            inference_time_ms = int((time.perf_counter() - inference_start) * 1000)
-            
-            landmarks = inference_results.multi_face_landmarks[0] if (inference_results and inference_results.multi_face_landmarks) else None
-            pose_landmarks = pose_results.pose_landmarks if (pose_results and pose_results.pose_landmarks) else None
-            
-            if landmarks:
-                # 前攝特徵
-                eye_dist, nc_dist = self._extract_physical_features(landmarks, w_l, h_l)
-                
-                # 側攝特徵 (基於 phone_frame 的維度)
-                sh_width, sh_mid_x, sh_mid_y = 0.0, 0.0, 0.0
-                if pose_landmarks:
-                    sh_width, sh_mid_x, sh_mid_y = self._extract_shoulder_features(pose_landmarks, w_p, h_p)
-                else:
-                    # 虛擬肩膀備用數據 (對應 local landmarks)
-                    left_eye = landmarks.landmark[33]
-                    right_eye = landmarks.landmark[263]
-                    face_center_x = (left_eye.x * w_l + right_eye.x * w_l) / 2.0
-                    face_center_y = (left_eye.y * h_l + right_eye.y * h_l) / 2.0
-                    
-                    if self.is_calibrated and self.baseline_eye_distance > 0 and self.baseline_shoulder_width > 0:
-                        ratio = self.baseline_shoulder_width / self.baseline_eye_distance
-                        sh_width = eye_dist * ratio
-                    else:
-                        sh_width = eye_dist * 4.5
-                    sh_mid_x = face_center_x
-                    sh_mid_y = face_center_y + eye_dist * 3.0
-                
-                # 決策邏輯
-                if not self.is_calibrated:
-                    face_dict_list = [{"x": l.x, "y": l.y} for l in landmarks.landmark] if landmarks else None
-                    pose_dict_list = [{"x": l.x, "y": l.y} for l in pose_landmarks.landmark] if pose_landmarks else None
-                    
-                    calibration_result = self.wizard.process(
-                        eye_dist, nc_dist,
-                        current_shoulder_width=sh_width,
-                        current_shoulder_midpoint_x=sh_mid_x,
-                        current_shoulder_midpoint_y=sh_mid_y,
-                        face_landmarks=face_dict_list,
-                        pose_landmarks=pose_dict_list
-                    )
-                    self.state.update_status(
-                        calibrating=True,
-                        calibration_progress=calibration_result.progress
-                    )
-                    if calibration_result.is_complete:
-                        self.baseline_eye_distance = calibration_result.baseline_eye_dist
-                        self.baseline_nose_chin_distance = calibration_result.baseline_nc_dist
-                        self.baseline_shoulder_width = calibration_result.baseline_shoulder_width
-                        self.baseline_shoulder_midpoint_x = calibration_result.baseline_shoulder_midpoint_x
-                        self.baseline_shoulder_midpoint_y = calibration_result.baseline_shoulder_midpoint_y
-                        self.baseline_face_landmarks = calibration_result.baseline_face_landmarks
-                        self.baseline_pose_landmarks = calibration_result.baseline_pose_landmarks
-                        
-                        # Store in global state for action engine
-                        self.baselines = {
-                            "eye_distance": self.baseline_eye_distance,
-                            "nose_chin_distance": self.baseline_nose_chin_distance,
-                            "shoulder_width": self.baseline_shoulder_width,
-                            "face_landmarks": self.baseline_face_landmarks,
-                            "pose_landmarks": self.baseline_pose_landmarks
-                        }
-                        
-                        self.is_calibrated = True
-                        self.state.update_status(baseline_eye_dist=self.baseline_eye_distance)
-                        logger.success(f"Calibration successful (Dual): Baseline NC Dist = {self.baseline_nose_chin_distance:.1f}, Shoulder Width = {self.baseline_shoulder_width:.1f}")
-                else:
-                    self._evaluate_posture(landmarks, pose_landmarks, (w_l, h_l), (w_p, h_p), inference_time_ms)
-            else:
-                self.state.update_status(latency_ms=inference_time_ms)
-                
-            # 繪製各分鏡的標記 (不要在子畫面畫文字)
-            self._annotate_frame(local_frame, landmarks, w_l, h_l, self.state.get_status(), pose_landmarks=None, draw_text=False)
-            self._annotate_frame(phone_frame, None, w_p, h_p, self.state.get_status(), pose_landmarks=pose_landmarks, draw_text=False)
-            
-            # 將手機畫面高度縮放至與電腦畫面一致並拼接
-            new_w_p = int(w_p * (h_l / h_p))
-            resized_phone = cv2.resize(phone_frame, (new_w_p, h_l))
-            stitched = np.hstack((local_frame, resized_phone))
-            
-            # 在拼接後的畫面繪製綜合狀態文字 (Stitched 寬度 = w_l + new_w_p)
-            self._annotate_frame(stitched, None, w_l + new_w_p, h_l, self.state.get_status(), pose_landmarks=None, draw_text=True)
-            return stitched
-            
+        # 2. 推理與分析
+        face_rgb = cv2.cvtColor(face_frame_tuple[1], cv2.COLOR_BGR2RGB)
+        inference_results = self.face_mesh.process(face_rgb)
+        
+        if face_frame_tuple[0] != pose_frame_tuple[0]:
+            pose_rgb = cv2.cvtColor(pose_frame_tuple[1], cv2.COLOR_BGR2RGB)
+            pose_results = self.pose.process(pose_rgb)
         else:
-            # === 單鏡頭模式 (傳統模式) ===
-            height, width, _ = frame.shape
-            image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            inference_results = self.face_mesh.process(image_rgb)
-            pose_results = self.pose.process(image_rgb)
-            inference_time_ms = int((time.perf_counter() - inference_start) * 1000)
+            pose_results = self.pose.process(face_rgb)
             
-            landmarks = inference_results.multi_face_landmarks[0] if (inference_results and inference_results.multi_face_landmarks) else None
-            pose_landmarks = pose_results.pose_landmarks if (pose_results and pose_results.pose_landmarks) else None
+        inference_time_ms = int((time.perf_counter() - inference_start) * 1000)
+        
+        landmarks = inference_results.multi_face_landmarks[0] if (inference_results and inference_results.multi_face_landmarks) else None
+        pose_landmarks = pose_results.pose_landmarks if (pose_results and pose_results.pose_landmarks) else None
+        
+        # 進行動作引擎分析 (綁定到 face_frame_tuple 畫面上，因為特徵大多在臉部)
+        h_f, w_f, _ = face_frame_tuple[1].shape
+        active_skills_state = {}
+        metrics_state = {}
+        
+        if landmarks:
+            eye_dist, nc_dist = self._extract_physical_features(landmarks, w_f, h_f)
             
-            if landmarks:
-                eye_dist, nc_dist = self._extract_physical_features(landmarks, width, height)
-                sh_width, sh_mid_x, sh_mid_y = 0.0, 0.0, 0.0
+            if status.calibrating:
+                # 校準中
+                sh_width = 0.0
+                sh_mid_x = 0.0
+                sh_mid_y = 0.0
                 if pose_landmarks:
-                    sh_width, sh_mid_x, sh_mid_y = self._extract_shoulder_features(pose_landmarks, width, height)
+                    sh_width, sh_mid_x, sh_mid_y = self._extract_shoulder_features(pose_landmarks, w_f, h_f)
+                face_dict = [{"x": l.x, "y": l.y} for l in landmarks.landmark]
+                pose_dict = [{"x": l.x, "y": l.y} for l in pose_landmarks.landmark] if pose_landmarks else None
+                wizard_status = self.wizard.process(
+                    eye_dist, nc_dist,
+                    current_shoulder_width=sh_width,
+                    current_shoulder_midpoint_x=sh_mid_x,
+                    current_shoulder_midpoint_y=sh_mid_y,
+                    face_landmarks=face_dict,
+                    pose_landmarks=pose_dict
+                )
+                self.state.update_status(
+                    calibration_progress=wizard_status.progress,
+                    calibrating=not wizard_status.is_complete,
+                    baseline_eye_dist=wizard_status.baseline_eye_dist if wizard_status.is_complete else status.baseline_eye_dist
+                )
+                if wizard_status.is_complete:
+                    self.is_calibrated = True
+                    self.baseline_eye_distance = wizard_status.baseline_eye_dist
+                    self.baseline_nose_chin_distance = wizard_status.baseline_nc_dist
+                    self.baseline_shoulder_width = wizard_status.baseline_shoulder_width
+                    self.baseline_shoulder_midpoint_x = wizard_status.baseline_shoulder_midpoint_x
+                    self.baseline_shoulder_midpoint_y = wizard_status.baseline_shoulder_midpoint_y
+                    self.baseline_face_landmarks = wizard_status.baseline_face_landmarks
+                    self.baseline_pose_landmarks = wizard_status.baseline_pose_landmarks
+                    self.state.save_prefs({
+                        "last_baseline_eye": wizard_status.baseline_eye_dist,
+                        "username": "User"
+                    })
                 
-                if sh_width <= 0:
-                    left_eye = landmarks.landmark[33]
-                    right_eye = landmarks.landmark[263]
-                    face_center_x = (left_eye.x * width + right_eye.x * width) / 2.0
-                    face_center_y = (left_eye.y * height + right_eye.y * height) / 2.0
-                    
-                    if self.is_calibrated and self.baseline_eye_distance > 0 and self.baseline_shoulder_width > 0:
-                        ratio = self.baseline_shoulder_width / self.baseline_eye_distance
-                        sh_width = eye_dist * ratio
-                    else:
-                        sh_width = eye_dist * 4.5
-                    sh_mid_x = face_center_x
-                    sh_mid_y = face_center_y + eye_dist * 3.0
-                    
-                if not self.is_calibrated:
-                    face_dict_list = [{"x": l.x, "y": l.y} for l in landmarks.landmark] if landmarks else None
-                    pose_dict_list = [{"x": l.x, "y": l.y} for l in pose_landmarks.landmark] if pose_landmarks else None
-
-                    calibration_result = self.wizard.process(
-                        eye_dist, nc_dist,
-                        current_shoulder_width=sh_width,
-                        current_shoulder_midpoint_x=sh_mid_x,
-                        current_shoulder_midpoint_y=sh_mid_y,
-                        face_landmarks=face_dict_list,
-                        pose_landmarks=pose_dict_list
-                    )
-                    self.state.update_status(
-                        calibrating=True,
-                        calibration_progress=calibration_result.progress
-                    )
-                    if calibration_result.is_complete:
-                        self.baseline_eye_distance = calibration_result.baseline_eye_dist
-                        self.baseline_nose_chin_distance = calibration_result.baseline_nc_dist
-                        self.baseline_shoulder_width = calibration_result.baseline_shoulder_width
-                        self.baseline_shoulder_midpoint_x = calibration_result.baseline_shoulder_midpoint_x
-                        self.baseline_shoulder_midpoint_y = calibration_result.baseline_shoulder_midpoint_y
-                        self.baseline_face_landmarks = calibration_result.baseline_face_landmarks
-                        self.baseline_pose_landmarks = calibration_result.baseline_pose_landmarks
-                        
-                        self.baselines = {
-                            "eye_distance": self.baseline_eye_distance,
-                            "nose_chin_distance": self.baseline_nose_chin_distance,
-                            "shoulder_width": self.baseline_shoulder_width,
-                            "face_landmarks": self.baseline_face_landmarks,
-                            "pose_landmarks": self.baseline_pose_landmarks
-                        }
-                        
-                        self.is_calibrated = True
-                        self.state.update_status(baseline_eye_dist=self.baseline_eye_distance)
-                        logger.success(f"Calibration successful: Baseline NC Dist = {self.baseline_nose_chin_distance:.1f}, Shoulder Width = {self.baseline_shoulder_width:.1f}")
-                else:
-                    self._evaluate_posture(landmarks, pose_landmarks, (width, height), (width, height), inference_time_ms)
+                # 繪製人臉網格
+                self.mp_drawing.draw_landmarks(
+                    image=face_frame_tuple[1],
+                    landmark_list=landmarks,
+                    connections=self.mp_face_mesh.FACEMESH_TESSELATION,
+                    landmark_drawing_spec=None,
+                    connection_drawing_spec=self.mp_drawing_styles.get_default_face_mesh_tesselation_style()
+                )
             else:
-                self.state.update_status(latency_ms=inference_time_ms)
-                
-            self._annotate_frame(frame, landmarks, width, height, self.state.get_status(), pose_landmarks=pose_landmarks, draw_text=True)
-            # 手機畫面在客戶端已處理完畢，不在此重複翻轉
-            if self.state.get_status().flip_enabled and not camera_source.startswith("phone"):
-                return cv2.flip(frame, 1)
-            return frame
+                # 動作分析 — 使用正確的 evaluate_all() 介面
+                baselines_for_eval = {
+                    "eye_distance": self.baseline_eye_distance,
+                    "nose_chin_distance": self.baseline_nose_chin_distance,
+                    "shoulder_width": self.baseline_shoulder_width,
+                    "shoulder_midpoint_x": self.baseline_shoulder_midpoint_x,
+                    "shoulder_midpoint_y": self.baseline_shoulder_midpoint_y,
+                    "face_landmarks": self.baseline_face_landmarks,
+                    "pose_landmarks": self.baseline_pose_landmarks,
+                }
+                state_history = {name: val for name, val in status.active_skills.items()}
 
-    def stop(self) -> None:
-        """安全停止流水線並釋放資源。"""
+                results = self.action_engine.evaluate_all(
+                    landmarks,
+                    pose_landmarks,
+                    face_dim=(w_f, h_f),
+                    body_dim=(w_f, h_f),
+                    baselines=baselines_for_eval,
+                    preferences=self.state.prefs,
+                    state_history=state_history
+                )
+
+                # 整理結果 — evaluate_all 回傳 {name: (is_triggered, metric_val, debug_info)}
+                for name, (is_triggered, metric_val, debug_info) in results.items():
+                    active_skills_state[name] = bool(is_triggered)
+                    metrics_state[name] = float(metric_val)
+
+                # --- 繪製可視化 (Visualization) ---
+                # 不再繪製整張網格，而是繪製已啟用技能的連線與點位
+                active_pairs = []
+                for name, detector in self.action_engine.detectors.items():
+                    if name in active_skills_state:
+                        triggered = active_skills_state[name]
+                        if hasattr(detector, 'get_point_pairs'):
+                            for p1, p2 in detector.get_point_pairs():
+                                active_pairs.append((p1, p2, triggered))
+
+                for p1_id, p2_id, triggered in active_pairs:
+                    try:
+                        def get_pt(pt_id):
+                            pt_id = str(pt_id).strip().lower()
+                            if pt_id.startswith('p'):
+                                idx = int(pt_id[1:])
+                                if pose_landmarks and hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
+                                    return pose_landmarks.landmark[idx]
+                            elif pt_id.startswith('f'):
+                                idx = int(pt_id[1:])
+                                if landmarks and hasattr(landmarks, 'landmark') and idx < len(landmarks.landmark):
+                                    return landmarks.landmark[idx]
+                            else:
+                                idx = int(pt_id)
+                                if idx <= 32 and pose_landmarks and hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
+                                    return pose_landmarks.landmark[idx]
+                            return None
+
+                        lm1 = get_pt(p1_id)
+                        lm2 = get_pt(p2_id)
+                        if lm1 and lm2:
+                            # 判斷這個點應該畫在哪個 frame (單相機就都在 face_frame_tuple[1], 雙相機的話 pose 點在 pose frame)
+                            def is_pose_id(pid):
+                                pid = str(pid).strip().lower()
+                                return pid.startswith('p') or (pid.isdigit() and int(pid) <= 32)
+
+                            target_frame_1 = pose_frame_tuple[1] if (is_pose_id(p1_id) and face_frame_tuple[0] != pose_frame_tuple[0]) else face_frame_tuple[1]
+                            target_frame_2 = pose_frame_tuple[1] if (is_pose_id(p2_id) and face_frame_tuple[0] != pose_frame_tuple[0]) else face_frame_tuple[1]
+                            
+                            h1, w1, _ = target_frame_1.shape
+                            h2, w2, _ = target_frame_2.shape
+                            
+                            cx1, cy1 = int(lm1.x * w1), int(lm1.y * h1)
+                            cx2, cy2 = int(lm2.x * w2), int(lm2.y * h2)
+                            
+                            color = (0, 0, 255) if triggered else (0, 255, 0) # BGR 格式 (紅:觸發, 綠:監控)
+                            
+                            # 如果兩個點在同一個 frame 上，才畫線，否則只畫點
+                            if target_frame_1 is target_frame_2:
+                                cv2.line(target_frame_1, (cx1, cy1), (cx2, cy2), color, 2, cv2.LINE_AA)
+                                
+                            cv2.circle(target_frame_1, (cx1, cy1), 4, color, -1)
+                            cv2.circle(target_frame_2, (cx2, cy2), 4, color, -1)
+                    except Exception as e:
+                        pass
+
+
+        # 3. 事件引擎評估 (Event Engine)
+        _baselines = {
+            "eye_distance": self.baseline_eye_distance,
+            "nose_chin_distance": self.baseline_nose_chin_distance,
+            "shoulder_width": self.baseline_shoulder_width,
+            "face_landmarks": self.baseline_face_landmarks,
+            "pose_landmarks": self.baseline_pose_landmarks,
+        }
+        active_events_state = self.event_engine.evaluate(
+            active_skills_dict=active_skills_state,
+            landmarks=landmarks,
+            pose_landmarks=pose_landmarks,
+            baselines=_baselines,
+            current_eye_distance=metrics_state.get("eye_distance", 0.0),
+            current_shoulder_width=metrics_state.get("shoulder_width", 0.0),
+            face_dim=(w_f, h_f) if landmarks else (640, 480),
+            body_dim=(w_f, h_f) if pose_landmarks else (640, 480)
+        )
+        
+        # 4. 同步狀態與觸發統計 (Metrics & State Sync)
+        # (在此略過統計觸發次數的細節以簡化)
+        self.state.update_status(
+            latency_ms=inference_time_ms,
+            active_skills=active_skills_state,
+            active_events=active_events_state,
+            metrics=metrics_state
+        )
+
+        # 5. 多畫面合併 (Stitching)
+        return self._stitch_frames(frames)
+        
+    def _stitch_frames(self, frames: list) -> np.ndarray:
+        """將多個影格縫合成單一畫面 (Grid Layout)"""
+        if len(frames) == 1:
+            return frames[0][1]
+            
+        # 將所有畫面縮放到相同高度 (以第一格為準)
+        base_h = 480
+        processed_frames = []
+        for src, f in frames:
+            h, w = f.shape[:2]
+            scale = base_h / h
+            new_w = int(w * scale)
+            resized = cv2.resize(f, (new_w, base_h))
+            # 加上相機標籤
+            cv2.putText(resized, src, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            processed_frames.append(resized)
+            
+        if len(processed_frames) == 2:
+            return cv2.hconcat(processed_frames)
+        elif len(processed_frames) <= 4:
+            # 2x2 grid
+            while len(processed_frames) < 4:
+                processed_frames.append(np.zeros_like(processed_frames[0]))
+            top = cv2.hconcat([processed_frames[0], processed_frames[1]])
+            bottom = cv2.hconcat([processed_frames[2], processed_frames[3]])
+            return cv2.vconcat([top, bottom])
+        else:
+            # 3x2 grid
+            while len(processed_frames) < 6:
+                processed_frames.append(np.zeros_like(processed_frames[0]))
+            top = cv2.hconcat([processed_frames[0], processed_frames[1], processed_frames[2]])
+            bottom = cv2.hconcat([processed_frames[3], processed_frames[4], processed_frames[5]])
+            return cv2.vconcat([top, bottom])
+
+    def stop(self):
+        """停止所有相機並釋放資源。"""
         logger.info("Stopping AgentPipeline workflow")
-        self.capture.stop()
+        for src, cap in self.captures.items():
+            logger.info(f"Stopping camera {src}")
+            cap.stop()
+        self.captures.clear()

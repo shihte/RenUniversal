@@ -34,7 +34,7 @@ class SharedState:
             yaw_tolerance=float(self.prefs.get("yaw_tolerance", 0.10) * 100),
             sway_threshold=float(self.prefs.get("sway_threshold", 0.15) * 100),
             lean_threshold=float(self.prefs.get("lean_threshold", 0.10) * 100),
-            camera_source=self.prefs.get("camera_source", "local_0"),
+            camera_source=["local_0"], # ALWAYS default to local_0 regardless of preferences
             flip_enabled=self.prefs.get("flip_enabled", True)
         )
         self.status_lock = threading.Lock()
@@ -103,7 +103,11 @@ class SharedState:
                     self.prefs["lean_threshold"] = val / 100.0
                     
             if "camera_source" in new_prefs:
-                current_dict["camera_source"] = str(new_prefs["camera_source"])
+                src = new_prefs["camera_source"]
+                if isinstance(src, list):
+                    current_dict["camera_source"] = [str(x) for x in src]
+                else:
+                    current_dict["camera_source"] = str(src)
                 
             if "flip_enabled" in new_prefs:
                 current_dict["flip_enabled"] = bool(new_prefs["flip_enabled"])
