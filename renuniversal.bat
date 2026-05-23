@@ -20,6 +20,7 @@ if /i "%1"=="start" goto run
 if /i "%1"=="test" goto test
 if /i "%1"=="clean" goto clean
 if /i "%1"=="install" goto install
+if /i "%1"=="build" goto build
 
 echo Invalid command: %1
 goto help
@@ -36,6 +37,7 @@ echo   renuniversal.bat start    - Same as run
 echo   renuniversal.bat test     - Run architecture validation tests
 echo   renuniversal.bat clean    - Clear cache and logs
 echo   renuniversal.bat install ^<path^> - Install a .renuniversal plugin
+echo   renuniversal.bat build --name ^<N^> --skills ^<S^> --events ^<E^> --apps ^<A^> - Package a plugin
 echo.
 exit /b 0
 
@@ -120,4 +122,20 @@ if not exist "%VENV_PYTHON%" (
 )
 echo === Installing Plugin from %2 ===
 "%VENV_PYTHON%" tools\installer.py "%2"
+exit /b 0
+
+:build
+if not exist "%VENV_PYTHON%" (
+    echo [Error] Virtual environment not found. Please run 'renuniversal.bat setup' first.
+    exit /b 1
+)
+shift
+set CMD_ARGS=
+:build_args_loop
+if "%~1"=="" goto build_execute
+set CMD_ARGS=%CMD_ARGS% %1
+shift
+goto build_args_loop
+:build_execute
+"%VENV_PYTHON%" tools\builder.py %CMD_ARGS%
 exit /b 0
