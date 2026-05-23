@@ -6,7 +6,7 @@ import socket
 import subprocess
 import re
 import json
-from flask import Flask, Response, jsonify, request, send_from_directory
+from flask import Flask, Response, jsonify, request, send_from_directory, render_template
 from flask_cors import CORS
 import cv2
 from loguru import logger
@@ -49,16 +49,17 @@ def start_tunnel(port=8080):
 
     threading.Thread(target=run, daemon=True).start()
 
-app = Flask(__name__)
+# 路徑定義
+BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BACKEND_DIR)
+WEB_DIR = os.path.join(PROJECT_ROOT, 'web')
+
+app = Flask(__name__, template_folder=WEB_DIR)
 CORS(app)
 
 # 初始化共享狀態 (具備 Memory 功能)
 state = SharedState()
 
-# 路徑定義
-BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.dirname(BACKEND_DIR)
-WEB_DIR = os.path.join(PROJECT_ROOT, 'web')
 
 # 全局代理流水線
 service_context = {
@@ -130,28 +131,28 @@ def generate_mjpeg_stream():
 
 @app.route('/')
 def index():
-    return send_from_directory(WEB_DIR, 'monitor.html')
+    return render_template('monitor.html', active_page='monitor')
 
 @app.route('/camera')
 def serve_camera():
-    return send_from_directory(WEB_DIR, 'camera.html')
+    return render_template('camera.html', active_page='camera')
 
 @app.route('/skills')
 def serve_skills():
-    return send_from_directory(WEB_DIR, 'skills.html')
+    return render_template('skills.html', active_page='skills')
 
 @app.route('/events')
 def serve_events():
-    return send_from_directory(WEB_DIR, 'events.html')
+    return render_template('events.html', active_page='events')
 
 @app.route('/apps', strict_slashes=False)
 def serve_apps_launcher():
-    return send_from_directory(WEB_DIR, 'apps_launcher.html')
+    return render_template('apps_launcher.html', active_page='apps')
 
 @app.route('/app/<filename>')
 def serve_app(filename):
     safe_filename = "".join(c for c in filename if c.isalnum() or c in ('_', '-'))
-    return send_from_directory(os.path.join(WEB_DIR, 'apps'), f"{safe_filename}.html")
+    return render_template(f'apps/{safe_filename}.html', active_page='apps')
 
 @app.route('/tailwind.js')
 def serve_tailwind():
