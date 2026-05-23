@@ -71,13 +71,17 @@ def main():
         for event_path in events:
             src = os.path.join(plugin_dir, event_path)
             if not os.path.exists(src):
-                print(f"    [Warning] Event file not found: {src}")
+                print(f"    [Warning] Event folder not found: {src}")
                 continue
                 
             basename = os.path.basename(os.path.normpath(src))
             dst = os.path.join(target_events_dir, basename)
             
-            shutil.copy2(src, dst)
+            if os.path.exists(dst):
+                print(f"    [!] Overwriting existing event: {basename}")
+                shutil.rmtree(dst)
+                
+            shutil.copytree(src, dst)
             print(f"    -> Installed event: {basename}")
 
     # Install Apps
