@@ -1,187 +1,20 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RenUniversal Posture Monitor</title>
-    <script src="/tailwind.js"></script>
-    <style>
-        :root {
-            --bg-dark: #141413;
-            --surface: #1a1a18;
-            --surface-accent: #232321;
-            --text-light: #faf9f5;
-            --text-muted: #b0aea5;
-            --text-dim: #706e68;
-            --accent-orange: #d97757;
-            --accent-blue: #6a9bcc;
-            --accent-green: #788c5d;
-            --border-subtle: rgba(176, 174, 165, 0.1);
-        }
+{% block title %}Monitor Dashboard{% endblock %}
 
-        body {
-            font-family: Georgia, Cambria, "Times New Roman", Times, serif;
-            background-color: var(--bg-dark);
-            color: var(--text-light);
-            -webkit-font-smoothing: antialiased;
-        }
-
-        h1, h2, h3, .font-heading {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        .anthropic-card {
-            background-color: var(--surface);
-            border: 1px solid var(--border-subtle);
-            border-radius: 12px;
-            transition: transform 0.2s ease, border-color 0.2s ease;
-        }
-
-        .anthropic-card:hover {
-            border-color: rgba(176, 174, 165, 0.3);
-        }
-
-        /* Custom Slider Styling */
-        input[type=range] {
-            width: 100%;
-            height: 4px;
-            background-color: var(--surface-accent);
-            border-radius: 2px;
-            -webkit-appearance: none;
-            appearance: none;
-            cursor: pointer;
-        }
-
-        input[type=range]::-webkit-slider-thumb {
-            height: 18px;
-            width: 18px;
-            border-radius: 50%;
-            background-color: var(--accent-orange);
-            -webkit-appearance: none;
-            cursor: pointer;
-            border: 2px solid var(--text-light);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-            transition: transform 0.1s ease;
-        }
-
-        input[type=range]::-webkit-slider-thumb:hover {
-            transform: scale(1.1);
-        }
-
-        /* Glassmorphism Overlays */
-        .glass-overlay {
-            background: rgba(20, 20, 19, 0.6);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(250, 249, 245, 0.1);
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: var(--bg-dark);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--surface-accent);
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-dim);
-        }
-        
-        .btn-anthropic-primary {
-            background-color: var(--accent-blue);
-            color: var(--text-light);
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .btn-anthropic-primary:hover {
-            filter: brightness(1.1);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(106, 155, 204, 0.3);
-        }
-
-        .btn-anthropic-secondary {
-            background-color: var(--surface-accent);
-            color: var(--text-muted);
-            border: 1px solid var(--border-subtle);
-            transition: all 0.2s ease;
-        }
-
-        .btn-anthropic-secondary:hover {
-            background-color: var(--surface);
-            color: var(--text-light);
-            border-color: var(--text-muted);
-        }
-    </style>
-</head>
-
-<body class="bg-[#141413] text-[#faf9f5] min-h-screen">
-    <div class="container mx-auto px-6 py-10 max-w-6xl">
-        <!-- Header -->
-        <header class="flex justify-between items-center mb-12">
-            <div class="flex items-center gap-4">
-                <div class="relative">
-                    <div class="w-3 h-3 rounded-full bg-[#788c5d] absolute inset-0 animate-ping opacity-75"></div>
-                    <div class="w-3 h-3 rounded-full bg-[#788c5d]" id="connection-status"></div>
-                </div>
-                <div>
-                    <h1 class="text-2xl font-bold tracking-tight text-[#faf9f5]">RenUniversal <span class="text-[#b0aea5] font-light"
-                        data-i18n="monitor_dashboard">Monitor Dashboard</span></h1>
-                    <p class="text-[10px] uppercase tracking-[0.2em] text-[#706e68] mt-1 font-sans">Advanced Posture Analysis System</p>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-6">
-                <!-- Language Switcher -->
-                <div class="flex p-1 bg-[#1a1a18] rounded-lg border border-[#b0aea5]/10">
-                    <button onclick="setLang('zh-TW')"
-                        class="text-[10px] font-semibold px-3 py-1.5 rounded-md transition-all duration-200"
-                        id="btn-zh">繁中</button>
-                    <button onclick="setLang('en')"
-                        class="text-[10px] font-semibold px-3 py-1.5 rounded-md transition-all duration-200"
-                        id="btn-en">EN</button>
-                </div>
-
-                <a href="/game"
-                    class="btn-anthropic-primary px-5 py-2.5 text-sm font-semibold rounded-xl flex items-center gap-2">
-                    <span data-i18n="play_game">Play Game</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M8 5v14l11-7z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                    </svg>
-                </a>
-            </div>
-        </header>
-
-        <!-- Tabs Navigation -->
-        <div class="flex border-b border-[#b0aea5]/10 mb-8 font-heading">
-            <a href="/" class="px-6 py-3 text-sm font-semibold border-b-2 border-[#d97757] text-[#faf9f5] transition-all duration-200">
-                即時監控 (Monitor)
-            </a>
-            <a href="/camera" class="px-6 py-3 text-sm font-semibold border-b-2 border-transparent text-[#b0aea5] hover:text-[#faf9f5] transition-all duration-200">
-                相機設定 (Camera)
-            </a>
-            <a href="/skills" class="px-6 py-3 text-sm font-semibold border-b-2 border-transparent text-[#b0aea5] hover:text-[#faf9f5] transition-all duration-200">
-                技能中心 (Skills Hub)
-            </a>
-            <a href="/events" class="px-6 py-3 text-sm font-semibold border-b-2 border-transparent text-[#b0aea5] hover:text-[#faf9f5] transition-all duration-200">
-                事件處理 (Events)
-            </a>
-        </div>
-<!-- Tab 1: Dashboard View -->
-        <div id="view-dashboard" class="grid grid-cols-1 lg:grid-cols-12 gap-8 font-sans">
+{% block content %}
+<main class="flex-1 p-6 md:p-8 overflow-y-auto relative z-0 h-screen">
+    <div class="max-w-6xl mx-auto space-y-8 pb-20">
+<div id="view-dashboard" class="grid grid-cols-1 lg:grid-cols-12 gap-8 font-sans">
             <!-- Main Video Stream -->
             <div class="lg:col-span-8 space-y-6">
-                <div class="relative aspect-video bg-[#0a0a09] rounded-[24px] overflow-hidden border border-[#b0aea5]/10 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.6)]">
+                <div class="relative aspect-video bg-slate-950 rounded-[24px] overflow-hidden border border-slate-700/50 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.6)]">
                     <img src="/live" class="w-full h-full object-contain" alt="Live Stream">
 
                     <!-- Overlay Status -->
                     <div class="absolute top-6 left-6 glass-overlay px-4 py-2 rounded-full flex items-center gap-3">
-                        <div class="w-2 h-2 rounded-full bg-[#d97757] animate-pulse" id="live-indicator"></div>
-                        <span class="text-[10px] font-bold tracking-widest text-[#faf9f5]/90" data-i18n="live">LIVE</span>
+                        <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse" id="live-indicator"></div>
+                        <span class="text-[10px] font-bold tracking-widest text-white/90" data-i18n="live">LIVE</span>
                     </div>
 
                     <div class="absolute bottom-6 left-6 right-6 flex justify-between items-end">
@@ -190,21 +23,21 @@
                         </div>
 
                         <div class="px-4 py-2 glass-overlay rounded-xl">
-                            <span class="text-[11px] font-mono tracking-tighter text-[#faf9f5]/70" id="fps-display">FPS: 0</span>
+                            <span class="text-[11px] font-mono tracking-tighter text-white/70" id="fps-display">FPS: 0</span>
                         </div>
                     </div>
                 </div>
                 
                 <!-- NEW EVENTS TABLE -->
-                <div class="bg-[#0a0a09] rounded-[24px] border border-[#b0aea5]/10 p-6 shadow-xl">
-                    <h2 class="text-[#faf9f5] text-lg font-bold tracking-tight mb-4 flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-[#6a9bcc]"></span>
+                <div class="bg-slate-950 rounded-[24px] border border-slate-700/50 p-6 shadow-xl">
+                    <h2 class="text-white text-lg font-bold tracking-tight mb-4 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
                         作用中事件監控表 (Active Events)
                     </h2>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-[#b0aea5] border-collapse">
+                        <table class="w-full text-left text-sm text-slate-300 border-collapse">
                             <thead>
-                                <tr class="border-b border-[#b0aea5]/10 text-xs uppercase tracking-wider text-[#706e68]">
+                                <tr class="border-b border-slate-700/50 text-xs uppercase tracking-wider text-slate-400">
                                     <th class="py-3 px-4 font-semibold">事件名稱 (Event Name)</th>
                                     <th class="py-3 px-4 font-semibold text-right">狀態 (Status)</th>
                                 </tr>
@@ -212,7 +45,7 @@
                             <tbody id="active-events-tbody">
                                 <!-- Dynamically populated by JS -->
                                 <tr>
-                                    <td colspan="2" class="py-6 text-center text-[#706e68] text-xs">正在載入事件...</td>
+                                    <td colspan="2" class="py-6 text-center text-slate-400 text-xs">正在載入事件...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -220,15 +53,15 @@
                 </div>
 
                 <!-- NEW SKILLS TABLE -->
-                <div class="bg-[#0a0a09] rounded-[24px] border border-[#b0aea5]/10 p-6 shadow-xl mt-6">
-                    <h2 class="text-[#faf9f5] text-lg font-bold tracking-tight mb-4 flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-[#73a373]"></span>
+                <div class="bg-slate-950 rounded-[24px] border border-slate-700/50 p-6 shadow-xl mt-6">
+                    <h2 class="text-white text-lg font-bold tracking-tight mb-4 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
                         作用中技能監控表 (Active Skills)
                     </h2>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-[#b0aea5] border-collapse">
+                        <table class="w-full text-left text-sm text-slate-300 border-collapse">
                             <thead>
-                                <tr class="border-b border-[#b0aea5]/10 text-xs uppercase tracking-wider text-[#706e68]">
+                                <tr class="border-b border-slate-700/50 text-xs uppercase tracking-wider text-slate-400">
                                     <th class="py-3 px-4 font-semibold">技能名稱 (Skill Name)</th>
                                     <th class="py-3 px-4 font-semibold text-right">狀態 (Status)</th>
                                 </tr>
@@ -236,7 +69,7 @@
                             <tbody id="active-skills-tbody">
                                 <!-- Dynamically populated by JS -->
                                 <tr>
-                                    <td colspan="2" class="py-6 text-center text-[#706e68] text-xs">正在載入技能...</td>
+                                    <td colspan="2" class="py-6 text-center text-slate-400 text-xs">正在載入技能...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -250,11 +83,11 @@
                 <div class="grid grid-cols-1 gap-4">
                     <div class="anthropic-card p-6 flex items-center justify-between">
                         <div>
-                            <div class="text-[#706e68] text-[10px] font-bold uppercase tracking-[0.15em] mb-1" data-i18n="ratio">Posture Ratio</div>
-                            <div class="text-4xl font-serif font-medium text-[#6a9bcc]" id="ratio-value">0%</div>
+                            <div class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-1" data-i18n="ratio">Posture Ratio</div>
+                            <div class="text-4xl font-serif font-medium text-indigo-400" id="ratio-value">0%</div>
                         </div>
-                        <div class="p-3 bg-[#6a9bcc]/10 rounded-xl">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="text-[#6a9bcc]">
+                        <div class="p-3 bg-indigo-500/10 rounded-xl">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="text-indigo-400">
                                 <path d="M12 2v20M2 12h20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                             </svg>
                         </div>
@@ -273,25 +106,25 @@
                     <!-- Static System Metrics -->
                     <div class="grid grid-cols-1 gap-4">
                         <div class="anthropic-card p-5 flex justify-between items-center">
-                            <span class="text-[#706e68] text-[10px] font-bold uppercase tracking-[0.15em]" data-i18n="avg_latency">Latency</span>
-                            <span class="text-xl font-serif font-medium text-[#788c5d]" id="latency-value">0ms</span>
+                            <span class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.15em]" data-i18n="avg_latency">Latency</span>
+                            <span class="text-xl font-serif font-medium text-emerald-400" id="latency-value">0ms</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Quick Actions -->
                 <div class="anthropic-card p-8 space-y-6">
-                    <h2 class="text-xs font-bold text-[#faf9f5] uppercase tracking-[0.2em] border-b border-[#b0aea5]/10 pb-4" data-i18n="actions">
+                    <h2 class="text-xs font-bold text-white uppercase tracking-[0.2em] border-b border-slate-700/50 pb-4" data-i18n="actions">
                         System Control</h2>
 
                     <!-- Backend Toggle -->
-                    <div class="flex items-center justify-between bg-[#232321] p-4 rounded-xl border border-[#b0aea5]/5">
-                        <span class="text-xs font-semibold text-[#faf9f5]/80" data-i18n="detection_active">Active Monitoring</span>
+                    <div class="flex items-center justify-between bg-slate-800 p-4 rounded-xl border border-slate-700/30">
+                        <span class="text-xs font-semibold text-white/80" data-i18n="detection_active">Active Monitoring</span>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" id="detection-toggle" class="sr-only peer"
                                 onchange="toggleDetection(this.checked)">
                             <div
-                                class="w-12 h-6 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#788c5d]">
+                                class="w-12 h-6 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500">
                             </div>
                         </label>
                     </div>
@@ -311,68 +144,41 @@
                         </svg>
                         <span data-i18n="recalibrate">Recalibrate Workspace</span>
                     </button>
-                    <p class="text-[10px] text-[#706e68] text-center italic" data-i18n="recalibrate_hint">
+                    <p class="text-[10px] text-slate-400 text-center italic" data-i18n="recalibrate_hint">
                         Reset the baseline while maintaining a neutral posture.
                     </p>
                 </div>
 
                 <!-- Active Actions & Events Status Card -->
                 <div class="anthropic-card p-6 space-y-4">
-                    <h2 class="text-xs font-bold text-[#faf9f5] uppercase tracking-[0.2em] border-b border-[#b0aea5]/10 pb-4">
+                    <h2 class="text-xs font-bold text-white uppercase tracking-[0.2em] border-b border-slate-700/50 pb-4">
                         即時判定狀態 (Actions & Events)
                     </h2>
                     
                     <div class="space-y-3">
-                        <div class="text-[10px] font-bold text-[#706e68] uppercase tracking-wider">動作判定 (Active Actions)</div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">動作判定 (Active Actions)</div>
                         <div id="active-skills-badges" class="flex flex-wrap gap-1.5">
-                            <span class="text-[10px] text-[#706e68] italic">無動作判定中</span>
+                            <span class="text-[10px] text-slate-400 italic">無動作判定中</span>
                         </div>
                     </div>
                     
-                                                <div class="space-y-3 pt-3 border-t border-[#b0aea5]/10">
-                        <div class="text-[10px] font-bold text-[#706e68] uppercase tracking-wider">複合事件 (Active Events)</div>
+                                                <div class="space-y-3 pt-3 border-t border-slate-700/50">
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">複合事件 (Active Events)</div>
                         <div id="active-events-badges" class="flex flex-wrap gap-1.5">
-                            <span class="text-[10px] text-[#706e68] italic">無事件觸發</span>
+                            <span class="text-[10px] text-slate-400 italic">無事件觸發</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        
-<!-- ═══════════════════════════════════════════════════════════════
-         GLOBAL EDIT MODAL  — 點擊作用中項目之後展開
-    ═══════════════════════════════════════════════════════════════ -->
-    <div id="edit-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/70 backdrop-blur-sm">
-        <div class="bg-[#1a1a18] border border-[#b0aea5]/20 rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-5 mx-4">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h3 id="modal-title" class="text-sm font-bold text-[#faf9f5]"></h3>
-                    <p id="modal-subtitle" class="text-[10px] text-[#706e68] mt-0.5"></p>
-                </div>
-                <button onclick="closeEditModal()" class="text-[#706e68] hover:text-[#faf9f5] text-xl leading-none">&times;</button>
-            </div>
-
-            <!-- 語法顯示與編輯區 -->
-            <div class="space-y-2">
-                <label class="text-[10px] text-[#b0aea5] font-semibold block">目前語法 (Syntax)</label>
-                <textarea id="modal-syntax" rows="3"
-                    class="w-full bg-[#151513] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-3 text-xs font-mono focus:outline-none focus:border-[#d97757] resize-none"></textarea>
-                <p class="text-[9px] text-[#706e68]">可直接編輯語法，支持 AND / OR / NOT 及點位 ID 語法。</p>
-            </div>
-
-                        
-
-            <!-- 操作按鈕 -->
-            <div class="flex gap-3 pt-2">
-                <button onclick="closeEditModal()" class="flex-1 bg-[#2a2a28] hover:bg-[#3a3a38] text-[#b0aea5] text-xs py-2.5 rounded-xl font-semibold">取消</button>
-                <button id="modal-save-btn" onclick="saveModalEdit()" class="flex-1 btn-anthropic-primary text-xs py-2.5 rounded-xl font-bold">儲存並套用</button>
-            </div>
-        </div>
     </div>
+</main>
+{% endblock %}
 
-    
+{% block scripts %}
 <script>
+
+
 
         // ─────────────────────────────────────────────────────────────────────────
         // EDIT MODAL LOGIC  (技能 / 事件 點擊彈出編輯)
@@ -436,14 +242,17 @@
         }
 
         function closeEditModal() {
-            document.getElementById('edit-modal').classList.add('hidden');
-            document.getElementById('edit-modal').classList.remove('flex');
+            const m2 = document.getElementById('edit-modal');
+        if(m2) m2.classList.add('hidden');
+            const m3 = document.getElementById('edit-modal');
+        if(m3) m3.classList.remove('flex');
             _modalContext = { type: null, name: null };
         }
 
         // Close on backdrop click
         window.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('edit-modal').addEventListener('click', function(e) {
+            const m = document.getElementById('edit-modal');
+            if(m) m.addEventListener('click', function(e) {
                 if (e.target === this) closeEditModal();
             });
         });
@@ -580,49 +389,15 @@
             const enBtn = document.getElementById('btn-en');
 
             if (lang === 'zh-TW') {
-                zhBtn.classList.add('bg-gray-700', 'text-white');
-                enBtn.classList.remove('bg-gray-700', 'text-white');
+                if(zhBtn) zhBtn.classList.add('bg-gray-700', 'text-white');
+                if(enBtn) enBtn.classList.remove('bg-gray-700', 'text-white');
             } else {
-                enBtn.classList.add('bg-gray-700', 'text-white');
-                zhBtn.classList.remove('bg-gray-700', 'text-white');
+                if(enBtn) enBtn.classList.add('bg-gray-700', 'text-white');
+                if(zhBtn) zhBtn.classList.remove('bg-gray-700', 'text-white');
             }
         }
 
         // --- Tabs Navigation ---
-        let activeTab = 'dashboard';
-
-        function switchTab(tabId) {
-            activeTab = tabId;
-            
-            // Hide all views
-            document.getElementById('view-dashboard').classList.add('hidden');
-            document.getElementById('view-camera').classList.add('hidden');
-            document.getElementById('view-skills').classList.add('hidden');
-            document.getElementById('view-events').classList.add('hidden');
-            
-            // Show selected view
-            document.getElementById(`view-${tabId}`).classList.remove('hidden');
-            
-            // Update tab button styles
-            const tabBtns = ['dashboard', 'camera', 'skills', 'events'];
-            tabBtns.forEach(btnId => {
-                const btn = document.getElementById(`tab-btn-${btnId}`);
-                if (btnId === tabId) {
-                    btn.classList.add('border-[#d97757]', 'text-[#faf9f5]');
-                    btn.classList.remove('border-transparent', 'text-[#b0aea5]');
-                } else {
-                    btn.classList.remove('border-[#d97757]', 'text-[#faf9f5]');
-                    btn.classList.add('border-transparent', 'text-[#b0aea5]');
-                }
-            });
-            
-            if (tabId === 'skills') {
-                loadSkills();
-            } else if (tabId === 'events') {
-                loadEvents();
-            }
-        }
-
         // --- Logic ---
 
         const statusEl = document.getElementById('connection-status');
@@ -651,11 +426,11 @@
                     const eventEntries = Object.entries(data.active_events);
                     
                     if (eventEntries.length === 0) {
-                        eventsTbody.innerHTML = '<tr><td colspan="2" class="py-6 text-center text-[#706e68] text-xs">尚無啟用的事件</td></tr>';
+                        eventsTbody.innerHTML = '<tr><td colspan="2" class="py-6 text-center text-slate-400 text-xs">尚無啟用的事件</td></tr>';
                     } else {
                         eventEntries.forEach(([name, isTriggered]) => {
                             const tr = document.createElement('tr');
-                            tr.className = 'border-b border-[#b0aea5]/5 transition-colors duration-300';
+                            tr.className = 'border-b border-slate-700/30 transition-colors duration-300';
                             
                             // 跟線段邏輯一樣：預設藍色，觸發變紅
                             const colorClass = isTriggered ? 'text-red-500 font-bold' : 'text-blue-500';
@@ -678,11 +453,11 @@
                     const skillEntries = Object.entries(data.active_skills);
                     
                     if (skillEntries.length === 0) {
-                        skillsTbody.innerHTML = '<tr><td colspan="2" class="py-6 text-center text-[#706e68] text-xs">尚無啟用的技能</td></tr>';
+                        skillsTbody.innerHTML = '<tr><td colspan="2" class="py-6 text-center text-slate-400 text-xs">尚無啟用的技能</td></tr>';
                     } else {
                         skillEntries.forEach(([name, isTriggered]) => {
                             const tr = document.createElement('tr');
-                            tr.className = 'border-b border-[#b0aea5]/5 transition-colors duration-300';
+                            tr.className = 'border-b border-slate-700/30 transition-colors duration-300';
                             
                             const colorClass = isTriggered ? 'text-red-500 font-bold' : 'text-blue-500';
                             const statusText = isTriggered ? 'TRIGGERED (觸發)' : 'MONITORING (監控中)';
@@ -711,8 +486,8 @@
                         let displayValue = typeof value === 'number' ? `${(value * 100).toFixed(1)}%` : value;
                         
                         card.innerHTML = `
-                            <div class="text-[#706e68] text-[10px] font-bold uppercase tracking-[0.15em] mb-1">${label}</div>
-                            <div class="text-2xl font-serif font-medium text-[#6a9bcc]">${displayValue}</div>
+                            <div class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-1">${label}</div>
+                            <div class="text-2xl font-serif font-medium text-indigo-400">${displayValue}</div>
                         `;
                         metricsContainer.appendChild(card);
                     });
@@ -732,8 +507,8 @@
                         if (name === 'lean') label = 'Lean Count';
                         
                         card.innerHTML = `
-                            <div class="text-[#706e68] text-[10px] font-bold uppercase tracking-[0.15em] mb-1">${label}</div>
-                            <div class="text-2xl font-serif font-medium text-[#d97757]">${count}</div>
+                            <div class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-1">${label}</div>
+                            <div class="text-2xl font-serif font-medium text-blue-400">${count}</div>
                         `;
                         countsContainer.appendChild(card);
                     });
@@ -798,7 +573,7 @@
                             activeSkillsContainer.appendChild(badge);
                         });
                     } else {
-                        activeSkillsContainer.innerHTML = '<span class="text-[10px] text-[#706e68] italic">無動作判定中</span>';
+                        activeSkillsContainer.innerHTML = '<span class="text-[10px] text-slate-400 italic">無動作判定中</span>';
                     }
                 }
 
@@ -810,7 +585,7 @@
                         Object.entries(data.active_events).forEach(([name, isActive]) => {
                             const badge = document.createElement('span');
                             if (isActive) {
-                                badge.className = 'text-[10px] bg-[#d97757]/20 text-[#d97757] border border-[#d97757]/30 px-2 py-0.5 rounded-full font-mono font-bold animate-bounce';
+                                badge.className = 'text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-full font-mono font-bold animate-bounce';
                                 badge.innerText = `${name.toUpperCase()} (Triggered)`;
                             } else {
                                 badge.className = 'text-[10px] bg-gray-500/10 text-gray-400 border border-gray-500/20 px-2 py-0.5 rounded-full font-mono';
@@ -819,7 +594,7 @@
                             activeEventsContainer.appendChild(badge);
                         });
                     } else {
-                        activeEventsContainer.innerHTML = '<span class="text-[10px] text-[#706e68] italic">無事件觸發</span>';
+                        activeEventsContainer.innerHTML = '<span class="text-[10px] text-slate-400 italic">無事件觸發</span>';
                     }
                 }
 
@@ -900,8 +675,8 @@
                     const reqs = skill.requirements || {};
                     
                     let reqHtml = '';
-                    if (reqs.face_mesh) reqHtml += '<span class="text-[8px] bg-[#6a9bcc]/20 text-[#6a9bcc] px-1.5 py-0.5 rounded font-mono font-bold">FACE MESH</span> ';
-                    if (reqs.pose)      reqHtml += '<span class="text-[8px] bg-[#d97757]/20 text-[#d97757] px-1.5 py-0.5 rounded font-mono font-bold">POSE</span> ';
+                    if (reqs.face_mesh) reqHtml += '<span class="text-[8px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded font-mono font-bold">FACE MESH</span> ';
+                    if (reqs.pose)      reqHtml += '<span class="text-[8px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-mono font-bold">POSE</span> ';
                     
                     // --- 規則語法顯示：相容 string 格式與 dict 格式 ---
                     let ruleSyntaxDisplay = '';
@@ -942,10 +717,10 @@
                         const minRange = (defaultPrefs[key] < 0) ? -100 : 0;
                         
                         threshHtml += `
-                            <div class="space-y-2 mt-3 pt-3 border-t border-[#b0aea5]/5">
+                            <div class="space-y-2 mt-3 pt-3 border-t border-slate-700/30">
                                 <div class="flex justify-between items-end">
-                                    <span class="text-[11px] text-[#b0aea5] font-medium font-sans">${key}</span>
-                                    <span class="text-xs font-serif italic text-[#d97757]" id="slider-val-${skill.name}-${key}">${sliderVal}%</span>
+                                    <span class="text-[11px] text-slate-300 font-medium font-sans">${key}</span>
+                                    <span class="text-xs font-serif italic text-blue-400" id="slider-val-${skill.name}-${key}">${sliderVal}%</span>
                                 </div>
                                 <input type="range" min="${minRange}" max="100" value="${sliderVal}" 
                                     oninput="updateSkillPreference('${skill.name}', '${key}', this.value)" 
@@ -959,24 +734,24 @@
                         <div class="flex justify-between items-start">
                             <div class="space-y-1 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity" onclick="openEditModal('skill','${skill.name}')" title="點擊編輯語法">
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    <h3 class="text-sm font-bold text-[#faf9f5] font-heading">${skill.name.toUpperCase()}</h3>
-                                    ${isBuiltin ? '<span class="text-[8px] bg-[#788c5d]/20 text-[#788c5d] px-1.5 py-0.5 rounded font-bold font-heading">內建核心</span>' : '<span class="text-[8px] bg-[#6a9bcc]/20 text-[#6a9bcc] px-1.5 py-0.5 rounded font-bold font-heading">自訂</span>'}
-                                    <span class="text-[8px] px-1.5 py-0.5 rounded font-mono ${isEnabled ? 'bg-[#788c5d]/20 text-[#788c5d]' : 'bg-[#706e68]/20 text-[#706e68]'}">${isEnabled ? '啟用' : '停用'}</span>
-                                    <span class="text-[8px] text-[#b0aea5] italic">✏️ 點擊編輯</span>
+                                    <h3 class="text-sm font-bold text-white font-heading">${skill.name.toUpperCase()}</h3>
+                                    ${isBuiltin ? '<span class="text-[8px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold font-heading">內建核心</span>' : '<span class="text-[8px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded font-bold font-heading">自訂</span>'}
+                                    <span class="text-[8px] px-1.5 py-0.5 rounded font-mono ${isEnabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-500/20 text-slate-400'}">${isEnabled ? '啟用' : '停用'}</span>
+                                    <span class="text-[8px] text-slate-300 italic">✏️ 點擊編輯</span>
                                 </div>
-                                <p class="text-xs text-[#b0aea5]">${skill.description || ''}</p>
+                                <p class="text-xs text-slate-300">${skill.description || ''}</p>
                                 <div class="mt-1 flex items-center gap-1.5">${reqHtml}</div>
-                                ${ruleSyntaxDisplay ? `<div class="mt-2 bg-[#1a1a18] px-2 py-1.5 rounded border border-[#b0aea5]/5 font-mono text-[10px] text-[#788c5d] truncate" title="${ruleSyntaxDisplay}">語法: ${ruleSyntaxDisplay}</div>` : ''}
+                                ${ruleSyntaxDisplay ? `<div class="mt-2 bg-slate-800/50 px-2 py-1.5 rounded border border-slate-700/30 font-mono text-[10px] text-emerald-400 truncate" title="${ruleSyntaxDisplay}">語法: ${ruleSyntaxDisplay}</div>` : ''}
                             </div>
                             
                             <div class="flex items-center gap-2 ml-3 flex-shrink-0">
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" class="sr-only peer" ${isEnabled ? 'checked' : ''} 
                                         onchange="toggleSkill('${skill.name}', this.checked)" onclick="event.stopPropagation()">
-                                    <div class="w-10 h-5 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#788c5d]"></div>
+                                    <div class="w-10 h-5 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                                 </label>
                                 ${!isBuiltin ? `
-                                    <button onclick="event.stopPropagation(); deleteSkill('${skill.name}')" class="text-[#d97757] hover:text-red-400 text-xs transition-colors p-1" title="刪除">🗑</button>
+                                    <button onclick="event.stopPropagation(); deleteSkill('${skill.name}')" class="text-blue-400 hover:text-red-400 text-xs transition-colors p-1" title="刪除">🗑</button>
                                 ` : ''}
                             </div>
                         </div>
@@ -1178,7 +953,7 @@
                 
                 if (events.length === 0) {
                     container.innerHTML = `
-                        <div class="anthropic-card p-8 text-center text-xs text-[#b0aea5] italic">
+                        <div class="anthropic-card p-8 text-center text-xs text-slate-300 italic">
                             尚未建立任何複合事件規則。請在右側表單建立第一個規則。
                         </div>
                     `;
@@ -1195,12 +970,12 @@
                         <div class="flex justify-between items-start">
                             <div class="space-y-1 flex-1 cursor-pointer hover:opacity-80 transition-opacity" onclick="openEditModal('event','${event.name}')" title="點擊編輯語法">
                                 <div class="flex items-center gap-2">
-                                    <h3 class="text-sm font-bold text-[#faf9f5] font-heading">${event.name.toUpperCase()}</h3>
-                                    <span class="text-[8px] text-[#b0aea5] italic">✏️ 點擊編輯</span>
+                                    <h3 class="text-sm font-bold text-white font-heading">${event.name.toUpperCase()}</h3>
+                                    <span class="text-[8px] text-slate-300 italic">✏️ 點擊編輯</span>
                                 </div>
-                                <p class="text-xs text-[#b0aea5]">${event.description || ''}</p>
-                                <div class="mt-2 bg-[#1a1a18] p-2 rounded border border-[#b0aea5]/5 font-mono text-[10px] text-[#faf9f5]">
-                                    語法: <span class="text-[#d97757]">${(event.rules && Array.isArray(event.rules)) ? event.rules.join(' ') : (event.rule_syntax || '')}</span>
+                                <p class="text-xs text-slate-300">${event.description || ''}</p>
+                                <div class="mt-2 bg-slate-800/50 p-2 rounded border border-slate-700/30 font-mono text-[10px] text-white">
+                                    語法: <span class="text-blue-400">${(event.rules && Array.isArray(event.rules)) ? event.rules.join(' ') : (event.rule_syntax || '')}</span>
                                 </div>
                             </div>
                             
@@ -1208,9 +983,9 @@
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" class="sr-only peer" ${isEnabled ? 'checked' : ''} 
                                         onchange="toggleEvent('${event.name}', this.checked)" onclick="event.stopPropagation()">
-                                    <div class="w-10 h-5 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#788c5d]"></div>
+                                    <div class="w-10 h-5 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                                 </label>
-                                <button onclick="event.stopPropagation(); deleteEvent('${event.name}')" class="text-[#d97757] hover:text-red-400 text-xs transition-colors p-1">🗑</button>
+                                <button onclick="event.stopPropagation(); deleteEvent('${event.name}')" class="text-blue-400 hover:text-red-400 text-xs transition-colors p-1">🗑</button>
                             </div>
                         </div>
                     `;
@@ -1352,7 +1127,7 @@
 
         async function loadAvailableCameras() {
             try {
-                const res = await fetch('/api/cameras');
+                const res = await fetch('/cameras');
                 const cameras = await res.json();
                 const select = document.getElementById('camera-source-select');
                 if (!select) return;
@@ -1401,7 +1176,7 @@
 
         // Poll
         setInterval(fetchStatus, 100);
-    </script>
-</body>
+    
 
-</html>
+</script>
+{% endblock %}

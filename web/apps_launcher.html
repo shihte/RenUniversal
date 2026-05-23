@@ -1,53 +1,7 @@
-<!DOCTYPE html>
-<html lang="en" class="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RenUniversal - 應用程式 (Apps)</title>
-    <script src="/tailwind.js"></script>
-    <style>
-        .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-    </style>
-</head>
-<body class="bg-slate-900 text-white min-h-screen flex flex-col md:flex-row overflow-hidden font-sans">
-    
-    <!-- Sidebar -->
-    <aside class="w-full md:w-64 glass-panel border-r border-slate-700/50 flex flex-col md:h-screen shadow-2xl relative z-10 transition-all duration-300">
-        <div class="p-6">
-            <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent mb-1">RenUniversal</h1>
-            <p class="text-xs text-slate-400 font-medium tracking-wide">AGENT PLATFORM</p>
-        </div>
-        
-        <nav class="flex-1 px-4 pb-4 space-y-2 overflow-y-auto">
-            <a href="/" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/50 transition-all">
-                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                監控戰情室 (Monitor)
-            </a>
-            <a href="/camera" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/50 transition-all">
-                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                鏡頭與校準 (Camera)
-            </a>
-            <a href="/skills" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/50 transition-all">
-                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                動作庫管理 (Skills)
-            </a>
-            <a href="/events" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/50 transition-all">
-                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                事件與規則 (Events)
-            </a>
-            <a href="/apps" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-500/10 text-blue-400 shadow-inner border border-blue-500/20 transition-all">
-                <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
-                應用程式庫 (Apps)
-            </a>
-        </nav>
-    </aside>
+{% extends "base.html" %}
 
-    <!-- Main Content -->
-    <main class="flex-1 p-6 md:p-8 overflow-y-auto relative z-0 h-screen">
+{% block content %}
+<main class="flex-1 p-6 md:p-8 overflow-y-auto relative z-0 h-screen">
         <div class="max-w-6xl mx-auto space-y-8 pb-20">
             <!-- Header -->
             <header class="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -71,8 +25,10 @@
             </div>
         </div>
     </main>
+{% endblock %}
 
-    <script>
+{% block scripts %}
+<script>
         async function fetchApps() {
             const grid = document.getElementById('appsGrid');
             grid.innerHTML = `
@@ -128,5 +84,4 @@
         // 初始載入
         document.addEventListener('DOMContentLoaded', fetchApps);
     </script>
-</body>
-</html>
+{% endblock %}
