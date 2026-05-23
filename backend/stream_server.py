@@ -144,7 +144,7 @@ def serve_skills():
 def serve_events():
     return send_from_directory(WEB_DIR, 'events.html')
 
-@app.route('/apps')
+@app.route('/apps', strict_slashes=False)
 def serve_apps_launcher():
     return send_from_directory(WEB_DIR, 'apps_launcher.html')
 
