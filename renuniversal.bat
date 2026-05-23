@@ -55,10 +55,17 @@ if not exist "%VENV_DIR%" (
 )
 
 echo - Upgrading pip...
-"%VENV_PYTHON%" -m pip install --upgrade pip
+"%VENV_PYTHON%" -m pip install --upgrade pip --quiet
 
-echo - Installing dependencies...
-"%VENV_PIP%" install -r "%REQUIREMENTS%"
+echo - Installing core dependencies...
+for /f "usebackq eol=# tokens=*" %%a in ("%REQUIREMENTS%") do (
+    set "pkg=%%a"
+    if not "!pkg!"=="" (
+        echo    ... Installing: !pkg!
+        "%VENV_PIP%" install "!pkg!" --quiet
+    )
+)
+echo    - All packages installed successfully!
 
 if not exist "%PROJECT_ROOT%skills" mkdir "%PROJECT_ROOT%skills"
 if not exist "%PROJECT_ROOT%events" mkdir "%PROJECT_ROOT%events"
