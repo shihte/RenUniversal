@@ -31,14 +31,14 @@
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
-        .anthropic-card {
+        .glass-panel shadow-lg rounded-xl {
             background-color: var(--surface);
             border: 1px solid var(--border-subtle);
             border-radius: 12px;
             transition: transform 0.2s ease, border-color 0.2s ease;
         }
 
-        .anthropic-card:hover {
+        .glass-panel shadow-lg rounded-xl:hover {
             border-color: rgba(176, 174, 165, 0.3);
         }
 
@@ -92,26 +92,26 @@
             background: var(--text-dim);
         }
         
-        .btn-anthropic-primary {
+        .bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all {
             background-color: var(--accent-blue);
             color: var(--text-light);
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        .btn-anthropic-primary:hover {
+        .bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all:hover {
             filter: brightness(1.1);
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(106, 155, 204, 0.3);
         }
 
-        .btn-anthropic-secondary {
+        .bg-slate-700 hover:bg-slate-600 text-white transition-all {
             background-color: var(--surface-accent);
             color: var(--text-muted);
             border: 1px solid var(--border-subtle);
             transition: all 0.2s ease;
         }
 
-        .btn-anthropic-secondary:hover {
+        .bg-slate-700 hover:bg-slate-600 text-white transition-all:hover {
             background-color: var(--surface);
             color: var(--text-light);
             border-color: var(--text-muted);
@@ -158,31 +158,31 @@
 <!-- Tab 3: Skills View -->
         <div id="view-skills" class="space-y-8 font-sans">
             <!-- Full Width Onboarding Tutorial Box -->
-            <div class="anthropic-card p-6 bg-[#1a1a18] border border-[#788c5d]/20 rounded-xl space-y-4 col-span-12">
+            <div class="glass-panel shadow-lg rounded-xl p-6 bg-slate-800/50 border border-[#788c5d]/20 rounded-xl space-y-4 col-span-12">
                 <div class="flex items-center gap-3">
-                    <div class="p-2 rounded-lg bg-[#788c5d]/10 text-[#788c5d]">
+                    <div class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
                         </svg>
                     </div>
                     <div>
-                        <h2 class="text-sm font-bold text-[#faf9f5]">🧠 技能中心引導 (Posture Skills Onboarding)</h2>
-                        <p class="text-[11px] text-[#b0aea5]">引導如何啟用、調整與創建自訂動作偵測規則</p>
+                        <h2 class="text-sm font-bold text-white">🧠 技能中心引導 (Posture Skills Onboarding)</h2>
+                        <p class="text-[11px] text-slate-300">引導如何啟用、調整與創建自訂動作偵測規則</p>
                     </div>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 text-[11px] leading-relaxed">
-                    <div class="p-3 rounded-lg bg-[#151513] border border-[#b0aea5]/5 space-y-2">
-                        <span class="font-bold text-[#788c5d]">1. 內建核心技能</span>
-                        <p class="text-[#b0aea5]">RenUniversal 預載了<b>駝背 (Slouch)</b>、<b>軀幹左右偏斜 (Sway)</b> 與<b>前傾 (Lean)</b> 三大核心判定包。您可以隨時調整各項敏感度閾值並即時儲存。</p>
+                    <div class="p-3 rounded-lg bg-[#151513] border border-slate-700/50 space-y-2">
+                        <span class="font-bold text-emerald-400">1. 內建核心技能</span>
+                        <p class="text-slate-300">RenUniversal 預載了<b>駝背 (Slouch)</b>、<b>軀幹左右偏斜 (Sway)</b> 與<b>前傾 (Lean)</b> 三大核心判定包。您可以隨時調整各項敏感度閾值並即時儲存。</p>
                     </div>
-                    <div class="p-3 rounded-lg bg-[#151513] border border-[#b0aea5]/5 space-y-2">
-                        <span class="font-bold text-[#6a9bcc]">2. 自訂判斷語法</span>
-                        <p class="text-[#b0aea5]">在右側建構器中輸入名稱與描述，然後添加檢測規則。如 <code>torso_sway > sway_threshold</code>，系統將會自動生成 Python 邏輯包。</p>
+                    <div class="p-3 rounded-lg bg-[#151513] border border-slate-700/50 space-y-2">
+                        <span class="font-bold text-blue-400">2. 自訂判斷語法</span>
+                        <p class="text-slate-300">在右側建構器中輸入名稱與描述，然後添加檢測規則。如 <code>torso_sway > sway_threshold</code>，系統將會自動生成 Python 邏輯包。</p>
                     </div>
-                    <div class="p-3 rounded-lg bg-[#151513] border border-[#b0aea5]/5 space-y-2">
-                        <span class="font-bold text-[#d97757]">3. 即時閾值微調</span>
-                        <p class="text-[#b0aea5]">創建後的技能會顯示在左側。拖動閾值拉條時，系統將即時通知後端更新，讓您在不需要重啟程式的情況下微調姿勢判定基準。</p>
+                    <div class="p-3 rounded-lg bg-[#151513] border border-slate-700/50 space-y-2">
+                        <span class="font-bold text-blue-400">3. 即時閾值微調</span>
+                        <p class="text-slate-300">創建後的技能會顯示在左側。拖動閾值拉條時，系統將即時通知後端更新，讓您在不需要重啟程式的情況下微調姿勢判定基準。</p>
                     </div>
                 </div>
             </div>
@@ -190,9 +190,9 @@
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <!-- Left Column: Active Skills List -->
             <div class="lg:col-span-6 space-y-6">
-                <div class="flex justify-between items-center pb-2 border-b border-[#b0aea5]/10">
-                    <h2 class="text-sm font-bold text-[#faf9f5] uppercase tracking-[0.15em]">作用中的動作判斷包</h2>
-                    <button onclick="loadSkills()" class="text-[#6a9bcc] hover:underline text-xs">重新整理</button>
+                <div class="flex justify-between items-center pb-2 border-b border-slate-700/50">
+                    <h2 class="text-sm font-bold text-white uppercase tracking-[0.15em]">作用中的動作判斷包</h2>
+                    <button onclick="loadSkills()" class="text-blue-400 hover:underline text-xs">重新整理</button>
                 </div>
                 <div id="skills-list-container" class="space-y-6">
                     <!-- Dynamic active skills items list here -->
@@ -201,91 +201,91 @@
 
             <!-- Right Column: Create Skill Builder Form -->
             <div class="lg:col-span-6 space-y-6">
-                <div class="pb-2 border-b border-[#b0aea5]/10">
-                    <h2 class="text-sm font-bold text-[#faf9f5] uppercase tracking-[0.15em]">自訂動作語法建構器</h2>
+                <div class="pb-2 border-b border-slate-700/50">
+                    <h2 class="text-sm font-bold text-white uppercase tracking-[0.15em]">自訂動作語法建構器</h2>
                 </div>
-                <div class="anthropic-card p-6 space-y-6">
+                <div class="glass-panel shadow-lg rounded-xl p-6 space-y-6">
                     <form id="create-skill-form" onsubmit="submitCreateSkill(event)" class="space-y-5">
                         <div class="space-y-2">
-                            <label class="text-xs text-[#b0aea5] font-semibold block">動作包系統名稱 (ID)*</label>
+                            <label class="text-xs text-slate-300 font-semibold block">動作包系統名稱 (ID)*</label>
                             <input type="text" id="skill-name" required placeholder="例如: shoulder_tilt" 
-                                class="w-full bg-[#1a1a18] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#d97757] font-mono">
-                            <p class="text-[9px] text-[#706e68]">限小寫英文、數字與底線，不可與現有動作包重名。</p>
+                                class="w-full bg-slate-800/50 border border-[#b0aea5]/20 text-white rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#d97757] font-mono">
+                            <p class="text-[9px] text-slate-400">限小寫英文、數字與底線，不可與現有動作包重名。</p>
                         </div>
 
                         <div class="space-y-2">
-                            <label class="text-xs text-[#b0aea5] font-semibold block">中文描述名稱</label>
+                            <label class="text-xs text-slate-300 font-semibold block">中文描述名稱</label>
                             <input type="text" id="skill-desc" placeholder="例如: 肩部高低傾斜偵測" 
-                                class="w-full bg-[#1a1a18] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#d97757]">
+                                class="w-full bg-slate-800/50 border border-[#b0aea5]/20 text-white rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#d97757]">
                         </div>
 
                         <div class="space-y-2">
-                            <label class="text-xs text-[#b0aea5] font-semibold block">演算法依賴 (Requirements)</label>
+                            <label class="text-xs text-slate-300 font-semibold block">演算法依賴 (Requirements)</label>
                             <div class="flex gap-6 mt-1">
-                                <label class="flex items-center gap-2 text-xs text-[#faf9f5] cursor-pointer">
-                                    <input type="checkbox" id="req-face" checked class="rounded border-[#b0aea5]/20 bg-[#1a1a18] text-[#d97757] focus:ring-0">
+                                <label class="flex items-center gap-2 text-xs text-white cursor-pointer">
+                                    <input type="checkbox" id="req-face" checked class="rounded border-[#b0aea5]/20 bg-slate-800/50 text-blue-400 focus:ring-0">
                                     人臉網格 (Face Mesh)
                                 </label>
-                                <label class="flex items-center gap-2 text-xs text-[#faf9f5] cursor-pointer">
-                                    <input type="checkbox" id="req-pose" class="rounded border-[#b0aea5]/20 bg-[#1a1a18] text-[#d97757] focus:ring-0">
+                                <label class="flex items-center gap-2 text-xs text-white cursor-pointer">
+                                    <input type="checkbox" id="req-pose" class="rounded border-[#b0aea5]/20 bg-slate-800/50 text-blue-400 focus:ring-0">
                                     骨骼姿態 (Pose)
                                 </label>
                             </div>
                         </div>
 
                         <!-- ── 點位 ID 建構器 ────────────────────────────────── -->
-                        <div class="space-y-3 pt-3 border-t border-[#b0aea5]/10">
+                        <div class="space-y-3 pt-3 border-t border-slate-700/50">
                             <div class="flex items-center justify-between">
-                                <label class="text-xs text-[#b0aea5] font-semibold">偵測點位 ID 建構器</label>
-                                <button type="button" onclick="toggleSkillLandmarkRef()" class="text-[9px] text-[#6a9bcc] hover:underline">📋 點位 ID 對照表</button>
+                                <label class="text-xs text-slate-300 font-semibold">偵測點位 ID 建構器</label>
+                                <button type="button" onclick="toggleSkillLandmarkRef()" class="text-[9px] text-blue-400 hover:underline">📋 點位 ID 對照表</button>
                             </div>
 
                             <!-- Landmark Reference Panel -->
-                            <div id="skill-landmark-ref" class="bg-[#151513] p-3 rounded-lg border border-[#b0aea5]/10 text-[10px] space-y-2 max-h-40 overflow-y-auto">
-                                <div class="grid grid-cols-2 gap-3 text-[#b0aea5]">
+                            <div id="skill-landmark-ref" class="bg-[#151513] p-3 rounded-lg border border-slate-700/50 text-[10px] space-y-2 max-h-40 overflow-y-auto">
+                                <div class="grid grid-cols-2 gap-3 text-slate-300">
                                     <div>
-                                        <span class="font-bold text-[#6a9bcc] block mb-1">🧍 身體 Pose (p前綴)</span>
+                                        <span class="font-bold text-blue-400 block mb-1">🧍 身體 Pose (p前綴)</span>
                                         <ul class="space-y-0.5 list-disc list-inside">
-                                            <li><code class="text-[#d97757]">p0</code>: 鼻尖</li>
-                                            <li><code class="text-[#d97757]">p11</code>: 左肩</li>
-                                            <li><code class="text-[#d97757]">p12</code>: 右肩</li>
-                                            <li><code class="text-[#d97757]">p13</code>: 左肘</li>
-                                            <li><code class="text-[#d97757]">p14</code>: 右肘</li>
-                                            <li><code class="text-[#d97757]">p15</code>: 左手腕</li>
-                                            <li><code class="text-[#d97757]">p16</code>: 右手腕</li>
-                                            <li><code class="text-[#d97757]">p23</code>: 左髖</li>
-                                            <li><code class="text-[#d97757]">p24</code>: 右髖</li>
+                                            <li><code class="text-blue-400">p0</code>: 鼻尖</li>
+                                            <li><code class="text-blue-400">p11</code>: 左肩</li>
+                                            <li><code class="text-blue-400">p12</code>: 右肩</li>
+                                            <li><code class="text-blue-400">p13</code>: 左肘</li>
+                                            <li><code class="text-blue-400">p14</code>: 右肘</li>
+                                            <li><code class="text-blue-400">p15</code>: 左手腕</li>
+                                            <li><code class="text-blue-400">p16</code>: 右手腕</li>
+                                            <li><code class="text-blue-400">p23</code>: 左髖</li>
+                                            <li><code class="text-blue-400">p24</code>: 右髖</li>
                                         </ul>
                                     </div>
                                     <div>
-                                        <span class="font-bold text-[#788c5d] block mb-1">👤 臉部 Face Mesh (f前綴)</span>
+                                        <span class="font-bold text-emerald-400 block mb-1">👤 臉部 Face Mesh (f前綴)</span>
                                         <ul class="space-y-0.5 list-disc list-inside">
-                                            <li><code class="text-[#d97757]">f1</code>: 鼻尖</li>
-                                            <li><code class="text-[#d97757]">f152</code>: 下巴</li>
-                                            <li><code class="text-[#d97757]">f33</code>: 左眼外角</li>
-                                            <li><code class="text-[#d97757]">f263</code>: 右眼外角</li>
-                                            <li><code class="text-[#d97757]">f133</code>: 左眼內角</li>
-                                            <li><code class="text-[#d97757]">f362</code>: 右眼內角</li>
-                                            <li><code class="text-[#d97757]">f13</code>: 上唇中點</li>
-                                            <li><code class="text-[#d97757]">f14</code>: 下唇中點</li>
-                                            <li><code class="text-[#d97757]">f4</code>: 鼻梁</li>
+                                            <li><code class="text-blue-400">f1</code>: 鼻尖</li>
+                                            <li><code class="text-blue-400">f152</code>: 下巴</li>
+                                            <li><code class="text-blue-400">f33</code>: 左眼外角</li>
+                                            <li><code class="text-blue-400">f263</code>: 右眼外角</li>
+                                            <li><code class="text-blue-400">f133</code>: 左眼內角</li>
+                                            <li><code class="text-blue-400">f362</code>: 右眼內角</li>
+                                            <li><code class="text-blue-400">f13</code>: 上唇中點</li>
+                                            <li><code class="text-blue-400">f14</code>: 下唇中點</li>
+                                            <li><code class="text-blue-400">f4</code>: 鼻梁</li>
                                         </ul>
                                     </div>
                                 </div>
-                                <div class="text-[9px] text-[#706e68] border-t border-[#b0aea5]/5 pt-1">💡 f = 臉部 (0-467)，p = 身體骨骼 (0-32)</div>
+                                <div class="text-[9px] text-slate-400 border-t border-slate-700/50 pt-1">💡 f = 臉部 (0-467)，p = 身體骨骼 (0-32)</div>
                             </div>
 
                             <!-- Generated Syntax Preview -->
                         <div class="space-y-1">
-                            <label class="text-[10px] text-[#b0aea5] font-semibold block">觸發邏輯語法 (Rule Syntax) <span class="text-[#d97757]">*</span></label>
+                            <label class="text-[10px] text-slate-300 font-semibold block">觸發邏輯語法 (Rule Syntax) <span class="text-blue-400">*</span></label>
                             <input type="text" id="rule-syntax" 
-                                class="w-full bg-[#1a1a18] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#d97757] font-mono"
+                                class="w-full bg-slate-800/50 border border-[#b0aea5]/20 text-white rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#d97757] font-mono"
                                 placeholder="例如: f1,f152 >< num=20% 或 torso_lean > lean_threshold">
-                            <p class="text-[9px] text-[#706e68]">格式：<code>f1,f152 &gt;&lt; num=20%</code>　說明：點位1,點位2 方向 num=閾值%</p>
+                            <p class="text-[9px] text-slate-400">格式：<code>f1,f152 &gt;&lt; num=20%</code>　說明：點位1,點位2 方向 num=閾值%</p>
                         </div>
 
                         <button type="submit" 
-                            class="btn-anthropic-primary w-full py-3.5 text-xs font-bold uppercase tracking-[0.1em] rounded-xl flex justify-center items-center gap-2">
+                            class="bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all w-full py-3.5 text-xs font-bold uppercase tracking-[0.1em] rounded-xl flex justify-center items-center gap-2">
                             建立並套用動作 (Deploy Custom Skill)
                         </button>
                     </form>
@@ -300,29 +300,29 @@
          GLOBAL EDIT MODAL  — 點擊作用中項目之後展開
     ═══════════════════════════════════════════════════════════════ -->
     <div id="edit-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/70 backdrop-blur-sm">
-        <div class="bg-[#1a1a18] border border-[#b0aea5]/20 rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-5 mx-4">
+        <div class="bg-slate-800/50 border border-[#b0aea5]/20 rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-5 mx-4">
             <div class="flex justify-between items-center">
                 <div>
-                    <h3 id="modal-title" class="text-sm font-bold text-[#faf9f5]"></h3>
-                    <p id="modal-subtitle" class="text-[10px] text-[#706e68] mt-0.5"></p>
+                    <h3 id="modal-title" class="text-sm font-bold text-white"></h3>
+                    <p id="modal-subtitle" class="text-[10px] text-slate-400 mt-0.5"></p>
                 </div>
-                <button onclick="closeEditModal()" class="text-[#706e68] hover:text-[#faf9f5] text-xl leading-none">&times;</button>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-white text-xl leading-none">&times;</button>
             </div>
 
             <!-- 語法顯示與編輯區 -->
             <div class="space-y-2">
-                <label class="text-[10px] text-[#b0aea5] font-semibold block">目前語法 (Syntax)</label>
+                <label class="text-[10px] text-slate-300 font-semibold block">目前語法 (Syntax)</label>
                 <textarea id="modal-syntax" rows="3"
-                    class="w-full bg-[#151513] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-3 text-xs font-mono focus:outline-none focus:border-[#d97757] resize-none"></textarea>
-                <p class="text-[9px] text-[#706e68]">可直接編輯語法，支持 AND / OR / NOT 及點位 ID 語法。</p>
+                    class="w-full bg-[#151513] border border-[#b0aea5]/20 text-white rounded-lg p-3 text-xs font-mono focus:outline-none focus:border-[#d97757] resize-none"></textarea>
+                <p class="text-[9px] text-slate-400">可直接編輯語法，支持 AND / OR / NOT 及點位 ID 語法。</p>
             </div>
 
                         
 
             <!-- 操作按鈕 -->
             <div class="flex gap-3 pt-2">
-                <button onclick="closeEditModal()" class="flex-1 bg-[#2a2a28] hover:bg-[#3a3a38] text-[#b0aea5] text-xs py-2.5 rounded-xl font-semibold">取消</button>
-                <button id="modal-save-btn" onclick="saveModalEdit()" class="flex-1 btn-anthropic-primary text-xs py-2.5 rounded-xl font-bold">儲存並套用</button>
+                <button onclick="closeEditModal()" class="flex-1 bg-[#2a2a28] hover:bg-[#3a3a38] text-slate-300 text-xs py-2.5 rounded-xl font-semibold">取消</button>
+                <button id="modal-save-btn" onclick="saveModalEdit()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all text-xs py-2.5 rounded-xl font-bold">儲存並套用</button>
             </div>
         </div>
     </div></main>
@@ -562,11 +562,11 @@
             tabBtns.forEach(btnId => {
                 const btn = document.getElementById(`tab-btn-${btnId}`);
                 if (btnId === tabId) {
-                    btn.classList.add('border-[#d97757]', 'text-[#faf9f5]');
-                    btn.classList.remove('border-transparent', 'text-[#b0aea5]');
+                    btn.classList.add('border-[#d97757]', 'text-white');
+                    btn.classList.remove('border-transparent', 'text-slate-300');
                 } else {
-                    btn.classList.remove('border-[#d97757]', 'text-[#faf9f5]');
-                    btn.classList.add('border-transparent', 'text-[#b0aea5]');
+                    btn.classList.remove('border-[#d97757]', 'text-white');
+                    btn.classList.add('border-transparent', 'text-slate-300');
                 }
             });
             
@@ -605,11 +605,11 @@
                     const eventEntries = Object.entries(data.active_events);
                     
                     if (eventEntries.length === 0) {
-                        eventsTbody.innerHTML = '<tr><td colspan="2" class="py-6 text-center text-[#706e68] text-xs">尚無啟用的事件</td></tr>';
+                        eventsTbody.innerHTML = '<tr><td colspan="2" class="py-6 text-center text-slate-400 text-xs">尚無啟用的事件</td></tr>';
                     } else {
                         eventEntries.forEach(([name, isTriggered]) => {
                             const tr = document.createElement('tr');
-                            tr.className = 'border-b border-[#b0aea5]/5 transition-colors duration-300';
+                            tr.className = 'border-b border-slate-700/50 transition-colors duration-300';
                             
                             // 跟線段邏輯一樣：預設藍色，觸發變紅
                             const colorClass = isTriggered ? 'text-red-500 font-bold' : 'text-blue-500';
@@ -632,11 +632,11 @@
                     const skillEntries = Object.entries(data.active_skills);
                     
                     if (skillEntries.length === 0) {
-                        skillsTbody.innerHTML = '<tr><td colspan="2" class="py-6 text-center text-[#706e68] text-xs">尚無啟用的技能</td></tr>';
+                        skillsTbody.innerHTML = '<tr><td colspan="2" class="py-6 text-center text-slate-400 text-xs">尚無啟用的技能</td></tr>';
                     } else {
                         skillEntries.forEach(([name, isTriggered]) => {
                             const tr = document.createElement('tr');
-                            tr.className = 'border-b border-[#b0aea5]/5 transition-colors duration-300';
+                            tr.className = 'border-b border-slate-700/50 transition-colors duration-300';
                             
                             const colorClass = isTriggered ? 'text-red-500 font-bold' : 'text-blue-500';
                             const statusText = isTriggered ? 'TRIGGERED (觸發)' : 'MONITORING (監控中)';
@@ -658,15 +658,15 @@
                     metricsContainer.innerHTML = '';
                     Object.entries(data.metrics).forEach(([name, value]) => {
                         const card = document.createElement('div');
-                        card.className = 'anthropic-card p-5';
+                        card.className = 'glass-panel shadow-lg rounded-xl p-5';
                         
                         let label = name.toUpperCase();
                         
                         let displayValue = typeof value === 'number' ? `${(value * 100).toFixed(1)}%` : value;
                         
                         card.innerHTML = `
-                            <div class="text-[#706e68] text-[10px] font-bold uppercase tracking-[0.15em] mb-1">${label}</div>
-                            <div class="text-2xl font-serif font-medium text-[#6a9bcc]">${displayValue}</div>
+                            <div class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-1">${label}</div>
+                            <div class="text-2xl font-serif font-medium text-blue-400">${displayValue}</div>
                         `;
                         metricsContainer.appendChild(card);
                     });
@@ -678,7 +678,7 @@
                     countsContainer.innerHTML = '';
                     Object.entries(data.trigger_counts).forEach(([name, count]) => {
                         const card = document.createElement('div');
-                        card.className = 'anthropic-card p-5';
+                        card.className = 'glass-panel shadow-lg rounded-xl p-5';
                         
                         let label = `${name.toUpperCase()} Count`;
                         if (name === 'slouch') label = 'Slouch Count';
@@ -686,8 +686,8 @@
                         if (name === 'lean') label = 'Lean Count';
                         
                         card.innerHTML = `
-                            <div class="text-[#706e68] text-[10px] font-bold uppercase tracking-[0.15em] mb-1">${label}</div>
-                            <div class="text-2xl font-serif font-medium text-[#d97757]">${count}</div>
+                            <div class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-1">${label}</div>
+                            <div class="text-2xl font-serif font-medium text-blue-400">${count}</div>
                         `;
                         countsContainer.appendChild(card);
                     });
@@ -719,7 +719,7 @@
                         if (localLinkEl.href !== localMobileUrl) {
                             localLinkEl.href = localMobileUrl;
                             localLinkEl.textContent = localMobileUrl;
-                            document.getElementById('local-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(localMobileUrl)}`;
+                            document.getElementById('local-qr').src = `https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=${encodeURIComponent(localMobileUrl)}`;
                         }
 
                         const mobileUrl = `${data.public_url}/mobile`;
@@ -727,7 +727,7 @@
                         if (linkEl.href !== mobileUrl) {
                             linkEl.href = mobileUrl;
                             linkEl.textContent = mobileUrl;
-                            document.getElementById('tunnel-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(mobileUrl)}`;
+                            document.getElementById('tunnel-qr').src = `https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=${encodeURIComponent(mobileUrl)}`;
                         }
                         const ptb = document.getElementById('public-tunnel-block'); if(ptb) ptb.classList.remove('hidden');
                     } else {
@@ -752,7 +752,7 @@
                             activeSkillsContainer.appendChild(badge);
                         });
                     } else {
-                        activeSkillsContainer.innerHTML = '<span class="text-[10px] text-[#706e68] italic">無動作判定中</span>';
+                        activeSkillsContainer.innerHTML = '<span class="text-[10px] text-slate-400 italic">無動作判定中</span>';
                     }
                 }
 
@@ -764,7 +764,7 @@
                         Object.entries(data.active_events).forEach(([name, isActive]) => {
                             const badge = document.createElement('span');
                             if (isActive) {
-                                badge.className = 'text-[10px] bg-[#d97757]/20 text-[#d97757] border border-[#d97757]/30 px-2 py-0.5 rounded-full font-mono font-bold animate-bounce';
+                                badge.className = 'text-[10px] bg-blue-500/20 text-blue-400 border border-[#d97757]/30 px-2 py-0.5 rounded-full font-mono font-bold animate-bounce';
                                 badge.innerText = `${name.toUpperCase()} (Triggered)`;
                             } else {
                                 badge.className = 'text-[10px] bg-gray-500/10 text-gray-400 border border-gray-500/20 px-2 py-0.5 rounded-full font-mono';
@@ -773,7 +773,7 @@
                             activeEventsContainer.appendChild(badge);
                         });
                     } else {
-                        activeEventsContainer.innerHTML = '<span class="text-[10px] text-[#706e68] italic">無事件觸發</span>';
+                        activeEventsContainer.innerHTML = '<span class="text-[10px] text-slate-400 italic">無事件觸發</span>';
                     }
                 }
 
@@ -847,15 +847,15 @@
                 
                 skills.forEach(skill => {
                     const card = document.createElement('div');
-                    card.className = 'anthropic-card p-6 space-y-4';
+                    card.className = 'glass-panel shadow-lg rounded-xl p-6 space-y-4';
                     
                     const isBuiltin = ['slouch', 'sway', 'lean'].includes(skill.name);
                     const isEnabled = skill.enabled !== false;
                     const reqs = skill.requirements || {};
                     
                     let reqHtml = '';
-                    if (reqs.face_mesh) reqHtml += '<span class="text-[8px] bg-[#6a9bcc]/20 text-[#6a9bcc] px-1.5 py-0.5 rounded font-mono font-bold">FACE MESH</span> ';
-                    if (reqs.pose)      reqHtml += '<span class="text-[8px] bg-[#d97757]/20 text-[#d97757] px-1.5 py-0.5 rounded font-mono font-bold">POSE</span> ';
+                    if (reqs.face_mesh) reqHtml += '<span class="text-[8px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-mono font-bold">FACE MESH</span> ';
+                    if (reqs.pose)      reqHtml += '<span class="text-[8px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-mono font-bold">POSE</span> ';
                     
                     // --- 規則語法顯示：相容 string 格式與 dict 格式 ---
                     let ruleSyntaxDisplay = '';
@@ -896,10 +896,10 @@
                         const minRange = (defaultPrefs[key] < 0) ? -100 : 0;
                         
                         threshHtml += `
-                            <div class="space-y-2 mt-3 pt-3 border-t border-[#b0aea5]/5">
+                            <div class="space-y-2 mt-3 pt-3 border-t border-slate-700/50">
                                 <div class="flex justify-between items-end">
-                                    <span class="text-[11px] text-[#b0aea5] font-medium font-sans">${key}</span>
-                                    <span class="text-xs font-serif italic text-[#d97757]" id="slider-val-${skill.name}-${key}">${sliderVal}%</span>
+                                    <span class="text-[11px] text-slate-300 font-medium font-sans">${key}</span>
+                                    <span class="text-xs font-serif italic text-blue-400" id="slider-val-${skill.name}-${key}">${sliderVal}%</span>
                                 </div>
                                 <input type="range" min="${minRange}" max="100" value="${sliderVal}" 
                                     oninput="updateSkillPreference('${skill.name}', '${key}', this.value)" 
@@ -913,24 +913,24 @@
                         <div class="flex justify-between items-start">
                             <div class="space-y-1 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity" onclick="openEditModal('skill','${skill.name}')" title="點擊編輯語法">
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    <h3 class="text-sm font-bold text-[#faf9f5] font-heading">${skill.name.toUpperCase()}</h3>
-                                    ${isBuiltin ? '<span class="text-[8px] bg-[#788c5d]/20 text-[#788c5d] px-1.5 py-0.5 rounded font-bold font-heading">內建核心</span>' : '<span class="text-[8px] bg-[#6a9bcc]/20 text-[#6a9bcc] px-1.5 py-0.5 rounded font-bold font-heading">自訂</span>'}
-                                    <span class="text-[8px] px-1.5 py-0.5 rounded font-mono ${isEnabled ? 'bg-[#788c5d]/20 text-[#788c5d]' : 'bg-[#706e68]/20 text-[#706e68]'}">${isEnabled ? '啟用' : '停用'}</span>
-                                    <span class="text-[8px] text-[#b0aea5] italic">✏️ 點擊編輯</span>
+                                    <h3 class="text-sm font-bold text-white font-heading">${skill.name.toUpperCase()}</h3>
+                                    ${isBuiltin ? '<span class="text-[8px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold font-heading">內建核心</span>' : '<span class="text-[8px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-bold font-heading">自訂</span>'}
+                                    <span class="text-[8px] px-1.5 py-0.5 rounded font-mono ${isEnabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-[#706e68]/20 text-slate-400'}">${isEnabled ? '啟用' : '停用'}</span>
+                                    <span class="text-[8px] text-slate-300 italic">✏️ 點擊編輯</span>
                                 </div>
-                                <p class="text-xs text-[#b0aea5]">${skill.description || ''}</p>
+                                <p class="text-xs text-slate-300">${skill.description || ''}</p>
                                 <div class="mt-1 flex items-center gap-1.5">${reqHtml}</div>
-                                ${ruleSyntaxDisplay ? `<div class="mt-2 bg-[#1a1a18] px-2 py-1.5 rounded border border-[#b0aea5]/5 font-mono text-[10px] text-[#788c5d] truncate" title="${ruleSyntaxDisplay}">語法: ${ruleSyntaxDisplay}</div>` : ''}
+                                ${ruleSyntaxDisplay ? `<div class="mt-2 bg-slate-800/50 px-2 py-1.5 rounded border border-slate-700/50 font-mono text-[10px] text-emerald-400 truncate" title="${ruleSyntaxDisplay}">語法: ${ruleSyntaxDisplay}</div>` : ''}
                             </div>
                             
                             <div class="flex items-center gap-2 ml-3 flex-shrink-0">
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" class="sr-only peer" ${isEnabled ? 'checked' : ''} 
                                         onchange="toggleSkill('${skill.name}', this.checked)" onclick="event.stopPropagation()">
-                                    <div class="w-10 h-5 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#788c5d]"></div>
+                                    <div class="w-10 h-5 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                                 </label>
                                 ${!isBuiltin ? `
-                                    <button onclick="event.stopPropagation(); deleteSkill('${skill.name}')" class="text-[#d97757] hover:text-red-400 text-xs transition-colors p-1" title="刪除">🗑</button>
+                                    <button onclick="event.stopPropagation(); deleteSkill('${skill.name}')" class="text-blue-400 hover:text-red-400 text-xs transition-colors p-1" title="刪除">🗑</button>
                                 ` : ''}
                             </div>
                         </div>
@@ -977,7 +977,7 @@
             
             const submitBtn = document.querySelector('#create-skill-form button[type="submit"]');
             submitBtn.innerHTML = '更新並套用動作 (Update Custom Skill)';
-            submitBtn.classList.remove('btn-anthropic-primary');
+            submitBtn.classList.remove('bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all');
             submitBtn.classList.add('bg-orange-600', 'hover:bg-orange-500', 'text-white');
             
             // Add a cancel button if it doesn't exist
@@ -985,7 +985,7 @@
                 const cancelBtn = document.createElement('button');
                 cancelBtn.id = 'cancel-edit-btn';
                 cancelBtn.type = 'button';
-                cancelBtn.className = 'btn-anthropic-secondary w-full py-2 mt-2 text-xs font-bold uppercase tracking-[0.1em] rounded-xl';
+                cancelBtn.className = 'bg-slate-700 hover:bg-slate-600 text-white transition-all w-full py-2 mt-2 text-xs font-bold uppercase tracking-[0.1em] rounded-xl';
                 cancelBtn.innerText = '取消編輯 (Cancel)';
                 cancelBtn.onclick = resetSkillForm;
                 submitBtn.parentNode.insertBefore(cancelBtn, submitBtn.nextSibling);
@@ -1000,7 +1000,7 @@
             
             const submitBtn = document.querySelector('#create-skill-form button[type="submit"]');
             submitBtn.innerHTML = '建立並套用動作 (Deploy Custom Skill)';
-            submitBtn.classList.add('btn-anthropic-primary');
+            submitBtn.classList.add('bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all');
             submitBtn.classList.remove('bg-orange-600', 'hover:bg-orange-500', 'text-white');
             
             const cancelBtn = document.getElementById('cancel-edit-btn');
@@ -1132,7 +1132,7 @@
                 
                 if (events.length === 0) {
                     container.innerHTML = `
-                        <div class="anthropic-card p-8 text-center text-xs text-[#b0aea5] italic">
+                        <div class="glass-panel shadow-lg rounded-xl p-8 text-center text-xs text-slate-300 italic">
                             尚未建立任何複合事件規則。請在右側表單建立第一個規則。
                         </div>
                     `;
@@ -1141,7 +1141,7 @@
                 
                 events.forEach(event => {
                     const card = document.createElement('div');
-                    card.className = 'anthropic-card p-6 space-y-4';
+                    card.className = 'glass-panel shadow-lg rounded-xl p-6 space-y-4';
                     
                     const isEnabled = event.enabled !== false;
                     
@@ -1149,12 +1149,12 @@
                         <div class="flex justify-between items-start">
                             <div class="space-y-1 flex-1 cursor-pointer hover:opacity-80 transition-opacity" onclick="openEditModal('event','${event.name}')" title="點擊編輯語法">
                                 <div class="flex items-center gap-2">
-                                    <h3 class="text-sm font-bold text-[#faf9f5] font-heading">${event.name.toUpperCase()}</h3>
-                                    <span class="text-[8px] text-[#b0aea5] italic">✏️ 點擊編輯</span>
+                                    <h3 class="text-sm font-bold text-white font-heading">${event.name.toUpperCase()}</h3>
+                                    <span class="text-[8px] text-slate-300 italic">✏️ 點擊編輯</span>
                                 </div>
-                                <p class="text-xs text-[#b0aea5]">${event.description || ''}</p>
-                                <div class="mt-2 bg-[#1a1a18] p-2 rounded border border-[#b0aea5]/5 font-mono text-[10px] text-[#faf9f5]">
-                                    語法: <span class="text-[#d97757]">${(event.rules && Array.isArray(event.rules)) ? event.rules.join(' ') : (event.rule_syntax || '')}</span>
+                                <p class="text-xs text-slate-300">${event.description || ''}</p>
+                                <div class="mt-2 bg-slate-800/50 p-2 rounded border border-slate-700/50 font-mono text-[10px] text-white">
+                                    語法: <span class="text-blue-400">${(event.rules && Array.isArray(event.rules)) ? event.rules.join(' ') : (event.rule_syntax || '')}</span>
                                 </div>
                             </div>
                             
@@ -1162,9 +1162,9 @@
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" class="sr-only peer" ${isEnabled ? 'checked' : ''} 
                                         onchange="toggleEvent('${event.name}', this.checked)" onclick="event.stopPropagation()">
-                                    <div class="w-10 h-5 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#788c5d]"></div>
+                                    <div class="w-10 h-5 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                                 </label>
-                                <button onclick="event.stopPropagation(); deleteEvent('${event.name}')" class="text-[#d97757] hover:text-red-400 text-xs transition-colors p-1">🗑</button>
+                                <button onclick="event.stopPropagation(); deleteEvent('${event.name}')" class="text-blue-400 hover:text-red-400 text-xs transition-colors p-1">🗑</button>
                             </div>
                         </div>
                     `;
@@ -1189,14 +1189,14 @@
             
             const submitBtn = document.querySelector('#create-event-form button[type="submit"]');
             submitBtn.innerHTML = '更新並套用事件 (Update Event)';
-            submitBtn.classList.remove('btn-anthropic-primary');
+            submitBtn.classList.remove('bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all');
             submitBtn.classList.add('bg-orange-600', 'hover:bg-orange-500', 'text-white');
             
             if (!document.getElementById('cancel-event-edit-btn')) {
                 const cancelBtn = document.createElement('button');
                 cancelBtn.id = 'cancel-event-edit-btn';
                 cancelBtn.type = 'button';
-                cancelBtn.className = 'btn-anthropic-secondary w-full py-2 mt-2 text-xs font-bold uppercase tracking-[0.1em] rounded-xl';
+                cancelBtn.className = 'bg-slate-700 hover:bg-slate-600 text-white transition-all w-full py-2 mt-2 text-xs font-bold uppercase tracking-[0.1em] rounded-xl';
                 cancelBtn.innerText = '取消編輯 (Cancel)';
                 cancelBtn.onclick = resetEventForm;
                 submitBtn.parentNode.insertBefore(cancelBtn, submitBtn.nextSibling);
@@ -1211,7 +1211,7 @@
             
             const submitBtn = document.querySelector('#create-event-form button[type="submit"]');
             submitBtn.innerHTML = '建立並套用事件 (Deploy Event)';
-            submitBtn.classList.add('btn-anthropic-primary');
+            submitBtn.classList.add('bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all');
             submitBtn.classList.remove('bg-orange-600', 'hover:bg-orange-500', 'text-white');
             
             const cancelBtn = document.getElementById('cancel-event-edit-btn');
