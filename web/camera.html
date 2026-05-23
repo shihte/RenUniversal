@@ -179,7 +179,7 @@
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="flip-enabled-checkbox" class="sr-only peer" onchange="updateSetting('flip_enabled', this.checked)">
-                        <div class="w-10 h-5 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                        <div class="w-10 h-5 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                     </label>
                 </div>
 
@@ -195,7 +195,7 @@
                     </div>
                     
                     <!-- Option A: Local Wi-Fi (Highly Recommended) -->
-                    <div class="space-y-2 p-4 rounded-lg bg-[#252523] border border-[#788c5d]/20">
+                    <div class="space-y-2 p-4 rounded-lg bg-slate-800/80 border border-emerald-500/20">
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-bold text-emerald-400">選項 A：本地 Wi-Fi 連線 (極速低延遲 &lt;30ms)</span>
                             <span class="text-[8px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold">推薦</span>
@@ -215,7 +215,7 @@
                     </div>
                     
                     <!-- Option B: Public Tunnel -->
-                    <div id="public-tunnel-block" class="space-y-2 p-4 rounded-lg bg-[#252523] border border-blue-500/20">
+                    <div id="public-tunnel-block" class="space-y-2 p-4 rounded-lg bg-slate-800/80 border border-blue-500/20">
                         <span class="text-xs font-bold text-blue-400">選項 B：遠端公網穿透連線 (延遲較高 1.5s+)</span>
                         <p class="text-[10px] text-slate-400">
                             當手機使用行動網路 (4G/5G) 或跨網段時使用。請掃描下方 QR Code：
@@ -239,7 +239,7 @@
          GLOBAL EDIT MODAL  — 點擊作用中項目之後展開
     ═══════════════════════════════════════════════════════════════ -->
     <div id="edit-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/70 backdrop-blur-sm">
-        <div class="bg-slate-800/50 border border-[#b0aea5]/20 rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-5 mx-4">
+        <div class="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-5 mx-4">
             <div class="flex justify-between items-center">
                 <div>
                     <h3 id="modal-title" class="text-sm font-bold text-white"></h3>
@@ -252,7 +252,7 @@
             <div class="space-y-2">
                 <label class="text-[10px] text-slate-300 font-semibold block">目前語法 (Syntax)</label>
                 <textarea id="modal-syntax" rows="3"
-                    class="w-full bg-[#151513] border border-[#b0aea5]/20 text-white rounded-lg p-3 text-xs font-mono focus:outline-none focus:border-[#d97757] resize-none"></textarea>
+                    class="w-full bg-slate-900/80 border border-slate-700/50 text-white rounded-lg p-3 text-xs font-mono focus:outline-none focus:border-blue-500 resize-none"></textarea>
                 <p class="text-[9px] text-slate-400">可直接編輯語法，支持 AND / OR / NOT 及點位 ID 語法。</p>
             </div>
 
@@ -260,7 +260,7 @@
 
             <!-- 操作按鈕 -->
             <div class="flex gap-3 pt-2">
-                <button onclick="closeEditModal()" class="flex-1 bg-[#2a2a28] hover:bg-[#3a3a38] text-slate-300 text-xs py-2.5 rounded-xl font-semibold">取消</button>
+                <button onclick="closeEditModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs py-2.5 rounded-xl font-semibold">取消</button>
                 <button id="modal-save-btn" onclick="saveModalEdit()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all text-xs py-2.5 rounded-xl font-bold">儲存並套用</button>
             </div>
         </div>
@@ -687,7 +687,7 @@
                     if (localLinkEl) {
                         localLinkEl.href = localMobileUrl;
                         localLinkEl.textContent = localMobileUrl;
-                        document.getElementById('local-qr').src = `https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=${encodeURIComponent(localMobileUrl)}`;
+                        document.getElementById('local-qr').src = `https://quickchart.io/qr?size=150&text=${encodeURIComponent(localMobileUrl)}`;
                     }
 
                     // Always show public block, but with a warning if not connected
@@ -700,13 +700,13 @@
                         if (linkEl) {
                             linkEl.href = mobileUrl;
                             linkEl.textContent = mobileUrl;
-                            document.getElementById('tunnel-qr').src = `https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=${encodeURIComponent(mobileUrl)}`;
+                            document.getElementById('tunnel-qr').src = `https://quickchart.io/qr?size=150&text=${encodeURIComponent(mobileUrl)}`;
                         }
                     } else {
                         if (linkEl) {
                             linkEl.href = "#";
                             linkEl.textContent = "未啟動 (Localhost.run 隧道未連線)";
-                            document.getElementById('tunnel-qr').src = `https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=NotConnected`;
+                            document.getElementById('tunnel-qr').src = `https://quickchart.io/qr?size=150&text=NotConnected`;
                         }
                     }
                 }
@@ -740,7 +740,7 @@
                         Object.entries(data.active_events).forEach(([name, isActive]) => {
                             const badge = document.createElement('span');
                             if (isActive) {
-                                badge.className = 'text-[10px] bg-blue-500/20 text-blue-400 border border-[#d97757]/30 px-2 py-0.5 rounded-full font-mono font-bold animate-bounce';
+                                badge.className = 'text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-full font-mono font-bold animate-bounce';
                                 badge.innerText = `${name.toUpperCase()} (Triggered)`;
                             } else {
                                 badge.className = 'text-[10px] bg-gray-500/10 text-gray-400 border border-gray-500/20 px-2 py-0.5 rounded-full font-mono';
@@ -783,8 +783,8 @@
                 data.cameras.forEach(cam => {
                     const labelText = labels[cam] || `📹 未知相機 (${cam})`;
                     const html = `
-                        <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:border-[#d97757]/50 transition-colors">
-                            <input type="checkbox" value="${cam}" class="cam-chk w-4 h-4 text-blue-400 bg-[#252523] border-[#3a3a38] rounded focus:ring-[#d97757] focus:ring-2">
+                        <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:border-blue-500/50 transition-colors">
+                            <input type="checkbox" value="${cam}" class="cam-chk w-4 h-4 text-blue-400 bg-slate-800/80 border-slate-600 rounded focus:ring-blue-500 focus:ring-2">
                             <span class="text-xs text-white">${labelText}</span>
                         </label>
                     `;
@@ -948,10 +948,10 @@
                         <div class="flex justify-between items-start">
                             <div class="space-y-1 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity" onclick="openEditModal('skill','${skill.name}')" title="點擊編輯語法">
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    <span id="skill-dot-${skill.name}" class="w-2.5 h-2.5 rounded-full bg-[#3a3a38] flex-shrink-0 transition-all duration-300" title="狀態"></span>
+                                    <span id="skill-dot-${skill.name}" class="w-2.5 h-2.5 rounded-full bg-slate-600 flex-shrink-0 transition-all duration-300" title="狀態"></span>
                                     <h3 class="text-sm font-bold text-white font-heading">${skill.name.toUpperCase()}</h3>
                                     ${isBuiltin ? '<span class="text-[8px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold font-heading">內建核心</span>' : '<span class="text-[8px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-bold font-heading">自訂</span>'}
-                                    <span class="text-[8px] px-1.5 py-0.5 rounded font-mono ${isEnabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-[#706e68]/20 text-slate-400'}">${isEnabled ? '啟用' : '停用'}</span>
+                                    <span class="text-[8px] px-1.5 py-0.5 rounded font-mono ${isEnabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-500/20 text-slate-400'}">${isEnabled ? '啟用' : '停用'}</span>
                                     <span id="skill-status-${skill.name}" class="text-[8px] text-slate-400 italic">待機中</span>
                                     <span class="text-[8px] text-slate-300 italic">✏️ 點擊編輯</span>
                                 </div>
@@ -964,7 +964,7 @@
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" class="sr-only peer" ${isEnabled ? 'checked' : ''} 
                                         onchange="toggleSkill('${skill.name}', this.checked)" onclick="event.stopPropagation()">
-                                    <div class="w-10 h-5 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                                    <div class="w-10 h-5 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                                 </label>
                                 ${!isBuiltin ? `
                                     <button onclick="event.stopPropagation(); deleteSkill('${skill.name}')" class="text-blue-400 hover:text-red-400 text-xs transition-colors p-1" title="刪除">🗑</button>
@@ -1199,7 +1199,7 @@
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" class="sr-only peer" ${isEnabled ? 'checked' : ''} 
                                         onchange="toggleEvent('${event.name}', this.checked)" onclick="event.stopPropagation()">
-                                    <div class="w-10 h-5 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                                    <div class="w-10 h-5 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                                 </label>
                                 <button onclick="event.stopPropagation(); deleteEvent('${event.name}')" class="text-blue-400 hover:text-red-400 text-xs transition-colors p-1">🗑</button>
                             </div>
