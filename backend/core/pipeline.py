@@ -215,12 +215,12 @@ class AgentPipeline:
 
     def _annotate_frame(self, frame: np.ndarray, landmarks: Any, width: int, height: int, status: Any, pose_landmarks: Any = None, draw_text: bool = True) -> None:
         """
-        在畫面上繪製 CTAR 核心追蹤點（雙眼、鼻、下巴、雙肩），以及額外啟用的 Skills 追蹤點。
+        在畫面上繪製 RenUniversal 核心追蹤點（雙眼、鼻、下巴、雙肩），以及額外啟用的 Skills 追蹤點。
         """
         NOSE_INDEX, CHIN_INDEX = 1, 152
         LEFT_EYE_INDEX, RIGHT_EYE_INDEX = 33, 263
         
-        # 1. 繪製 CTAR 基礎面部追蹤點 (雙眼、鼻子、下巴)
+        # 1. 繪製 RenUniversal 基礎面部追蹤點 (雙眼、鼻子、下巴)
         if landmarks is not None:
             points = [
                 (landmarks.landmark[NOSE_INDEX], (255, 100, 0), "Nose"),      # 藍色 (BGR)
@@ -233,7 +233,7 @@ class AgentPipeline:
                 cv2.circle(frame, (cx, cy), 5, color, -1)
                 cv2.circle(frame, (cx, cy), 7, (255, 255, 255), 1)
 
-            # 繪製鼻尖到下巴的連線 (CTAR 核心：下巴內收參考線)
+            # 繪製鼻尖到下巴的連線 (RenUniversal 核心：下巴內收參考線)
             nose = landmarks.landmark[NOSE_INDEX]
             chin = landmarks.landmark[CHIN_INDEX]
             cv2.line(frame, 
@@ -241,7 +241,7 @@ class AgentPipeline:
                      (int(chin.x * width), int(chin.y * height)), 
                      (255, 255, 255), 1, cv2.LINE_AA)
 
-        # 2. 繪製 CTAR 基礎身體追蹤點 (雙肩)
+        # 2. 繪製 RenUniversal 基礎身體追蹤點 (雙肩)
         if pose_landmarks:
             left_shoulder = pose_landmarks.landmark[11]
             right_shoulder = pose_landmarks.landmark[12]
@@ -419,28 +419,30 @@ class AgentPipeline:
             # 暫停模式：直接回傳拼接後的畫面，不跑 AI
             return self._stitch_frames(frames)
 
-        # 決定誰跑 AI
-        # 如果只有 1 支鏡頭，它跑 Face + Pose
-        # 如果有 2 支以上鏡頭，第 1 支跑 Face，第 2 支跑 Pose
-        face_frame_tuple = frames[0]
-        pose_frame_tuple = frames[1] if len(frames) >= 2 else frames[0]
-        
+        # 2. 推理與分析：強制搜尋所有鏡頭，尋找臉部與身體
         inference_start = time.perf_counter()
         
-        # 2. 推理與分析
-        face_rgb = cv2.cvtColor(face_frame_tuple[1], cv2.COLOR_BGR2RGB)
-        inference_results = self.face_mesh.process(face_rgb)
+        frames_rgb = [(src, frame, cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)) for src, frame in frames]
         
-        if face_frame_tuple[0] != pose_frame_tuple[0]:
-            pose_rgb = cv2.cvtColor(pose_frame_tuple[1], cv2.COLOR_BGR2RGB)
-            pose_results = self.pose.process(pose_rgb)
-        else:
-            pose_results = self.pose.process(face_rgb)
+        landmarks = None
+        face_frame_tuple = frames[0]
+        for src, frame, rgb in frames_rgb:
+            res = self.face_mesh.process(rgb)
+            if res and res.multi_face_landmarks:
+                landmarks = res.multi_face_landmarks[0]
+                face_frame_tuple = (src, frame)
+                break
+                
+        pose_landmarks = None
+        pose_frame_tuple = frames[0]
+        for src, frame, rgb in frames_rgb:
+            res = self.pose.process(rgb)
+            if res and res.pose_landmarks:
+                pose_landmarks = res.pose_landmarks
+                pose_frame_tuple = (src, frame)
+                break
             
         inference_time_ms = int((time.perf_counter() - inference_start) * 1000)
-        
-        landmarks = inference_results.multi_face_landmarks[0] if (inference_results and inference_results.multi_face_landmarks) else None
-        pose_landmarks = pose_results.pose_landmarks if (pose_results and pose_results.pose_landmarks) else None
         
         # 進行動作引擎分析 (綁定到 face_frame_tuple 畫面上，因為特徵大多在臉部)
         h_f, w_f, _ = face_frame_tuple[1].shape

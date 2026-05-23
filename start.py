@@ -6,7 +6,7 @@ import time
 
 def main():
     """
-    One-click startup script for CTAR CTAR Posture Monitor.
+    One-click startup script for RenUniversal RenUniversal Posture Monitor.
     Handles starting the server and ensuring it shuts down when this script is closed.
     """
     # Define paths based on the script location
@@ -31,7 +31,7 @@ def main():
         sys.exit(1)
 
     print(f"{'='*50}")
-    print(f"CTAR Launcher")
+    print(f"RenUniversal Launcher")
     print(f"{'='*50}")
     print(f"Root:   {ROOT_DIR}")
     print(f"Python: {PYTHON_EXEC}")

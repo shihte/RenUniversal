@@ -1,4 +1,4 @@
-# CTAR 動作判斷包設計規範與開發指引 (Action Judgment Packages)
+# RenUniversal 動作判斷包設計規範與開發指引 (Action Judgment Packages)
 
 本目錄存放所有自定義的動作與姿態偵測模組。系統底層偵測核心（Pipeline）採用動態插件模式，於運行時自動掃描、加載並執行此目錄下的判斷包。
 
