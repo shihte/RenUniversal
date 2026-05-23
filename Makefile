@@ -1,5 +1,5 @@
 # ============================================================
-# CTAR Project Makefile — Dynamic Self-Healing Build System
+# RenUniversal Project Makefile — Dynamic Self-Healing Build System
 # ============================================================
 .PHONY: help check-env setup run start stop restart status test clean doctor
 
@@ -43,7 +43,7 @@ COMPATIBLE_PYTHON := $(shell \
 help:
 	@echo ""
 	@echo "  ╔══════════════════════════════════════╗"
-	@echo "  ║      CTAR Agent — 指令說明           ║"
+	@echo "  ║      RenUniversal Agent — 指令說明           ║"
 	@echo "  ╚══════════════════════════════════════╝"
 	@echo ""
 	@echo "  make doctor   — 診斷系統環境並嘗試自動修復"
@@ -55,13 +55,14 @@ help:
 	@echo "  make run      — 前景執行（可見日誌，Ctrl+C 停止）"
 	@echo "  make test     — 執行架構驗證測試"
 	@echo "  make clean    — 清除快取、日誌與 PID 檔案"
+	@echo "  make install PATH=<dir> — 安裝 .renuniversal 外掛套件"
 	@echo ""
 
 # ============================================================
 # DOCTOR — 環境診斷與自動修補
 # ============================================================
 doctor:
-	@echo "=== CTAR 環境診斷 (Doctor) ==="
+	@echo "=== RenUniversal 環境診斷 (Doctor) ==="
 	@echo ""
 	@echo "▶ 1. 偵測作業系統..."
 	@OS=$$(uname -s); \
@@ -213,7 +214,7 @@ _install_deps:
 # SETUP
 # ============================================================
 setup:
-	@echo "=== 初始化 CTAR Agent 環境 ==="
+	@echo "=== 初始化 RenUniversal Agent 環境 ==="
 	@if [ -z "$(COMPATIBLE_PYTHON)" ]; then \
 		echo "✗ 找不到相容的 Python (3.9–3.12)，嘗試自動修復..."; \
 		$(MAKE) _install_python; \
@@ -233,7 +234,7 @@ run:
 	@if [ ! -f "$(VENV_PYTHON)" ]; then \
 		echo "✗ 找不到虛擬環境。執行 'make setup' 初始化。"; exit 1; \
 	fi
-	@echo "=== 前景啟動 CTAR（Ctrl+C 停止）==="
+	@echo "=== 前景啟動 RenUniversal（Ctrl+C 停止）==="
 	@PYTHONPATH="$(PROJECT_ROOT):$$PYTHONPATH" $(VENV_PYTHON) "$(SERVER_SCRIPT)"
 
 # ============================================================
@@ -263,7 +264,7 @@ start:
 		for p in $$STALE; do kill -9 $$p 2>/dev/null || true; done; \
 		sleep 3; \
 	fi
-	@echo "=== 啟動 CTAR Agent 伺服器 ==="
+	@echo "=== 啟動 RenUniversal Agent 伺服器 ==="
 	@PYTHONPATH="$(PROJECT_ROOT):$$PYTHONPATH" \
 		nohup $(VENV_PYTHON) "$(SERVER_SCRIPT)" >"$(LOG_FILE)" 2>&1 & \
 		echo $$! >"$(PID_FILE)"
@@ -285,7 +286,7 @@ start:
 # STOP — 三層式確保徹底停止
 # ============================================================
 stop:
-	@echo "=== 停止 CTAR Agent 伺服器 ==="
+	@echo "=== 停止 RenUniversal Agent 伺服器 ==="
 	@KILLED=0; \
 	\
 	# 層 1: PID 檔案
@@ -349,7 +350,7 @@ restart:
 # STATUS
 # ============================================================
 status:
-	@echo "=== CTAR Agent 狀態 ==="
+	@echo "=== RenUniversal Agent 狀態 ==="
 	@if [ -f "$(PID_FILE)" ]; then \
 		PID=$$(cat "$(PID_FILE)" 2>/dev/null || true); \
 		if [ -n "$$PID" ] && kill -0 "$$PID" 2>/dev/null; then \
@@ -391,3 +392,15 @@ clean:
 	@rm -f preferences.json
 	@rm -f backend/core/.status.tmp
 	@echo "✓ 清除完成"
+
+# ============================================================
+# INSTALL PLUGIN
+# ============================================================
+install:
+	@if [ -z "$(PATH)" ]; then \
+		echo "✗ 請提供外掛路徑，例如：make install PATH=./my_plugin"; exit 1; \
+	fi
+	@if [ ! -f "$(VENV_PYTHON)" ]; then \
+		echo "✗ 找不到虛擬環境。執行 'make setup'。"; exit 1; \
+	fi
+	@$(VENV_PYTHON) tools/installer.py "$(PATH)"

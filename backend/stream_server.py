@@ -541,7 +541,7 @@ def api_update_settings():
         return jsonify({"error": str(e)}), 500
 
 def main():
-    parser = argparse.ArgumentParser(description='CTAR Agent-Powered Server')
+    parser = argparse.ArgumentParser(description='RenUniversal Agent-Powered Server')
     parser.add_argument('--port', type=int, default=8080)
     args = parser.parse_args()
     
@@ -562,7 +562,7 @@ def main():
     https_thread = threading.Thread(target=run_https, daemon=True)
     https_thread.start()
     
-    logger.info(f"CTAR Agent Server starting on http://localhost:{args.port}")
+    logger.info(f"RenUniversal Agent Server starting on http://localhost:{args.port}")
     logger.info(f"Mobile Access URL (HTTP): http://{local_ip}:{args.port}/mobile")
     logger.info(f"Mobile Access URL (HTTPS Local): https://{local_ip}:8443/mobile")
     start_tunnel(args.port)
