@@ -31,14 +31,14 @@
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
-        .anthropic-card {
+        .glass-panel shadow-lg rounded-xl {
             background-color: var(--surface);
             border: 1px solid var(--border-subtle);
             border-radius: 12px;
             transition: transform 0.2s ease, border-color 0.2s ease;
         }
 
-        .anthropic-card:hover {
+        .glass-panel shadow-lg rounded-xl:hover {
             border-color: rgba(176, 174, 165, 0.3);
         }
 
@@ -92,26 +92,26 @@
             background: var(--text-dim);
         }
         
-        .btn-anthropic-primary {
+        .bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all {
             background-color: var(--accent-blue);
             color: var(--text-light);
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        .btn-anthropic-primary:hover {
+        .bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all:hover {
             filter: brightness(1.1);
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(106, 155, 204, 0.3);
         }
 
-        .btn-anthropic-secondary {
+        .bg-slate-700 hover:bg-slate-600 text-white transition-all {
             background-color: var(--surface-accent);
             color: var(--text-muted);
             border: 1px solid var(--border-subtle);
             transition: all 0.2s ease;
         }
 
-        .btn-anthropic-secondary:hover {
+        .bg-slate-700 hover:bg-slate-600 text-white transition-all:hover {
             background-color: var(--surface);
             color: var(--text-light);
             border-color: var(--text-muted);
@@ -157,39 +157,39 @@
         <div class="max-w-6xl mx-auto space-y-8 pb-20">
 <!-- Tab 2: Camera View -->
         <div id="view-camera" class="max-w-3xl mx-auto space-y-8 font-sans">
-            <div class="anthropic-card p-8 space-y-8">
-                <h2 class="text-xs font-bold text-[#faf9f5] uppercase tracking-[0.2em] border-b border-[#b0aea5]/10 pb-4"
+            <div class="glass-panel shadow-lg rounded-xl p-8 space-y-8">
+                <h2 class="text-xs font-bold text-white uppercase tracking-[0.2em] border-b border-slate-700/50 pb-4"
                     data-i18n="camera_source_label">鏡頭輸入來源 (Camera Source)</h2>
 
                 <div class="space-y-4">
-                    <label class="text-xs text-[#b0aea5] font-medium">請選擇作用中的鏡頭裝置 (最少 1，最多 5)：</label>
+                    <label class="text-xs text-slate-300 font-medium">請選擇作用中的鏡頭裝置 (最少 1，最多 5)：</label>
                     <div id="camera-checkboxes" class="flex flex-col gap-3 mt-2">
                         <!-- Dynamically populated -->
                     </div>
-                    <p class="text-[10px] text-[#706e68] leading-relaxed italic" data-i18n="camera_source_desc" id="camera-source-desc">
+                    <p class="text-[10px] text-slate-400 leading-relaxed italic" data-i18n="camera_source_desc" id="camera-source-desc">
                         多鏡頭模式會自動分割畫面 (Grid Layout)。若選擇手機網路串流，請確保手機已掃描下方 QR Code 進行連線。
                     </p>
                 </div>
 
                 <!-- Mirror Preview Frame Option -->
-                <div class="flex items-center justify-between p-4 rounded-lg bg-[#1a1a18] border border-[#b0aea5]/10 mt-4">
+                <div class="flex items-center justify-between p-4 rounded-lg bg-slate-800/50 border border-slate-700/50 mt-4">
                     <div class="space-y-1">
-                        <span class="text-xs font-bold text-[#faf9f5]">鏡像翻轉預覽畫面 (Mirror Preview Frame)</span>
-                        <p class="text-[10px] text-[#b0aea5]">開啟後，預覽影像將水平翻轉（適合筆電前置鏡頭）；若使用手機後置鏡頭或 USB 外接相機，可關閉以取得正確方向。</p>
+                        <span class="text-xs font-bold text-white">鏡像翻轉預覽畫面 (Mirror Preview Frame)</span>
+                        <p class="text-[10px] text-slate-300">開啟後，預覽影像將水平翻轉（適合筆電前置鏡頭）；若使用手機後置鏡頭或 USB 外接相機，可關閉以取得正確方向。</p>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="flip-enabled-checkbox" class="sr-only peer" onchange="updateSetting('flip_enabled', this.checked)">
-                        <div class="w-10 h-5 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#788c5d]"></div>
+                        <div class="w-10 h-5 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                     </label>
                 </div>
 
                 <!-- Dual connection info -->
-                <div id="tunnel-info-container" class="space-y-4 bg-[#1d1d1b] p-6 rounded-xl border border-[#d97757]/20">
+                <div id="tunnel-info-container" class="space-y-4 bg-slate-800/50 p-6 rounded-xl border border-blue-500/20">
                     <div class="space-y-1">
-                        <span class="text-xs font-bold text-[#d97757] uppercase tracking-[0.15em] block">
+                        <span class="text-xs font-bold text-blue-400 uppercase tracking-[0.15em] block">
                             📱 手機連線配置 (Phone Connection Options)
                         </span>
-                        <p class="text-[11px] text-[#b0aea5] leading-normal">
+                        <p class="text-[11px] text-slate-300 leading-normal">
                             請使用手機掃描以下 QR Code 開啟前置相機進行高精度人臉與姿態辨識：
                         </p>
                     </div>
@@ -197,10 +197,10 @@
                     <!-- Option A: Local Wi-Fi (Highly Recommended) -->
                     <div class="space-y-2 p-4 rounded-lg bg-[#252523] border border-[#788c5d]/20">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-[#788c5d]">選項 A：本地 Wi-Fi 連線 (極速低延遲 &lt;30ms)</span>
-                            <span class="text-[8px] bg-[#788c5d]/20 text-[#788c5d] px-1.5 py-0.5 rounded font-bold">推薦</span>
+                            <span class="text-xs font-bold text-emerald-400">選項 A：本地 Wi-Fi 連線 (極速低延遲 &lt;30ms)</span>
+                            <span class="text-[8px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold">推薦</span>
                         </div>
-                        <p class="text-[10px] text-[#706e68]">
+                        <p class="text-[10px] text-slate-400">
                             手機必須與電腦連接到<strong>同一個 Wi-Fi</strong>。請掃描下方 QR Code 或輸入網址（請手動指定 http）：
                         </p>
                         <div class="flex items-center gap-4 mt-2">
@@ -208,16 +208,16 @@
                                 <img id="local-qr" src="" alt="Local QR" class="w-24 h-24" />
                             </div>
                             <div class="space-y-2 overflow-hidden min-w-0">
-                                <a id="local-link" href="" target="_blank" class="text-xs text-[#788c5d] underline block truncate font-mono"></a>
-                                <span class="text-[9px] text-[#706e68] block">⚠️ 如果手機未開 Wi-Fi 或連接不同網路，此連結會連不上。</span>
+                                <a id="local-link" href="" target="_blank" class="text-xs text-emerald-400 underline block truncate font-mono"></a>
+                                <span class="text-[9px] text-slate-400 block">⚠️ 如果手機未開 Wi-Fi 或連接不同網路，此連結會連不上。</span>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Option B: Public Tunnel -->
-                    <div id="public-tunnel-block" class="space-y-2 p-4 rounded-lg bg-[#252523] border border-[#d97757]/20">
-                        <span class="text-xs font-bold text-[#d97757]">選項 B：遠端公網穿透連線 (延遲較高 1.5s+)</span>
-                        <p class="text-[10px] text-[#706e68]">
+                    <div id="public-tunnel-block" class="space-y-2 p-4 rounded-lg bg-[#252523] border border-blue-500/20">
+                        <span class="text-xs font-bold text-blue-400">選項 B：遠端公網穿透連線 (延遲較高 1.5s+)</span>
+                        <p class="text-[10px] text-slate-400">
                             當手機使用行動網路 (4G/5G) 或跨網段時使用。請掃描下方 QR Code：
                         </p>
                         <div class="flex items-center gap-4 mt-2">
@@ -225,8 +225,8 @@
                                 <img id="tunnel-qr" src="" alt="Tunnel QR" class="w-24 h-24" />
                             </div>
                             <div class="space-y-2 overflow-hidden min-w-0">
-                                <a id="tunnel-link" href="" target="_blank" class="text-xs text-[#d97757] underline block truncate font-mono"></a>
-                                <span class="text-[9px] text-[#706e68] block">✈️ 資料需繞行海外轉機點，延遲較高。建議切換手機至極速模式。</span>
+                                <a id="tunnel-link" href="" target="_blank" class="text-xs text-blue-400 underline block truncate font-mono"></a>
+                                <span class="text-[9px] text-slate-400 block">✈️ 資料需繞行海外轉機點，延遲較高。建議切換手機至極速模式。</span>
                             </div>
                         </div>
                     </div>
@@ -239,29 +239,29 @@
          GLOBAL EDIT MODAL  — 點擊作用中項目之後展開
     ═══════════════════════════════════════════════════════════════ -->
     <div id="edit-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/70 backdrop-blur-sm">
-        <div class="bg-[#1a1a18] border border-[#b0aea5]/20 rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-5 mx-4">
+        <div class="bg-slate-800/50 border border-[#b0aea5]/20 rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-5 mx-4">
             <div class="flex justify-between items-center">
                 <div>
-                    <h3 id="modal-title" class="text-sm font-bold text-[#faf9f5]"></h3>
-                    <p id="modal-subtitle" class="text-[10px] text-[#706e68] mt-0.5"></p>
+                    <h3 id="modal-title" class="text-sm font-bold text-white"></h3>
+                    <p id="modal-subtitle" class="text-[10px] text-slate-400 mt-0.5"></p>
                 </div>
-                <button onclick="closeEditModal()" class="text-[#706e68] hover:text-[#faf9f5] text-xl leading-none">&times;</button>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-white text-xl leading-none">&times;</button>
             </div>
 
             <!-- 語法顯示與編輯區 -->
             <div class="space-y-2">
-                <label class="text-[10px] text-[#b0aea5] font-semibold block">目前語法 (Syntax)</label>
+                <label class="text-[10px] text-slate-300 font-semibold block">目前語法 (Syntax)</label>
                 <textarea id="modal-syntax" rows="3"
-                    class="w-full bg-[#151513] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-3 text-xs font-mono focus:outline-none focus:border-[#d97757] resize-none"></textarea>
-                <p class="text-[9px] text-[#706e68]">可直接編輯語法，支持 AND / OR / NOT 及點位 ID 語法。</p>
+                    class="w-full bg-[#151513] border border-[#b0aea5]/20 text-white rounded-lg p-3 text-xs font-mono focus:outline-none focus:border-[#d97757] resize-none"></textarea>
+                <p class="text-[9px] text-slate-400">可直接編輯語法，支持 AND / OR / NOT 及點位 ID 語法。</p>
             </div>
 
                         
 
             <!-- 操作按鈕 -->
             <div class="flex gap-3 pt-2">
-                <button onclick="closeEditModal()" class="flex-1 bg-[#2a2a28] hover:bg-[#3a3a38] text-[#b0aea5] text-xs py-2.5 rounded-xl font-semibold">取消</button>
-                <button id="modal-save-btn" onclick="saveModalEdit()" class="flex-1 btn-anthropic-primary text-xs py-2.5 rounded-xl font-bold">儲存並套用</button>
+                <button onclick="closeEditModal()" class="flex-1 bg-[#2a2a28] hover:bg-[#3a3a38] text-slate-300 text-xs py-2.5 rounded-xl font-semibold">取消</button>
+                <button id="modal-save-btn" onclick="saveModalEdit()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all text-xs py-2.5 rounded-xl font-bold">儲存並套用</button>
             </div>
         </div>
     </div></main>
@@ -501,11 +501,11 @@
             tabBtns.forEach(btnId => {
                 const btn = document.getElementById(`tab-btn-${btnId}`);
                 if (btnId === tabId) {
-                    btn.classList.add('border-[#d97757]', 'text-[#faf9f5]');
-                    btn.classList.remove('border-transparent', 'text-[#b0aea5]');
+                    btn.classList.add('border-[#d97757]', 'text-white');
+                    btn.classList.remove('border-transparent', 'text-slate-300');
                 } else {
-                    btn.classList.remove('border-[#d97757]', 'text-[#faf9f5]');
-                    btn.classList.add('border-transparent', 'text-[#b0aea5]');
+                    btn.classList.remove('border-[#d97757]', 'text-white');
+                    btn.classList.add('border-transparent', 'text-slate-300');
                 }
             });
             
@@ -544,11 +544,11 @@
                     const eventEntries = Object.entries(data.active_events);
                     
                     if (eventEntries.length === 0) {
-                        eventsTbody.innerHTML = '<tr><td colspan="2" class="py-6 text-center text-[#706e68] text-xs">尚無啟用的事件</td></tr>';
+                        eventsTbody.innerHTML = '<tr><td colspan="2" class="py-6 text-center text-slate-400 text-xs">尚無啟用的事件</td></tr>';
                     } else {
                         eventEntries.forEach(([name, isTriggered]) => {
                             const tr = document.createElement('tr');
-                            tr.className = 'border-b border-[#b0aea5]/5 transition-colors duration-300';
+                            tr.className = 'border-b border-slate-700/50 transition-colors duration-300';
                             
                             // 跟線段邏輯一樣：預設藍色，觸發變紅
                             const colorClass = isTriggered ? 'text-red-500 font-bold' : 'text-blue-500';
@@ -571,11 +571,11 @@
                     const skillEntries = Object.entries(data.active_skills);
                     
                     if (skillEntries.length === 0) {
-                        skillsTbody.innerHTML = '<tr><td colspan="2" class="py-6 text-center text-[#706e68] text-xs">尚無啟用的技能</td></tr>';
+                        skillsTbody.innerHTML = '<tr><td colspan="2" class="py-6 text-center text-slate-400 text-xs">尚無啟用的技能</td></tr>';
                     } else {
                         skillEntries.forEach(([name, isTriggered]) => {
                             const tr = document.createElement('tr');
-                            tr.className = 'border-b border-[#b0aea5]/5 transition-colors duration-300';
+                            tr.className = 'border-b border-slate-700/50 transition-colors duration-300';
                             
                             const colorClass = isTriggered ? 'text-red-500 font-bold' : 'text-blue-500';
                             const statusText = isTriggered ? 'TRIGGERED (觸發)' : 'MONITORING (監控中)';
@@ -597,15 +597,15 @@
                     metricsContainer.innerHTML = '';
                     Object.entries(data.metrics).forEach(([name, value]) => {
                         const card = document.createElement('div');
-                        card.className = 'anthropic-card p-5';
+                        card.className = 'glass-panel shadow-lg rounded-xl p-5';
                         
                         let label = name.toUpperCase();
                         
                         let displayValue = typeof value === 'number' ? `${(value * 100).toFixed(1)}%` : value;
                         
                         card.innerHTML = `
-                            <div class="text-[#706e68] text-[10px] font-bold uppercase tracking-[0.15em] mb-1">${label}</div>
-                            <div class="text-2xl font-serif font-medium text-[#6a9bcc]">${displayValue}</div>
+                            <div class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-1">${label}</div>
+                            <div class="text-2xl font-serif font-medium text-blue-400">${displayValue}</div>
                         `;
                         metricsContainer.appendChild(card);
                     });
@@ -617,7 +617,7 @@
                     countsContainer.innerHTML = '';
                     Object.entries(data.trigger_counts).forEach(([name, count]) => {
                         const card = document.createElement('div');
-                        card.className = 'anthropic-card p-5';
+                        card.className = 'glass-panel shadow-lg rounded-xl p-5';
                         
                         let label = `${name.toUpperCase()} Count`;
                         if (name === 'slouch') label = 'Slouch Count';
@@ -625,8 +625,8 @@
                         if (name === 'lean') label = 'Lean Count';
                         
                         card.innerHTML = `
-                            <div class="text-[#706e68] text-[10px] font-bold uppercase tracking-[0.15em] mb-1">${label}</div>
-                            <div class="text-2xl font-serif font-medium text-[#d97757]">${count}</div>
+                            <div class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-1">${label}</div>
+                            <div class="text-2xl font-serif font-medium text-blue-400">${count}</div>
                         `;
                         countsContainer.appendChild(card);
                     });
@@ -657,8 +657,8 @@
                                 dot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0 transition-all duration-300 animate-pulse shadow-[0_0_6px_rgba(239,68,68,0.8)]';
                                 if (lbl) { lbl.className = 'text-[8px] text-red-400 font-bold'; lbl.textContent = '⚠ 觸發中'; }
                             } else {
-                                dot.className = 'w-2.5 h-2.5 rounded-full bg-[#788c5d] flex-shrink-0 transition-all duration-300';
-                                if (lbl) { lbl.className = 'text-[8px] text-[#788c5d]'; lbl.textContent = '● 監控中'; }
+                                dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0 transition-all duration-300';
+                                if (lbl) { lbl.className = 'text-[8px] text-emerald-400'; lbl.textContent = '● 監控中'; }
                             }
                         }
                     });
@@ -685,7 +685,7 @@
                     if (localLinkEl) {
                         localLinkEl.href = localMobileUrl;
                         localLinkEl.textContent = localMobileUrl;
-                        document.getElementById('local-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(localMobileUrl)}`;
+                        document.getElementById('local-qr').src = `https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=${encodeURIComponent(localMobileUrl)}`;
                     }
 
                     // Always show public block, but with a warning if not connected
@@ -698,13 +698,13 @@
                         if (linkEl) {
                             linkEl.href = mobileUrl;
                             linkEl.textContent = mobileUrl;
-                            document.getElementById('tunnel-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(mobileUrl)}`;
+                            document.getElementById('tunnel-qr').src = `https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=${encodeURIComponent(mobileUrl)}`;
                         }
                     } else {
                         if (linkEl) {
                             linkEl.href = "#";
                             linkEl.textContent = "未啟動 (Localhost.run 隧道未連線)";
-                            document.getElementById('tunnel-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=NotConnected`;
+                            document.getElementById('tunnel-qr').src = `https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=NotConnected`;
                         }
                     }
                 }
@@ -726,7 +726,7 @@
                             activeSkillsContainer.appendChild(badge);
                         });
                     } else {
-                        activeSkillsContainer.innerHTML = '<span class="text-[10px] text-[#706e68] italic">無動作判定中</span>';
+                        activeSkillsContainer.innerHTML = '<span class="text-[10px] text-slate-400 italic">無動作判定中</span>';
                     }
                 }
 
@@ -738,7 +738,7 @@
                         Object.entries(data.active_events).forEach(([name, isActive]) => {
                             const badge = document.createElement('span');
                             if (isActive) {
-                                badge.className = 'text-[10px] bg-[#d97757]/20 text-[#d97757] border border-[#d97757]/30 px-2 py-0.5 rounded-full font-mono font-bold animate-bounce';
+                                badge.className = 'text-[10px] bg-blue-500/20 text-blue-400 border border-[#d97757]/30 px-2 py-0.5 rounded-full font-mono font-bold animate-bounce';
                                 badge.innerText = `${name.toUpperCase()} (Triggered)`;
                             } else {
                                 badge.className = 'text-[10px] bg-gray-500/10 text-gray-400 border border-gray-500/20 px-2 py-0.5 rounded-full font-mono';
@@ -747,7 +747,7 @@
                             activeEventsContainer.appendChild(badge);
                         });
                     } else {
-                        activeEventsContainer.innerHTML = '<span class="text-[10px] text-[#706e68] italic">無事件觸發</span>';
+                        activeEventsContainer.innerHTML = '<span class="text-[10px] text-slate-400 italic">無事件觸發</span>';
                     }
                 }
 
@@ -781,9 +781,9 @@
                 data.cameras.forEach(cam => {
                     const labelText = labels[cam] || `📹 未知相機 (${cam})`;
                     const html = `
-                        <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg bg-[#1a1a18] border border-[#b0aea5]/10 hover:border-[#d97757]/50 transition-colors">
-                            <input type="checkbox" value="${cam}" class="cam-chk w-4 h-4 text-[#d97757] bg-[#252523] border-[#3a3a38] rounded focus:ring-[#d97757] focus:ring-2">
-                            <span class="text-xs text-[#faf9f5]">${labelText}</span>
+                        <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:border-[#d97757]/50 transition-colors">
+                            <input type="checkbox" value="${cam}" class="cam-chk w-4 h-4 text-blue-400 bg-[#252523] border-[#3a3a38] rounded focus:ring-[#d97757] focus:ring-2">
+                            <span class="text-xs text-white">${labelText}</span>
                         </label>
                     `;
                     container.insertAdjacentHTML('beforeend', html);
@@ -879,15 +879,15 @@
                 
                 skills.forEach(skill => {
                     const card = document.createElement('div');
-                    card.className = 'anthropic-card p-6 space-y-4';
+                    card.className = 'glass-panel shadow-lg rounded-xl p-6 space-y-4';
                     
                     const isBuiltin = ['slouch', 'sway', 'lean'].includes(skill.name);
                     const isEnabled = skill.enabled !== false;
                     const reqs = skill.requirements || {};
                     
                     let reqHtml = '';
-                    if (reqs.face_mesh) reqHtml += '<span class="text-[8px] bg-[#6a9bcc]/20 text-[#6a9bcc] px-1.5 py-0.5 rounded font-mono font-bold">FACE MESH</span> ';
-                    if (reqs.pose)      reqHtml += '<span class="text-[8px] bg-[#d97757]/20 text-[#d97757] px-1.5 py-0.5 rounded font-mono font-bold">POSE</span> ';
+                    if (reqs.face_mesh) reqHtml += '<span class="text-[8px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-mono font-bold">FACE MESH</span> ';
+                    if (reqs.pose)      reqHtml += '<span class="text-[8px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-mono font-bold">POSE</span> ';
                     
                     // --- 規則語法顯示：相容 string 格式與 dict 格式 ---
                     let ruleSyntaxDisplay = '';
@@ -928,10 +928,10 @@
                         const minRange = (defaultPrefs[key] < 0) ? -100 : 0;
                         
                         threshHtml += `
-                            <div class="space-y-2 mt-3 pt-3 border-t border-[#b0aea5]/5">
+                            <div class="space-y-2 mt-3 pt-3 border-t border-slate-700/50">
                                 <div class="flex justify-between items-end">
-                                    <span class="text-[11px] text-[#b0aea5] font-medium font-sans">${key}</span>
-                                    <span class="text-xs font-serif italic text-[#d97757]" id="slider-val-${skill.name}-${key}">${sliderVal}%</span>
+                                    <span class="text-[11px] text-slate-300 font-medium font-sans">${key}</span>
+                                    <span class="text-xs font-serif italic text-blue-400" id="slider-val-${skill.name}-${key}">${sliderVal}%</span>
                                 </div>
                                 <input type="range" min="${minRange}" max="100" value="${sliderVal}" 
                                     oninput="updateSkillPreference('${skill.name}', '${key}', this.value)" 
@@ -947,25 +947,25 @@
                             <div class="space-y-1 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity" onclick="openEditModal('skill','${skill.name}')" title="點擊編輯語法">
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <span id="skill-dot-${skill.name}" class="w-2.5 h-2.5 rounded-full bg-[#3a3a38] flex-shrink-0 transition-all duration-300" title="狀態"></span>
-                                    <h3 class="text-sm font-bold text-[#faf9f5] font-heading">${skill.name.toUpperCase()}</h3>
-                                    ${isBuiltin ? '<span class="text-[8px] bg-[#788c5d]/20 text-[#788c5d] px-1.5 py-0.5 rounded font-bold font-heading">內建核心</span>' : '<span class="text-[8px] bg-[#6a9bcc]/20 text-[#6a9bcc] px-1.5 py-0.5 rounded font-bold font-heading">自訂</span>'}
-                                    <span class="text-[8px] px-1.5 py-0.5 rounded font-mono ${isEnabled ? 'bg-[#788c5d]/20 text-[#788c5d]' : 'bg-[#706e68]/20 text-[#706e68]'}">${isEnabled ? '啟用' : '停用'}</span>
-                                    <span id="skill-status-${skill.name}" class="text-[8px] text-[#706e68] italic">待機中</span>
-                                    <span class="text-[8px] text-[#b0aea5] italic">✏️ 點擊編輯</span>
+                                    <h3 class="text-sm font-bold text-white font-heading">${skill.name.toUpperCase()}</h3>
+                                    ${isBuiltin ? '<span class="text-[8px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold font-heading">內建核心</span>' : '<span class="text-[8px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-bold font-heading">自訂</span>'}
+                                    <span class="text-[8px] px-1.5 py-0.5 rounded font-mono ${isEnabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-[#706e68]/20 text-slate-400'}">${isEnabled ? '啟用' : '停用'}</span>
+                                    <span id="skill-status-${skill.name}" class="text-[8px] text-slate-400 italic">待機中</span>
+                                    <span class="text-[8px] text-slate-300 italic">✏️ 點擊編輯</span>
                                 </div>
-                                <p class="text-xs text-[#b0aea5]">${skill.description || ''}</p>
+                                <p class="text-xs text-slate-300">${skill.description || ''}</p>
                                 <div class="mt-1 flex items-center gap-1.5">${reqHtml}</div>
-                                ${ruleSyntaxDisplay ? `<div class="mt-2 bg-[#1a1a18] px-2 py-1.5 rounded border border-[#b0aea5]/5 font-mono text-[10px] text-[#788c5d] truncate" title="${ruleSyntaxDisplay}">語法: ${ruleSyntaxDisplay}</div>` : ''}
+                                ${ruleSyntaxDisplay ? `<div class="mt-2 bg-slate-800/50 px-2 py-1.5 rounded border border-slate-700/50 font-mono text-[10px] text-emerald-400 truncate" title="${ruleSyntaxDisplay}">語法: ${ruleSyntaxDisplay}</div>` : ''}
                             </div>
                             
                             <div class="flex items-center gap-2 ml-3 flex-shrink-0">
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" class="sr-only peer" ${isEnabled ? 'checked' : ''} 
                                         onchange="toggleSkill('${skill.name}', this.checked)" onclick="event.stopPropagation()">
-                                    <div class="w-10 h-5 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#788c5d]"></div>
+                                    <div class="w-10 h-5 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                                 </label>
                                 ${!isBuiltin ? `
-                                    <button onclick="event.stopPropagation(); deleteSkill('${skill.name}')" class="text-[#d97757] hover:text-red-400 text-xs transition-colors p-1" title="刪除">🗑</button>
+                                    <button onclick="event.stopPropagation(); deleteSkill('${skill.name}')" class="text-blue-400 hover:text-red-400 text-xs transition-colors p-1" title="刪除">🗑</button>
                                 ` : ''}
                             </div>
                         </div>
@@ -1012,7 +1012,7 @@
             
             const submitBtn = document.querySelector('#create-skill-form button[type="submit"]');
             submitBtn.innerHTML = '更新並套用動作 (Update Custom Skill)';
-            submitBtn.classList.remove('btn-anthropic-primary');
+            submitBtn.classList.remove('bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all');
             submitBtn.classList.add('bg-orange-600', 'hover:bg-orange-500', 'text-white');
             
             // Add a cancel button if it doesn't exist
@@ -1020,7 +1020,7 @@
                 const cancelBtn = document.createElement('button');
                 cancelBtn.id = 'cancel-edit-btn';
                 cancelBtn.type = 'button';
-                cancelBtn.className = 'btn-anthropic-secondary w-full py-2 mt-2 text-xs font-bold uppercase tracking-[0.1em] rounded-xl';
+                cancelBtn.className = 'bg-slate-700 hover:bg-slate-600 text-white transition-all w-full py-2 mt-2 text-xs font-bold uppercase tracking-[0.1em] rounded-xl';
                 cancelBtn.innerText = '取消編輯 (Cancel)';
                 cancelBtn.onclick = resetSkillForm;
                 submitBtn.parentNode.insertBefore(cancelBtn, submitBtn.nextSibling);
@@ -1035,7 +1035,7 @@
             
             const submitBtn = document.querySelector('#create-skill-form button[type="submit"]');
             submitBtn.innerHTML = '建立並套用動作 (Deploy Custom Skill)';
-            submitBtn.classList.add('btn-anthropic-primary');
+            submitBtn.classList.add('bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all');
             submitBtn.classList.remove('bg-orange-600', 'hover:bg-orange-500', 'text-white');
             
             const cancelBtn = document.getElementById('cancel-edit-btn');
@@ -1167,7 +1167,7 @@
                 
                 if (events.length === 0) {
                     container.innerHTML = `
-                        <div class="anthropic-card p-8 text-center text-xs text-[#b0aea5] italic">
+                        <div class="glass-panel shadow-lg rounded-xl p-8 text-center text-xs text-slate-300 italic">
                             尚未建立任何複合事件規則。請在右側表單建立第一個規則。
                         </div>
                     `;
@@ -1176,7 +1176,7 @@
                 
                 events.forEach(event => {
                     const card = document.createElement('div');
-                    card.className = 'anthropic-card p-6 space-y-4';
+                    card.className = 'glass-panel shadow-lg rounded-xl p-6 space-y-4';
                     
                     const isEnabled = event.enabled !== false;
                     
@@ -1184,12 +1184,12 @@
                         <div class="flex justify-between items-start">
                             <div class="space-y-1 flex-1 cursor-pointer hover:opacity-80 transition-opacity" onclick="openEditModal('event','${event.name}')" title="點擊編輯語法">
                                 <div class="flex items-center gap-2">
-                                    <h3 class="text-sm font-bold text-[#faf9f5] font-heading">${event.name.toUpperCase()}</h3>
-                                    <span class="text-[8px] text-[#b0aea5] italic">✏️ 點擊編輯</span>
+                                    <h3 class="text-sm font-bold text-white font-heading">${event.name.toUpperCase()}</h3>
+                                    <span class="text-[8px] text-slate-300 italic">✏️ 點擊編輯</span>
                                 </div>
-                                <p class="text-xs text-[#b0aea5]">${event.description || ''}</p>
-                                <div class="mt-2 bg-[#1a1a18] p-2 rounded border border-[#b0aea5]/5 font-mono text-[10px] text-[#faf9f5]">
-                                    語法: <span class="text-[#d97757]">${(event.rules && Array.isArray(event.rules)) ? event.rules.join(' ') : (event.rule_syntax || '')}</span>
+                                <p class="text-xs text-slate-300">${event.description || ''}</p>
+                                <div class="mt-2 bg-slate-800/50 p-2 rounded border border-slate-700/50 font-mono text-[10px] text-white">
+                                    語法: <span class="text-blue-400">${(event.rules && Array.isArray(event.rules)) ? event.rules.join(' ') : (event.rule_syntax || '')}</span>
                                 </div>
                             </div>
                             
@@ -1197,9 +1197,9 @@
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" class="sr-only peer" ${isEnabled ? 'checked' : ''} 
                                         onchange="toggleEvent('${event.name}', this.checked)" onclick="event.stopPropagation()">
-                                    <div class="w-10 h-5 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#788c5d]"></div>
+                                    <div class="w-10 h-5 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                                 </label>
-                                <button onclick="event.stopPropagation(); deleteEvent('${event.name}')" class="text-[#d97757] hover:text-red-400 text-xs transition-colors p-1">🗑</button>
+                                <button onclick="event.stopPropagation(); deleteEvent('${event.name}')" class="text-blue-400 hover:text-red-400 text-xs transition-colors p-1">🗑</button>
                             </div>
                         </div>
                     `;
@@ -1224,14 +1224,14 @@
             
             const submitBtn = document.querySelector('#create-event-form button[type="submit"]');
             submitBtn.innerHTML = '更新並套用事件 (Update Event)';
-            submitBtn.classList.remove('btn-anthropic-primary');
+            submitBtn.classList.remove('bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all');
             submitBtn.classList.add('bg-orange-600', 'hover:bg-orange-500', 'text-white');
             
             if (!document.getElementById('cancel-event-edit-btn')) {
                 const cancelBtn = document.createElement('button');
                 cancelBtn.id = 'cancel-event-edit-btn';
                 cancelBtn.type = 'button';
-                cancelBtn.className = 'btn-anthropic-secondary w-full py-2 mt-2 text-xs font-bold uppercase tracking-[0.1em] rounded-xl';
+                cancelBtn.className = 'bg-slate-700 hover:bg-slate-600 text-white transition-all w-full py-2 mt-2 text-xs font-bold uppercase tracking-[0.1em] rounded-xl';
                 cancelBtn.innerText = '取消編輯 (Cancel)';
                 cancelBtn.onclick = resetEventForm;
                 submitBtn.parentNode.insertBefore(cancelBtn, submitBtn.nextSibling);
@@ -1246,7 +1246,7 @@
             
             const submitBtn = document.querySelector('#create-event-form button[type="submit"]');
             submitBtn.innerHTML = '建立並套用事件 (Deploy Event)';
-            submitBtn.classList.add('btn-anthropic-primary');
+            submitBtn.classList.add('bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all');
             submitBtn.classList.remove('bg-orange-600', 'hover:bg-orange-500', 'text-white');
             
             const cancelBtn = document.getElementById('cancel-event-edit-btn');
