@@ -172,11 +172,11 @@
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 text-[11px] leading-relaxed">
-                    <div class="p-3 rounded-lg bg-[#151513] border border-slate-700/50 space-y-1">
+                    <div class="p-3 rounded-lg bg-slate-900/80 border border-slate-700/50 space-y-1">
                         <span class="font-bold text-emerald-400">邏輯語法規則</span>
                         <p class="text-slate-300">您可以使用 <code>AND</code>, <code>OR</code>, <code>NOT</code> 與括號來組合動作包。例如：<code>slouch AND sway</code> 代表同時發生低頭與左右偏斜時觸發該事件。</p>
                     </div>
-                    <div class="p-3 rounded-lg bg-[#151513] border border-slate-700/50 space-y-2">
+                    <div class="p-3 rounded-lg bg-slate-900/80 border border-slate-700/50 space-y-2">
                         <div class="flex justify-between items-center">
                             <span class="font-bold text-blue-400">現有可用動作變數</span>
                             <span class="text-[9px] text-slate-400">點擊變數可複製名稱</span>
@@ -208,14 +208,14 @@
                             <div class="space-y-2">
                                 <label class="text-xs text-slate-300 font-semibold block">事件系統名稱 (ID)*</label>
                                 <input type="text" id="event-name" required placeholder="例如: heavy_fatigue" 
-                                    class="w-full bg-slate-800/50 border border-[#b0aea5]/20 text-white rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#d97757] font-mono">
+                                    class="w-full bg-slate-800/50 border border-slate-700/50 text-white rounded-lg p-2.5 text-xs focus:outline-none focus:border-blue-500 font-mono">
                                 <p class="text-[9px] text-slate-400">限小寫英文、數字與底線，不可與現有事件重名。</p>
                             </div>
 
                             <div class="space-y-2">
                                 <label class="text-xs text-slate-300 font-semibold block">中文描述名稱</label>
                                 <input type="text" id="event-desc" placeholder="例如: 嚴重疲勞警示" 
-                                    class="w-full bg-slate-800/50 border border-[#b0aea5]/20 text-white rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#d97757]">
+                                    class="w-full bg-slate-800/50 border border-slate-700/50 text-white rounded-lg p-2.5 text-xs focus:outline-none focus:border-blue-500">
                             </div>
 
 
@@ -223,7 +223,7 @@
                             <div class="space-y-3 pt-3 border-t border-slate-700/50">
                                 <label class="text-xs text-slate-300 font-semibold block">觸發邏輯語法 (Rule Syntax)*</label>
                                 <input type="text" id="event-syntax" required
-                                    class="w-full bg-slate-800/50 border border-[#b0aea5]/20 text-white rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#d97757] font-mono"
+                                    class="w-full bg-slate-800/50 border border-slate-700/50 text-white rounded-lg p-2.5 text-xs focus:outline-none focus:border-blue-500 font-mono"
                                     placeholder="例如: slouch AND sway">
                                 <div id="event-syntax-vars" class="flex flex-wrap gap-1"></div>
                             </div>
@@ -254,7 +254,7 @@
          GLOBAL EDIT MODAL  — 點擊作用中項目之後展開
     ═══════════════════════════════════════════════════════════════ -->
     <div id="edit-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/70 backdrop-blur-sm">
-        <div class="bg-slate-800/50 border border-[#b0aea5]/20 rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-5 mx-4">
+        <div class="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-5 mx-4">
             <div class="flex justify-between items-center">
                 <div>
                     <h3 id="modal-title" class="text-sm font-bold text-white"></h3>
@@ -267,7 +267,7 @@
             <div class="space-y-2">
                 <label class="text-[10px] text-slate-300 font-semibold block">目前語法 (Syntax)</label>
                 <textarea id="modal-syntax" rows="3"
-                    class="w-full bg-[#151513] border border-[#b0aea5]/20 text-white rounded-lg p-3 text-xs font-mono focus:outline-none focus:border-[#d97757] resize-none"></textarea>
+                    class="w-full bg-slate-900/80 border border-slate-700/50 text-white rounded-lg p-3 text-xs font-mono focus:outline-none focus:border-blue-500 resize-none"></textarea>
                 <p class="text-[9px] text-slate-400">可直接編輯語法，支持 AND / OR / NOT 及點位 ID 語法。</p>
             </div>
 
@@ -275,7 +275,7 @@
 
             <!-- 操作按鈕 -->
             <div class="flex gap-3 pt-2">
-                <button onclick="closeEditModal()" class="flex-1 bg-[#2a2a28] hover:bg-[#3a3a38] text-slate-300 text-xs py-2.5 rounded-xl font-semibold">取消</button>
+                <button onclick="closeEditModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs py-2.5 rounded-xl font-semibold">取消</button>
                 <button id="modal-save-btn" onclick="saveModalEdit()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all text-xs py-2.5 rounded-xl font-bold">儲存並套用</button>
             </div>
         </div>
@@ -675,7 +675,7 @@
                         if (localLinkEl.href !== localMobileUrl) {
                             localLinkEl.href = localMobileUrl;
                             localLinkEl.textContent = localMobileUrl;
-                            document.getElementById('local-qr').src = `https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=${encodeURIComponent(localMobileUrl)}`;
+                            document.getElementById('local-qr').src = `https://quickchart.io/qr?size=150&text=${encodeURIComponent(localMobileUrl)}`;
                         }
 
                         const mobileUrl = `${data.public_url}/mobile`;
@@ -683,7 +683,7 @@
                         if (linkEl.href !== mobileUrl) {
                             linkEl.href = mobileUrl;
                             linkEl.textContent = mobileUrl;
-                            document.getElementById('tunnel-qr').src = `https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=${encodeURIComponent(mobileUrl)}`;
+                            document.getElementById('tunnel-qr').src = `https://quickchart.io/qr?size=150&text=${encodeURIComponent(mobileUrl)}`;
                         }
                         const ptb = document.getElementById('public-tunnel-block'); if(ptb) ptb.classList.remove('hidden');
                     } else {
@@ -720,7 +720,7 @@
                         Object.entries(data.active_events).forEach(([name, isActive]) => {
                             const badge = document.createElement('span');
                             if (isActive) {
-                                badge.className = 'text-[10px] bg-blue-500/20 text-blue-400 border border-[#d97757]/30 px-2 py-0.5 rounded-full font-mono font-bold animate-bounce';
+                                badge.className = 'text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-full font-mono font-bold animate-bounce';
                                 badge.innerText = `${name.toUpperCase()} (Triggered)`;
                             } else {
                                 badge.className = 'text-[10px] bg-gray-500/10 text-gray-400 border border-gray-500/20 px-2 py-0.5 rounded-full font-mono';
@@ -871,7 +871,7 @@
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <h3 class="text-sm font-bold text-white font-heading">${skill.name.toUpperCase()}</h3>
                                     ${isBuiltin ? '<span class="text-[8px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold font-heading">內建核心</span>' : '<span class="text-[8px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-bold font-heading">自訂</span>'}
-                                    <span class="text-[8px] px-1.5 py-0.5 rounded font-mono ${isEnabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-[#706e68]/20 text-slate-400'}">${isEnabled ? '啟用' : '停用'}</span>
+                                    <span class="text-[8px] px-1.5 py-0.5 rounded font-mono ${isEnabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-500/20 text-slate-400'}">${isEnabled ? '啟用' : '停用'}</span>
                                     <span class="text-[8px] text-slate-300 italic">✏️ 點擊編輯</span>
                                 </div>
                                 <p class="text-xs text-slate-300">${skill.description || ''}</p>
@@ -883,7 +883,7 @@
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" class="sr-only peer" ${isEnabled ? 'checked' : ''} 
                                         onchange="toggleSkill('${skill.name}', this.checked)" onclick="event.stopPropagation()">
-                                    <div class="w-10 h-5 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                                    <div class="w-10 h-5 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                                 </label>
                                 ${!isBuiltin ? `
                                     <button onclick="event.stopPropagation(); deleteSkill('${skill.name}')" class="text-blue-400 hover:text-red-400 text-xs transition-colors p-1" title="刪除">🗑</button>
@@ -1118,7 +1118,7 @@
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" class="sr-only peer" ${isEnabled ? 'checked' : ''} 
                                         onchange="toggleEvent('${event.name}', this.checked)" onclick="event.stopPropagation()">
-                                    <div class="w-10 h-5 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                                    <div class="w-10 h-5 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                                 </label>
                                 <button onclick="event.stopPropagation(); deleteEvent('${event.name}')" class="text-blue-400 hover:text-red-400 text-xs transition-colors p-1">🗑</button>
                             </div>
