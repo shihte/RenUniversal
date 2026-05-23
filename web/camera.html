@@ -178,15 +178,12 @@
                     data-i18n="camera_source_label">鏡頭輸入來源 (Camera Source)</h2>
 
                 <div class="space-y-4">
-                    <label class="text-xs text-[#b0aea5] font-medium">請選擇作用中的鏡頭裝置：</label>
-                    <select id="camera-source-select" class="w-full bg-[#1a1a18] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-3 text-xs focus:outline-none focus:border-[#d97757]" onchange="updateSetting('camera_source', this.value)">
-                        <option value="local_0">電腦預設鏡頭 (Local Camera 0)</option>
-                        <option value="local_1">電腦外接鏡頭 (Local Camera 1)</option>
-                        <option value="phone">手機網路串流 (Mobile WiFi Stream)</option>
-                        <option value="dual">雙鏡頭連線模式 (Dual-Camera: Face + Pose)</option>
-                    </select>
+                    <label class="text-xs text-[#b0aea5] font-medium">請選擇作用中的鏡頭裝置 (最少 1，最多 5)：</label>
+                    <div id="camera-checkboxes" class="flex flex-col gap-3 mt-2">
+                        <!-- Dynamically populated -->
+                    </div>
                     <p class="text-[10px] text-[#706e68] leading-relaxed italic" data-i18n="camera_source_desc" id="camera-source-desc">
-                        在手機上開啟手機串流網頁發送畫面，並在此選擇手機網路串流或雙鏡頭連線模式。
+                        多鏡頭模式會自動分割畫面 (Grid Layout)。若選擇手機網路串流，請確保手機已掃描下方 QR Code 進行連線。
                     </p>
                 </div>
 
@@ -653,9 +650,36 @@
                     });
                 }
 
-                const cameraSelect = document.getElementById('camera-source-select');
-                if (cameraSelect && !cameraSelect.matches(':focus')) {
-                    cameraSelect.value = data.camera_source || 'local_0';
+                // Multi-camera checkboxes — sync state, highlight active
+                const camCheckboxes = document.querySelectorAll('.cam-chk');
+                if (camCheckboxes.length > 0) {
+                    let sources = data.camera_source;
+                    if (typeof sources === 'string') {
+                        if (sources === 'dual') sources = ['local_0', 'phone'];
+                        else sources = [sources];
+                    }
+                    if (!Array.isArray(sources) || sources.length === 0) sources = ['local_0'];
+                    
+                    camCheckboxes.forEach(chk => {
+                        if (!chk.matches(':active')) chk.checked = sources.includes(chk.value);
+                    });
+                }
+
+                // Update live skill status dots on Skills Hub cards
+                if (data.active_skills) {
+                    Object.entries(data.active_skills).forEach(([name, isTriggered]) => {
+                        const dot = document.getElementById(`skill-dot-${name}`);
+                        const lbl = document.getElementById(`skill-status-${name}`);
+                        if (dot) {
+                            if (isTriggered) {
+                                dot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0 transition-all duration-300 animate-pulse shadow-[0_0_6px_rgba(239,68,68,0.8)]';
+                                if (lbl) { lbl.className = 'text-[8px] text-red-400 font-bold'; lbl.textContent = '⚠ 觸發中'; }
+                            } else {
+                                dot.className = 'w-2.5 h-2.5 rounded-full bg-[#788c5d] flex-shrink-0 transition-all duration-300';
+                                if (lbl) { lbl.className = 'text-[8px] text-[#788c5d]'; lbl.textContent = '● 監控中'; }
+                            }
+                        }
+                    });
                 }
 
                 const flipCheckbox = document.getElementById('flip-enabled-checkbox');
@@ -748,6 +772,64 @@
             } catch (e) {
                 console.error(e);
                 if (statusEl) if (statusEl) statusEl.className = 'w-3 h-3 rounded-full bg-gray-500';
+            }
+        }
+
+        
+        let lastCamerasHash = "";
+        async function loadCameras() {
+            try {
+                const res = await fetch('/cameras');
+                const data = await res.json();
+                
+                const newHash = data.cameras.join(',');
+                if (newHash === lastCamerasHash) return; // 不重複重建
+                lastCamerasHash = newHash;
+                
+                const container = document.getElementById('camera-checkboxes');
+                container.innerHTML = '';
+                
+                const labels = {
+                    'local_0': '💻 電腦預設鏡頭 (Local Camera 0)',
+                    'local_1': '📹 外接相機 1 (Local Camera 1)',
+                    'local_2': '📹 外接相機 2 (Local Camera 2)',
+                    'phone': '📱 手機網路串流 (Mobile WiFi Stream)'
+                };
+                
+                data.cameras.forEach(cam => {
+                    const labelText = labels[cam] || `📹 未知相機 (${cam})`;
+                    const html = `
+                        <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg bg-[#1a1a18] border border-[#b0aea5]/10 hover:border-[#d97757]/50 transition-colors">
+                            <input type="checkbox" value="${cam}" class="cam-chk w-4 h-4 text-[#d97757] bg-[#252523] border-[#3a3a38] rounded focus:ring-[#d97757] focus:ring-2">
+                            <span class="text-xs text-[#faf9f5]">${labelText}</span>
+                        </label>
+                    `;
+                    container.insertAdjacentHTML('beforeend', html);
+                });
+                
+                // Re-bind change events for new checkboxes
+                document.querySelectorAll('.cam-chk').forEach(chk => {
+                    chk.addEventListener('change', async () => {
+                        const checked = Array.from(document.querySelectorAll('.cam-chk:checked')).map(cb => cb.value);
+                        if (checked.length > 5) {
+                            chk.checked = false;
+                            alert("最多只能選擇 5 個鏡頭！");
+                            return;
+                        }
+                        if (checked.length === 0) {
+                            chk.checked = true;
+                            alert("最少必須選擇 1 個鏡頭！");
+                            return;
+                        }
+                        await updateSetting('camera_source', checked);
+                        // 切換相機後自動重新校準
+                        try {
+                            await fetch('/recalibrate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+                        } catch(e) { console.warn('Auto-recalibrate failed', e); }
+                    });
+                });
+            } catch (e) {
+                console.error("Failed to load cameras", e);
             }
         }
 
@@ -877,13 +959,16 @@
                         `;
                     });
                     
+                    card.dataset.skillName = skill.name;
                     card.innerHTML = `
                         <div class="flex justify-between items-start">
                             <div class="space-y-1 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity" onclick="openEditModal('skill','${skill.name}')" title="點擊編輯語法">
                                 <div class="flex items-center gap-2 flex-wrap">
+                                    <span id="skill-dot-${skill.name}" class="w-2.5 h-2.5 rounded-full bg-[#3a3a38] flex-shrink-0 transition-all duration-300" title="狀態"></span>
                                     <h3 class="text-sm font-bold text-[#faf9f5] font-heading">${skill.name.toUpperCase()}</h3>
                                     ${isBuiltin ? '<span class="text-[8px] bg-[#788c5d]/20 text-[#788c5d] px-1.5 py-0.5 rounded font-bold font-heading">內建核心</span>' : '<span class="text-[8px] bg-[#6a9bcc]/20 text-[#6a9bcc] px-1.5 py-0.5 rounded font-bold font-heading">自訂</span>'}
                                     <span class="text-[8px] px-1.5 py-0.5 rounded font-mono ${isEnabled ? 'bg-[#788c5d]/20 text-[#788c5d]' : 'bg-[#706e68]/20 text-[#706e68]'}">${isEnabled ? '啟用' : '停用'}</span>
+                                    <span id="skill-status-${skill.name}" class="text-[8px] text-[#706e68] italic">待機中</span>
                                     <span class="text-[8px] text-[#b0aea5] italic">✏️ 點擊編輯</span>
                                 </div>
                                 <p class="text-xs text-[#b0aea5]">${skill.description || ''}</p>
@@ -1319,10 +1404,12 @@
 
         // Initialize Language
         setLang('zh-TW');
-        loadAvailableCameras();
+        loadCameras();
 
         // Poll
         setInterval(fetchStatus, 100);
+        // Refresh camera list every 5s to pick up newly connected devices
+        setInterval(loadCameras, 5000);
     </script>
 </body>
 
