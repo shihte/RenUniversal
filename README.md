@@ -58,24 +58,18 @@ make setup
 
 ### 3. 運行系統
 
-*   **前台偵錯模式**：
-    ```bash
-    make run
-    ```
-*   **背景守護進程模式** (將 PID 保存至 `.agent.pid`，日誌輸出至 `agent.log`)：
-    ```bash
-    make start
-    ```
-*   **終止背景服務**：
-    ```bash
-    make stop
-    ```
+*   **Mac / Linux 用戶 (使用 Makefile)**：
+    *   前台偵錯模式：`make run`
+    *   背景守護進程模式：`make start`（日誌將輸出至 `agent.log`）
+    *   終止背景服務：`make stop`
+    *   架構合規性測試：`make test`
 
-### 4. 架構合規性測試
-執行單元測試以確保 Pydantic 結構體與 SharedState 模型狀態讀寫符合系統預期：
-```bash
-make test
-```
+*   **Windows 用戶 (使用 ctar.bat)**：
+    Windows 原生環境對 Makefile 支援較差，請改用專屬的 `ctar.bat` 腳本：
+    1.  初始化環境與安裝：在命令提示字元 (cmd) 執行 `ctar.bat setup`
+    2.  啟動伺服器：執行 `ctar.bat run`
+    3.  執行測試：執行 `ctar.bat test`
+    4.  清除暫存：執行 `ctar.bat clean`
 
 ---
 
