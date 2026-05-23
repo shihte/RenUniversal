@@ -83,17 +83,10 @@ def capture_loop():
         while True:
             start_time = time.time()
             
-            # 如果偵測已啟動則執行流水線循環
-            if state.get_status().is_active:
-                processed_frame = pipeline.run_cycle()
-                if processed_frame is not None:
-                    state.update_frame(processed_frame)
-            else:
-                # 暫停模式：僅讀取影格但不處理分析
-                frame_data = pipeline.capture.read()
-                if frame_data.frame is not None:
-                    dimmed = cv2.addWeighted(frame_data.frame, 0.5, frame_data.frame, 0, 0)
-                    state.update_frame(dimmed)
+            # 執行流水線循環 (AI 與 暫停邏輯已在 pipeline 內處理)
+            processed_frame = pipeline.run_cycle()
+            if processed_frame is not None:
+                state.update_frame(processed_frame)
 
             # 計算並更新 FPS
             frame_count += 1
@@ -164,6 +157,9 @@ def serve_tailwind():
 def video_feed():
     return Response(generate_mjpeg_stream(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+
+
+
 @app.route('/status')
 def status():
     status_data = state.get_status().model_dump()
@@ -211,20 +207,22 @@ def settings():
 def serve_mobile():
     return send_from_directory(WEB_DIR, 'MobileCamera.html')
 
-@app.route('/api/cameras')
-def list_cameras():
-    available_cameras = []
-    # 快速偵測索引 0 至 4 內可用的鏡頭
-    for i in range(5):
-        cap = cv2.VideoCapture(i)
-        if cap.isOpened():
-            ret, frame = cap.read()
-            if ret:
-                available_cameras.append(i)
-            cap.release()
-    if not available_cameras:
-        available_cameras = [0]
-    return jsonify(available_cameras)
+@app.route('/cameras')
+def get_cameras():
+    import subprocess
+    import platform
+    cameras = ["local_0"] # always assume at least 1 internal
+    try:
+        if platform.system() == "Darwin":
+            out = subprocess.check_output(["system_profiler", "SPCameraDataType"], text=True)
+            count = out.count("Model ID:")
+            if count > 1:
+                for i in range(1, count):
+                    cameras.append(f"local_{i}")
+    except Exception:
+        pass
+    cameras.append("phone")
+    return jsonify({"cameras": cameras})
 
 @app.route('/upload_frame', methods=['POST'])
 def upload_frame():
@@ -249,6 +247,12 @@ def recalibrate():
     if pipeline:
         pipeline.wizard.reset()
         pipeline.is_calibrated = False
+        pipeline.baseline_eye_distance = 0.0
+        pipeline.baseline_nose_chin_distance = 0.0
+        pipeline.baseline_shoulder_width = 0.0
+        pipeline.baseline_face_landmarks = None
+        pipeline.baseline_pose_landmarks = None
+        state.update_status(calibrating=True, calibration_progress=0)
         return jsonify({"success": True})
     return jsonify({"error": "Pipeline not initialized"}), 500
 
@@ -563,6 +567,19 @@ def main():
     logger.info(f"Mobile Access URL (HTTPS Local): https://{local_ip}:8443/mobile")
     start_tunnel(args.port)
     app.run(host='0.0.0.0', port=args.port, threaded=True)
+
+
+import signal
+import sys
+
+def graceful_shutdown(signum, frame):
+    logger.info(f"Received signal {signum}, initiating graceful shutdown...")
+    if "pipeline" in service_context and service_context["pipeline"]:
+        service_context["pipeline"].stop()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, graceful_shutdown)
+signal.signal(signal.SIGTERM, graceful_shutdown)
 
 if __name__ == "__main__":
     main()

@@ -261,7 +261,7 @@ start:
 	if [ -n "$$STALE" ]; then \
 		echo "⚠ Port $(PORT) 被佔用 (PID: $$STALE)，先清除..."; \
 		for p in $$STALE; do kill -9 $$p 2>/dev/null || true; done; \
-		sleep 1; \
+		sleep 3; \
 	fi
 	@echo "=== 啟動 CTAR Agent 伺服器 ==="
 	@PYTHONPATH="$(PROJECT_ROOT):$$PYTHONPATH" \
@@ -295,7 +295,8 @@ stop:
 			if kill -0 "$$PID" 2>/dev/null; then \
 				echo "  → 終止 PID 檔案進程 $$PID..."; \
 				kill "$$PID" 2>/dev/null || true; \
-				sleep 1; \
+				pkill -f "nokey@localhost.run" 2>/dev/null || true; \
+				sleep 3; \
 				kill -9 "$$PID" 2>/dev/null || true; \
 				KILLED=1; \
 			fi; \
@@ -310,7 +311,7 @@ stop:
 			echo "  → 終止進程 $$pid (stream_server.py)..."; \
 			kill "$$pid" 2>/dev/null || true; \
 		done; \
-		sleep 1; \
+		sleep 3; \
 		for pid in $$PYPIDS; do \
 			kill -9 "$$pid" 2>/dev/null || true; \
 		done; \
