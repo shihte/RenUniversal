@@ -90,6 +90,12 @@ class GenericActionDetector:
                 if hasattr(lm, 'landmark') and idx < len(lm.landmark):
                     pt = lm.landmark[idx]
                     return pt.x * w, pt.y * h
+                elif isinstance(lm, list) and idx < len(lm):
+                    pt = lm[idx]
+                    if isinstance(pt, dict):
+                        return pt.get("x", 0.0) * w, pt.get("y", 0.0) * h
+                    else:
+                        return pt.x * w, pt.y * h
         except Exception:
             pass
         return None
