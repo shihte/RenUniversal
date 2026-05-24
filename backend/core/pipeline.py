@@ -311,11 +311,19 @@ class AgentPipeline:
                     idx_str = str(v)
                 
                 idx = int(idx_str)
-                if is_pose and pose_landmarks and hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
-                    lm = pose_landmarks[idx]
-                elif not is_pose and landmarks and hasattr(landmarks, 'landmark') and idx < len(landmarks.landmark):
-                    lm = landmarks[idx]
-                else:
+                lm = None
+                if is_pose and pose_landmarks:
+                    if isinstance(pose_landmarks, list) and idx < len(pose_landmarks):
+                        lm = pose_landmarks[idx]
+                    elif hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
+                        lm = pose_landmarks.landmark[idx]
+                elif not is_pose and landmarks:
+                    if isinstance(landmarks, list) and idx < len(landmarks):
+                        lm = landmarks[idx]
+                    elif hasattr(landmarks, 'landmark') and idx < len(landmarks.landmark):
+                        lm = landmarks.landmark[idx]
+                
+                if lm is None:
                     continue
                     
                 cx, cy = int(lm.x * width), int(lm.y * height)
@@ -351,8 +359,11 @@ class AgentPipeline:
                             return landmarks.landmark[idx]
                     else:
                         idx = int(pt_id)
-                        if idx <= 32 and pose_landmarks and hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
-                            return pose_landmarks[idx]
+                        if idx <= 32 and pose_landmarks:
+                            if isinstance(pose_landmarks, list) and idx < len(pose_landmarks):
+                                return pose_landmarks[idx]
+                            elif hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
+                                return pose_landmarks.landmark[idx]
                     return None
 
                 lm1 = get_pt(p1_id)
@@ -585,16 +596,25 @@ class AgentPipeline:
                             pt_id = str(pt_id).strip().lower()
                             if pt_id.startswith('p'):
                                 idx = int(pt_id[1:])
-                                if pose_landmarks and hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
-                                    return pose_landmarks[idx]
+                                if pose_landmarks:
+                                    if isinstance(pose_landmarks, list) and idx < len(pose_landmarks):
+                                        return pose_landmarks[idx]
+                                    elif hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
+                                        return pose_landmarks.landmark[idx]
                             elif pt_id.startswith('f'):
                                 idx = int(pt_id[1:])
-                                if landmarks and hasattr(landmarks, 'landmark') and idx < len(landmarks.landmark):
-                                    return landmarks[idx]
+                                if landmarks:
+                                    if isinstance(landmarks, list) and idx < len(landmarks):
+                                        return landmarks[idx]
+                                    elif hasattr(landmarks, 'landmark') and idx < len(landmarks.landmark):
+                                        return landmarks.landmark[idx]
                             else:
                                 idx = int(pt_id)
-                                if idx <= 32 and pose_landmarks and hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
-                                    return pose_landmarks[idx]
+                                if idx <= 32 and pose_landmarks:
+                                    if isinstance(pose_landmarks, list) and idx < len(pose_landmarks):
+                                        return pose_landmarks[idx]
+                                    elif hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
+                                        return pose_landmarks.landmark[idx]
                             return None
 
                         lm1 = get_pt(p1_id)
