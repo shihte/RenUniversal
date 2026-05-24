@@ -25,7 +25,10 @@ PYTHON_CANDIDATES := \
 	/usr/local/opt/python@3.9/bin/python3     \
 	python3.12 python3.11 python3.10 python3.9 python3 python
 
-COMPATIBLE_PYTHON := $(shell \
+ifdef PYTHON
+  COMPATIBLE_PYTHON := $(PYTHON)
+else
+  COMPATIBLE_PYTHON := $(shell \
 	for py in $(PYTHON_CANDIDATES); do \
 		if command -v $$py >/dev/null 2>&1; then \
 			VER=$$($$py -c 'import sys; v=sys.version_info; print(f"{v.major}.{v.minor}")' 2>/dev/null); \
@@ -36,6 +39,7 @@ COMPATIBLE_PYTHON := $(shell \
 			fi; \
 		fi; \
 	done)
+endif
 
 # ============================================================
 # HELP
@@ -207,6 +211,23 @@ _install_deps:
 # ============================================================
 # SETUP
 # ============================================================
+
+_download_models:
+	@echo "▶ 4. 下載 MediaPipe AI 模型..."
+	@mkdir -p backend/models
+	@if [ ! -f "backend/models/face_landmarker.task" ]; then \
+		echo "   → 正在下載 Face Landmarker 模型..."; \
+		curl -sSL "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task" -o backend/models/face_landmarker.task; \
+	else \
+		echo "   ✓ Face Landmarker 模型已存在"; \
+	fi
+	@if [ ! -f "backend/models/pose_landmarker_lite.task" ]; then \
+		echo "   → 正在下載 Pose Landmarker 模型..."; \
+		curl -sSL "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task" -o backend/models/pose_landmarker_lite.task; \
+	else \
+		echo "   ✓ Pose Landmarker 模型已存在"; \
+	fi
+
 setup:
 	@echo "=== 初始化 RenUniversal Agent 環境 ==="
 	@if [ -z "$(COMPATIBLE_PYTHON)" ]; then \
@@ -216,6 +237,7 @@ setup:
 	@echo "✓ 使用 Python: $(COMPATIBLE_PYTHON) ($$($(COMPATIBLE_PYTHON) --version))"
 	@$(MAKE) _create_venv
 	@$(MAKE) _install_deps
+	@$(MAKE) _download_models
 	@mkdir -p skills events
 	@mkdir -p backend/services
 	@echo ""

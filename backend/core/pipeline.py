@@ -5,6 +5,8 @@
 
 import cv2
 import mediapipe as mp
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
 import time
 import numpy as np
 import math
@@ -45,23 +47,48 @@ class AgentPipeline:
         self.wizard = CalibrationWizardSkill()
         
         # 2. MediaPipe 模型設定
-        self.mp_face_mesh = mp.solutions.face_mesh
-        self.face_mesh = self.mp_face_mesh.FaceMesh(
-            static_image_mode=False,
-            max_num_faces=1,
-            refine_landmarks=True,
-            min_detection_confidence=0.5,
+        # MediaPipe Tasks API Setup
+        import os
+        base_dir = os.path.dirname(os.path.dirname(__file__))
+        
+        # Face Landmarker
+        face_model_path = os.path.join(base_dir, 'models', 'face_landmarker.task')
+        face_base_options = python.BaseOptions(model_asset_path=face_model_path)
+        face_options = vision.FaceLandmarkerOptions(
+            base_options=face_base_options,
+            output_face_blendshapes=True,
+            output_facial_transformation_matrixes=True,
+            num_faces=1,
+            min_face_detection_confidence=0.5,
+            min_face_presence_confidence=0.5,
             min_tracking_confidence=0.5
         )
-        self.mp_pose = mp.solutions.pose
-        self.pose = self.mp_pose.Pose(
-            static_image_mode=False,
-            model_complexity=1,
-            min_detection_confidence=0.5,
+        self.face_landmarker = vision.FaceLandmarker.create_from_options(face_options)
+        
+        # Pose Landmarker
+        pose_model_path = os.path.join(base_dir, 'models', 'pose_landmarker_lite.task')
+        pose_base_options = python.BaseOptions(model_asset_path=pose_model_path)
+        pose_options = vision.PoseLandmarkerOptions(
+            base_options=pose_base_options,
+            output_segmentation_masks=False,
+            min_pose_detection_confidence=0.5,
+            min_pose_presence_confidence=0.5,
             min_tracking_confidence=0.5
         )
-        self.mp_drawing = mp.solutions.drawing_utils
-        self.mp_drawing_styles = mp.solutions.drawing_styles
+        self.pose_landmarker = vision.PoseLandmarker.create_from_options(pose_options)
+        
+        # Backward compatibility for drawing utils
+        try:
+            self.mp_drawing = mp.solutions.drawing_utils
+            self.mp_drawing_styles = mp.solutions.drawing_styles
+            self.mp_face_mesh = mp.solutions.face_mesh
+            self.mp_pose = mp.solutions.pose
+        except AttributeError:
+            self.mp_drawing = None
+            self.mp_drawing_styles = None
+            self.mp_face_mesh = None
+            self.mp_pose = None
+
         
         self.baseline_eye_distance = 0.0
         self.baseline_nose_chin_distance = 0.0
@@ -183,10 +210,10 @@ class AgentPipeline:
         NOSE_INDEX, CHIN_INDEX = 1, 152
         LEFT_EYE_INDEX, RIGHT_EYE_INDEX = 33, 263
         
-        nose = landmarks.landmark[NOSE_INDEX]
-        chin = landmarks.landmark[CHIN_INDEX]
-        left_eye = landmarks.landmark[LEFT_EYE_INDEX]
-        right_eye = landmarks.landmark[RIGHT_EYE_INDEX]
+        nose = landmarks[NOSE_INDEX]
+        chin = landmarks[CHIN_INDEX]
+        left_eye = landmarks[LEFT_EYE_INDEX]
+        right_eye = landmarks[RIGHT_EYE_INDEX]
         
         # 轉換為像素距離
         current_eye_distance = abs(right_eye.x * width - left_eye.x * width)
@@ -201,8 +228,8 @@ class AgentPipeline:
         """
         從 Pose 地標中提取肩膀寬度、中點 X 與 Y 座標（像素）。
         """
-        left_shoulder = pose_landmarks.landmark[11]
-        right_shoulder = pose_landmarks.landmark[12]
+        left_shoulder = pose_landmarks[11]
+        right_shoulder = pose_landmarks[12]
         
         ls_x, ls_y = left_shoulder.x * width, left_shoulder.y * height
         rs_x, rs_y = right_shoulder.x * width, right_shoulder.y * height
@@ -223,10 +250,10 @@ class AgentPipeline:
         # 1. 繪製 RenUniversal 基礎面部追蹤點 (雙眼、鼻子、下巴)
         if landmarks is not None:
             points = [
-                (landmarks.landmark[NOSE_INDEX], (255, 100, 0), "Nose"),      # 藍色 (BGR)
-                (landmarks.landmark[CHIN_INDEX], (0, 0, 255), "Chin"),        # 紅色
-                (landmarks.landmark[LEFT_EYE_INDEX], (0, 255, 0), "L-Eye"),    # 綠色
-                (landmarks.landmark[RIGHT_EYE_INDEX], (0, 255, 0), "R-Eye")    # 綠色
+                (landmarks[NOSE_INDEX], (255, 100, 0), "Nose"),      # 藍色 (BGR)
+                (landmarks[CHIN_INDEX], (0, 0, 255), "Chin"),        # 紅色
+                (landmarks[LEFT_EYE_INDEX], (0, 255, 0), "L-Eye"),    # 綠色
+                (landmarks[RIGHT_EYE_INDEX], (0, 255, 0), "R-Eye")    # 綠色
             ]
             for lm, color, label in points:
                 cx, cy = int(lm.x * width), int(lm.y * height)
@@ -234,8 +261,8 @@ class AgentPipeline:
                 cv2.circle(frame, (cx, cy), 7, (255, 255, 255), 1)
 
             # 繪製鼻尖到下巴的連線 (RenUniversal 核心：下巴內收參考線)
-            nose = landmarks.landmark[NOSE_INDEX]
-            chin = landmarks.landmark[CHIN_INDEX]
+            nose = landmarks[NOSE_INDEX]
+            chin = landmarks[CHIN_INDEX]
             cv2.line(frame, 
                      (int(nose.x * width), int(nose.y * height)), 
                      (int(chin.x * width), int(chin.y * height)), 
@@ -243,8 +270,8 @@ class AgentPipeline:
 
         # 2. 繪製 RenUniversal 基礎身體追蹤點 (雙肩)
         if pose_landmarks:
-            left_shoulder = pose_landmarks.landmark[11]
-            right_shoulder = pose_landmarks.landmark[12]
+            left_shoulder = pose_landmarks[11]
+            right_shoulder = pose_landmarks[12]
             
             ls_x, ls_y = int(left_shoulder.x * width), int(left_shoulder.y * height)
             rs_x, rs_y = int(right_shoulder.x * width), int(right_shoulder.y * height)
@@ -285,9 +312,9 @@ class AgentPipeline:
                 
                 idx = int(idx_str)
                 if is_pose and pose_landmarks and hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
-                    lm = pose_landmarks.landmark[idx]
+                    lm = pose_landmarks[idx]
                 elif not is_pose and landmarks and hasattr(landmarks, 'landmark') and idx < len(landmarks.landmark):
-                    lm = landmarks.landmark[idx]
+                    lm = landmarks[idx]
                 else:
                     continue
                     
@@ -312,16 +339,20 @@ class AgentPipeline:
                     pt_id = str(pt_id).strip().lower()
                     if pt_id.startswith('p'):
                         idx = int(pt_id[1:])
-                        if pose_landmarks and hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
+                        if pose_landmarks and isinstance(pose_landmarks, list) and idx < len(pose_landmarks):
+                            return pose_landmarks[idx]
+                        elif pose_landmarks and hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
                             return pose_landmarks.landmark[idx]
                     elif pt_id.startswith('f'):
                         idx = int(pt_id[1:])
-                        if landmarks and hasattr(landmarks, 'landmark') and idx < len(landmarks.landmark):
+                        if landmarks and isinstance(landmarks, list) and idx < len(landmarks):
+                            return landmarks[idx]
+                        elif landmarks and hasattr(landmarks, 'landmark') and idx < len(landmarks.landmark):
                             return landmarks.landmark[idx]
                     else:
                         idx = int(pt_id)
                         if idx <= 32 and pose_landmarks and hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
-                            return pose_landmarks.landmark[idx]
+                            return pose_landmarks[idx]
                     return None
 
                 lm1 = get_pt(p1_id)
@@ -427,18 +458,20 @@ class AgentPipeline:
         landmarks = None
         face_frame_tuple = frames[0]
         for src, frame, rgb in frames_rgb:
-            res = self.face_mesh.process(rgb)
-            if res and res.multi_face_landmarks:
-                landmarks = res.multi_face_landmarks[0]
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+            res = self.face_landmarker.detect(mp_image)
+            if res and res.face_landmarks and len(res.face_landmarks) > 0:
+                landmarks = res.face_landmarks[0]
                 face_frame_tuple = (src, frame)
                 break
                 
         pose_landmarks = None
         pose_frame_tuple = frames[0]
         for src, frame, rgb in frames_rgb:
-            res = self.pose.process(rgb)
-            if res and res.pose_landmarks:
-                pose_landmarks = res.pose_landmarks
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+            res = self.pose_landmarker.detect(mp_image)
+            if res and res.pose_landmarks and len(res.pose_landmarks) > 0:
+                pose_landmarks = res.pose_landmarks[0]
                 pose_frame_tuple = (src, frame)
                 break
             
@@ -459,8 +492,20 @@ class AgentPipeline:
                 sh_mid_y = 0.0
                 if pose_landmarks:
                     sh_width, sh_mid_x, sh_mid_y = self._extract_shoulder_features(pose_landmarks, w_f, h_f)
-                face_dict = [{"x": l.x, "y": l.y} for l in landmarks.landmark]
-                pose_dict = [{"x": l.x, "y": l.y} for l in pose_landmarks.landmark] if pose_landmarks else None
+                
+                # Check for old API vs Tasks API
+                if isinstance(landmarks, list):
+                    face_dict = [{"x": l.x, "y": l.y} for l in landmarks]
+                else:
+                    face_dict = [{"x": l.x, "y": l.y} for l in landmarks.landmark]
+                    
+                if pose_landmarks:
+                    if isinstance(pose_landmarks, list):
+                        pose_dict = [{"x": l.x, "y": l.y} for l in pose_landmarks]
+                    else:
+                        pose_dict = [{"x": l.x, "y": l.y} for l in pose_landmarks.landmark]
+                else:
+                    pose_dict = None
                 wizard_status = self.wizard.process(
                     eye_dist, nc_dist,
                     current_shoulder_width=sh_width,
@@ -488,14 +533,14 @@ class AgentPipeline:
                         "username": "User"
                     })
                 
-                # 繪製人臉網格
-                self.mp_drawing.draw_landmarks(
-                    image=face_frame_tuple[1],
-                    landmark_list=landmarks,
-                    connections=self.mp_face_mesh.FACEMESH_TESSELATION,
-                    landmark_drawing_spec=None,
-                    connection_drawing_spec=self.mp_drawing_styles.get_default_face_mesh_tesselation_style()
-                )
+                if landmarks and self.mp_drawing and self.mp_drawing_styles and self.mp_face_mesh:
+                    self.mp_drawing.draw_landmarks(
+                        image=face_frame_tuple[1],
+                        landmark_list=landmarks,
+                        connections=self.mp_face_mesh.FACEMESH_TESSELATION,
+                        landmark_drawing_spec=None,
+                        connection_drawing_spec=self.mp_drawing_styles.get_default_face_mesh_tesselation_style()
+                    )
             else:
                 # 動作分析 — 使用正確的 evaluate_all() 介面
                 baselines_for_eval = {
@@ -541,15 +586,15 @@ class AgentPipeline:
                             if pt_id.startswith('p'):
                                 idx = int(pt_id[1:])
                                 if pose_landmarks and hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
-                                    return pose_landmarks.landmark[idx]
+                                    return pose_landmarks[idx]
                             elif pt_id.startswith('f'):
                                 idx = int(pt_id[1:])
                                 if landmarks and hasattr(landmarks, 'landmark') and idx < len(landmarks.landmark):
-                                    return landmarks.landmark[idx]
+                                    return landmarks[idx]
                             else:
                                 idx = int(pt_id)
                                 if idx <= 32 and pose_landmarks and hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
-                                    return pose_landmarks.landmark[idx]
+                                    return pose_landmarks[idx]
                             return None
 
                         lm1 = get_pt(p1_id)
