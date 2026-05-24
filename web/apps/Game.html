@@ -218,7 +218,9 @@
                     const data = await res.json();
                     
                     let currentTriggerCount = 0;
-                    if (data.trigger_counts && data.trigger_counts['renuniversal_tuck'] !== undefined) {
+                    if (data.trigger_counts && data.trigger_counts['lean'] !== undefined) {
+                        currentTriggerCount = data.trigger_counts['lean'];
+                    } else if (data.trigger_counts && data.trigger_counts['renuniversal_tuck'] !== undefined) {
                         currentTriggerCount = data.trigger_counts['renuniversal_tuck'];
                     } else if (data.down_count !== undefined) {
                         currentTriggerCount = data.down_count;
