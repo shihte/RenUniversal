@@ -666,12 +666,28 @@ class AgentPipeline:
         )
         
         # 4. 同步狀態與觸發統計 (Metrics & State Sync)
-        # (在此略過統計觸發次數的細節以簡化)
+        for name, triggered in active_skills_state.items():
+            if name not in self.trigger_counts:
+                self.trigger_counts[name] = 0
+            prev = self.previous_states.get(name, False)
+            if triggered and not prev:
+                self.trigger_counts[name] += 1
+            self.previous_states[name] = triggered
+            
+        for name, triggered in active_events_state.items():
+            if name not in self.trigger_counts:
+                self.trigger_counts[name] = 0
+            prev = self.previous_states.get(name, False)
+            if triggered and not prev:
+                self.trigger_counts[name] += 1
+            self.previous_states[name] = triggered
+
         self.state.update_status(
             latency_ms=inference_time_ms,
             active_skills=active_skills_state,
             active_events=active_events_state,
-            metrics=metrics_state
+            metrics=metrics_state,
+            trigger_counts=self.trigger_counts
         )
 
         # 5. 多畫面合併 (Stitching)
