@@ -116,8 +116,12 @@ class SharedState:
             
         try:
             with open(self.prefs_path, "w") as f:
-                json.dump(self.prefs, f, indent=4)
-            logger.info("Preferences saved and status synchronized successfully (Personalization)")
+                persistent_prefs = {
+                    k: v for k, v in self.prefs.items()
+                    if not ("threshold" in k or "tolerance" in k)
+                }
+                json.dump(persistent_prefs, f, indent=4)
+            logger.info("Preferences saved (sliders excluded for memory-only tuning)")
         except Exception as e:
             logger.error(f"Failed to save preferences: {e}")
 
