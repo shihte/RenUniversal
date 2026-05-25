@@ -9,6 +9,6 @@
   "default_preferences": {
     "threshold": 0.1
   },
-  "rule_syntax": "p11,p12 <> num=15% OR p11,p12 ~~ num=10000px",
+  "rule_syntax": "p11,p12 <> num=15% OR p11,p12 ~~ num=35px",
   "rules": []
 }

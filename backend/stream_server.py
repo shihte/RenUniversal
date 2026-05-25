@@ -66,7 +66,7 @@ service_context = {
     "pipeline": None
 }
 
-def capture_loop():
+def capture_loop(cli_mode=False):
     """
     主捕捉與檢測循環，驅動 AgentPipeline。
     """
@@ -79,6 +79,7 @@ def capture_loop():
     
     last_fps_time = time.time()
     frame_count = 0
+    last_triggered = set()
     
     try:
         while True:
@@ -86,8 +87,19 @@ def capture_loop():
             
             # 執行流水線循環 (AI 與 暫停邏輯已在 pipeline 內處理)
             processed_frame = pipeline.run_cycle()
-            if processed_frame is not None:
+            if processed_frame is not None and not cli_mode:
                 state.update_frame(processed_frame)
+
+            if cli_mode:
+                status = state.get_status()
+                current_triggered = set(k for k, v in status.active_skills.items() if v)
+                if current_triggered != last_triggered:
+                    print(json.dumps({
+                        "timestamp": time.time(),
+                        "triggered": list(current_triggered),
+                        "metrics": status.metrics
+                    }), flush=True)
+                    last_triggered = current_triggered
 
             # 計算並更新 FPS
             frame_count += 1
@@ -589,15 +601,17 @@ def api_update_settings():
 def main():
     parser = argparse.ArgumentParser(description='RenUniversal Agent-Powered Server')
     parser.add_argument('--port', type=int, default=8080)
-    parser.add_argument('--api-only', action='store_true', help='Run in pure API mode without local camera capture')
+    parser.add_argument('--cli', action='store_true', help='Run in pure CLI mode (headless, no web server)')
     args = parser.parse_args()
     
-    if not args.api_only:
-        # 啟動背景線程驅動流水線
-        thread = threading.Thread(target=capture_loop, daemon=True)
-        thread.start()
-    else:
-        logger.info("Starting in Pure API Mode (Local camera capture disabled).")
+    if args.cli:
+        logger.info("Running in pure CLI mode (headless). JSON events will be printed to stdout.")
+        capture_loop(cli_mode=True)
+        return
+
+    # 啟動背景線程驅動流水線
+    thread = threading.Thread(target=capture_loop, args=(False,), daemon=True)
+    thread.start()
     
     local_ip = get_local_ip()
     
