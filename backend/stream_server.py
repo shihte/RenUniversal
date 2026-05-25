@@ -304,6 +304,8 @@ def create_skill():
         default_prefs = req_data.get("default_preferences", {"threshold": 0.10})
         is_update = req_data.get("is_update", False)
         
+        rule_syntax = req_data.get("rule_syntax", "")
+        
         if not name:
             return jsonify({"error": "Skill name is required"}), 400
             
@@ -326,14 +328,13 @@ def create_skill():
             "enabled": True,
             "requirements": requirements,
             "default_preferences": default_prefs,
+            "rule_syntax": rule_syntax,
             "rules": rules
         }
         with open(os.path.join(target_dir, 'config.json'), 'w', encoding='utf-8') as f:
             json.dump(cfg, f, indent=2, ensure_ascii=False)
             
-        # Copy template logic.py
-        template_src = os.path.join(BACKEND_DIR, 'core', 'skill_template.py')
-        shutil.copy(template_src, os.path.join(target_dir, 'logic.py'))
+        # The action engine will use GenericActionDetector automatically if logic.py is missing.
         
         # Trigger reload in action engine
         pipeline = service_context.get("pipeline")

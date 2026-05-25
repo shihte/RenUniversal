@@ -495,14 +495,14 @@ class AgentPipeline:
         
         if landmarks:
             eye_dist, nc_dist = self._extract_physical_features(landmarks, w_f, h_f)
-            
+            sh_width = 0.0
+            sh_mid_x = 0.0
+            sh_mid_y = 0.0
+            if pose_landmarks:
+                sh_width, sh_mid_x, sh_mid_y = self._extract_shoulder_features(pose_landmarks, w_f, h_f)
+                
             if status.calibrating:
                 # 校準中
-                sh_width = 0.0
-                sh_mid_x = 0.0
-                sh_mid_y = 0.0
-                if pose_landmarks:
-                    sh_width, sh_mid_x, sh_mid_y = self._extract_shoulder_features(pose_landmarks, w_f, h_f)
                 
                 # Check for old API vs Tasks API
                 if isinstance(landmarks, list):
@@ -562,6 +562,8 @@ class AgentPipeline:
                     "shoulder_midpoint_y": self.baseline_shoulder_midpoint_y,
                     "face_landmarks": self.baseline_face_landmarks,
                     "pose_landmarks": self.baseline_pose_landmarks,
+                    "_current_eye_distance": eye_dist,
+                    "_current_shoulder_width": sh_width,
                 }
                 state_history = {name: val for name, val in status.active_skills.items()}
 
@@ -644,6 +646,46 @@ class AgentPipeline:
                             cv2.circle(target_frame_2, (cx2, cy2), 4, color, -1)
                     except Exception as e:
                         pass
+
+        # 4.5 繪製虛擬膠囊 (Virtual Capsules for debugging)
+        for name, detector in self.action_engine.detectors.items():
+            if hasattr(detector, 'capsules_to_draw'):
+                for cap in detector.capsules_to_draw:
+                    b1 = cap["b1"]
+                    b2 = cap["b2"]
+                    if not b1 or not b2:
+                        continue
+                    r = int(cap["radius"])
+                    triggered = cap["triggered"]
+                    pt1_id = cap["pt1_id"]
+                    
+                    def is_pose_id(pid):
+                        pid = str(pid).strip().lower()
+                        return pid.startswith('p') or (pid.isdigit() and int(pid) <= 32)
+                        
+                    target_frame = pose_frame_tuple[1] if (is_pose_id(pt1_id) and face_frame_tuple[0] != pose_frame_tuple[0]) else face_frame_tuple[1]
+                    
+                    # 黃色表示膠囊區，紅色表示出界觸發
+                    color = (0, 0, 255) if triggered else (0, 255, 255)
+                    
+                    cx1, cy1 = int(b1[0]), int(b1[1])
+                    cx2, cy2 = int(b2[0]), int(b2[1])
+                    
+                    cv2.circle(target_frame, (cx1, cy1), r, color, 1, cv2.LINE_AA)
+                    cv2.circle(target_frame, (cx2, cy2), r, color, 1, cv2.LINE_AA)
+                    
+                    vx = cx2 - cx1
+                    vy = cy2 - cy1
+                    length = math.sqrt(vx*vx + vy*vy)
+                    if length > 0:
+                        nx = -vy / length
+                        ny = vx / length
+                        ox = int(nx * r)
+                        oy = int(ny * r)
+                        
+                        cv2.line(target_frame, (cx1 + ox, cy1 + oy), (cx2 + ox, cy2 + oy), color, 1, cv2.LINE_AA)
+                        cv2.line(target_frame, (cx1 - ox, cy1 - oy), (cx2 - ox, cy2 - oy), color, 1, cv2.LINE_AA)
+
 
 
         # 3. 事件引擎評估 (Event Engine)

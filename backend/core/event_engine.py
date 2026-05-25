@@ -206,7 +206,7 @@ class EventEngine:
             # Now replace standard logical operators (case-insensitive)
             py_syntax = re.sub(r'\bAND\b', 'and', working_syntax, flags=re.IGNORECASE)
             py_syntax = re.sub(r'\bOR\b', 'or', py_syntax, flags=re.IGNORECASE)
-            py_syntax = re.sub(r'\bNOT\b', 'not', py_syntax, flags=re.IGNORECASE)
+            py_syntax = py_syntax.replace('!', ' not ')
             
             # Replace remaining variables (like slouch, sway, etc.)
             def replacer(match):
