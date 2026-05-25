@@ -117,14 +117,15 @@ class GenericActionDetector:
         proj = (v[0] + t * (w[0] - v[0]), v[1] + t * (w[1] - v[1]))
         return self._dist(p, proj)
 
-    def _evaluate_pattern(self, pt1_id, pt2_id, op, num_str, is_pct, face_landmarks, pose_landmarks, face_dim, body_dim, baselines, preferences):
+    def _evaluate_pattern(self, pt1_id, pt2_id, op, num_str, pct_sign, face_landmarks, pose_landmarks, face_dim, body_dim, baselines, preferences):
         threshold = float(num_str)
+        is_pct = (pct_sign == '%')
         if is_pct and op != "~~":
             threshold /= 100.0
         
-        # Override with slider preference if available
+        # Override with slider preference if available, but NOT if explicitly using px unit
         pref_key = f"{self.config.get('name', '')}_threshold"
-        if pref_key in preferences:
+        if pref_key in preferences and pct_sign != 'px':
             try:
                 pref_val = float(preferences[pref_key])
                 if op == "~~" or not is_pct:
@@ -235,9 +236,8 @@ class GenericActionDetector:
 
         for m in matches:
             pt1_id, pt2_id, op, num_str, pct_sign = m.group(1), m.group(2), m.group(3), m.group(4), m.group(5)
-            is_pct = (pct_sign == '%')
             triggered, change = self._evaluate_pattern(
-                pt1_id, pt2_id, op, num_str, is_pct,
+                pt1_id, pt2_id, op, num_str, pct_sign,
                 face_landmarks, pose_landmarks, face_dim, body_dim, baselines, preferences
             )
             if abs(change) > abs(max_change):
