@@ -43,21 +43,20 @@ endif
 
 # ============================================================
 # HELP
-# ============================================================
 help:
 	@echo ""
 	@echo "  ======================================"
-	@echo "      RenUniversal Agent — 指令說明"
+	@echo "     RenUniversal Agent - 指令說明     "
 	@echo "  ======================================"
 	@echo ""
 	@echo "  make doctor   — 診斷系統環境並嘗試自動修復"
 	@echo "  make setup    — 初始化 Python 虛擬環境與依賴"
 	@echo "  make start    — 在背景啟動 Agent 伺服器"
-	@echo "  make api      — 以純 API 模式啟動（無本地攝影機擷取）"
 	@echo "  make stop     — 停止所有 Agent 相關進程"
 	@echo "  make restart  — 重啟 Agent 伺服器"
 	@echo "  make status   — 顯示目前運行狀態"
 	@echo "  make run      — 前景執行（可見日誌，Ctrl+C 停止）"
+	@echo "  make cli      — 純 CLI 模式執行（輕量無網頁版，終端輸出 JSON）"
 	@echo "  make clean    — 清除快取、日誌與 PID 檔案"
 	@echo "  make install PATH=<dir> — 安裝 .renuniversal 外掛套件"
 	@echo "  make build --name <N> --skills <S> --events <E> --apps <A> — 打包自訂外掛"
@@ -254,14 +253,14 @@ run:
 	@PYTHONPATH="$(PROJECT_ROOT):$$PYTHONPATH" $(VENV_PYTHON) "$(SERVER_SCRIPT)"
 
 # ============================================================
-# API MODE (前景純 API 模式)
+# CLI (純 API 輕量模式)
 # ============================================================
-api:
+cli:
 	@if [ ! -f "$(VENV_PYTHON)" ]; then \
 		echo "✗ 找不到虛擬環境。執行 'make setup' 初始化。"; exit 1; \
 	fi
-	@echo "=== 啟動純 API 模式（無本機鏡頭，Ctrl+C 停止）==="
-	@PYTHONPATH="$(PROJECT_ROOT):$$PYTHONPATH" $(VENV_PYTHON) "$(SERVER_SCRIPT)" --api-only
+	@echo "=== CLI 模式啟動 RenUniversal（無前端，JSON 輸出）==="
+	@PYTHONPATH="$(PROJECT_ROOT):$$PYTHONPATH" $(VENV_PYTHON) "$(SERVER_SCRIPT)" --cli
 
 # ============================================================
 # START (背景)
