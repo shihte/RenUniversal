@@ -1,7 +1,7 @@
 # ============================================================
 # RenUniversal Project Makefile — Dynamic Self-Healing Build System
 # ============================================================
-.PHONY: help check-env setup run start stop restart status test clean doctor
+.PHONY: help check-env setup run start stop restart status clean doctor
 
 PROJECT_ROOT := $(shell pwd)
 PID_FILE     := $(PROJECT_ROOT)/.agent.pid
@@ -57,7 +57,6 @@ help:
 	@echo "  make restart  — 重啟 Agent 伺服器"
 	@echo "  make status   — 顯示目前運行狀態"
 	@echo "  make run      — 前景執行（可見日誌，Ctrl+C 停止）"
-	@echo "  make test     — 執行架構驗證測試"
 	@echo "  make clean    — 清除快取、日誌與 PID 檔案"
 	@echo "  make install PATH=<dir> — 安裝 .renuniversal 外掛套件"
 	@echo "  make build --name <N> --skills <S> --events <E> --apps <A> — 打包自訂外掛"
@@ -386,15 +385,6 @@ status:
 	@echo "  端口 $(PORT): $$(lsof -t -i :$(PORT) 2>/dev/null && echo 佔用 || echo 空閒)"
 	@echo "  端口 $(PORT_HTTPS): $$(lsof -t -i :$(PORT_HTTPS) 2>/dev/null && echo 佔用 || echo 空閒)"
 
-# ============================================================
-# TEST
-# ============================================================
-test:
-	@if [ ! -f "$(VENV_PYTHON)" ]; then \
-		echo "✗ 找不到虛擬環境。執行 'make setup'。"; exit 1; \
-	fi
-	@echo "=== 執行架構驗證測試 ==="
-	@PYTHONPATH="$(PROJECT_ROOT):$$PYTHONPATH" $(VENV_PYTHON) backend/test_architecture.py
 
 # ============================================================
 # CLEAN
