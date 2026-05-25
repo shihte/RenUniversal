@@ -589,11 +589,15 @@ def api_update_settings():
 def main():
     parser = argparse.ArgumentParser(description='RenUniversal Agent-Powered Server')
     parser.add_argument('--port', type=int, default=8080)
+    parser.add_argument('--api-only', action='store_true', help='Run in pure API mode without local camera capture')
     args = parser.parse_args()
     
-    # 啟動背景線程驅動流水線
-    thread = threading.Thread(target=capture_loop, daemon=True)
-    thread.start()
+    if not args.api_only:
+        # 啟動背景線程驅動流水線
+        thread = threading.Thread(target=capture_loop, daemon=True)
+        thread.start()
+    else:
+        logger.info("Starting in Pure API Mode (Local camera capture disabled).")
     
     local_ip = get_local_ip()
     
