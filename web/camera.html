@@ -733,7 +733,7 @@
                     // 從 syntax 中提取閾值當預設值
                     let defaultThresh = null;
                     if (ruleSyntaxDisplay) {
-                        const m = ruleSyntaxDisplay.match(/num=(\d+(?:\.\d+)?)%/i);
+                        const m = ruleSyntaxDisplay.match(/num=(\d+(?:\.\d+)?)(%|px)?/i);
                         if (m) defaultThresh = parseFloat(m[1]) / 100.0;
                     }
 
