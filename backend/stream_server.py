@@ -11,6 +11,8 @@ from flask_cors import CORS
 import cv2
 from loguru import logger
 from pydantic import ValidationError
+import secrets
+import string
 
 from core import SharedState
 from core.pipeline import AgentPipeline
@@ -140,6 +142,27 @@ def generate_mjpeg_stream():
         time.sleep(0.033)
 
 # --- Routes ---
+
+def check_auth(username, password):
+    expected_user = app.config.get('BASIC_AUTH_USERNAME')
+    expected_pass = app.config.get('BASIC_AUTH_PASSWORD')
+    if not expected_user or not expected_pass:
+        return True
+    return username == expected_user and password == expected_pass
+
+def authenticate():
+    return Response(
+        'Could not verify your access level for that URL.\n'
+        'You have to login with proper credentials', 401,
+        {'WWW-Authenticate': 'Basic realm="RenUniversal Login Required"'}
+    )
+
+@app.before_request
+def require_auth():
+    if app.config.get('BASIC_AUTH_USERNAME'):
+        auth = request.authorization
+        if not auth or not check_auth(auth.username, auth.password):
+            return authenticate()
 
 @app.route('/')
 def index():
@@ -600,9 +623,36 @@ def api_update_settings():
 
 def main():
     parser = argparse.ArgumentParser(description='RenUniversal Agent-Powered Server')
+    parser.add_argument('--host', type=str, default='127.0.0.1', help='Host IP to bind the server to (default: 127.0.0.1)')
     parser.add_argument('--port', type=int, default=8080)
     parser.add_argument('--cli', action='store_true', help='Run in pure CLI mode (headless, no web server)')
+    parser.add_argument('--enable-tunnel', action='store_true', help='Enable intranet tunnel via localhost.run (WARNING: Exposes service to public internet)')
+    parser.add_argument('--auth', type=str, default=None, help='Basic auth credentials in format username:password')
     args = parser.parse_args()
+    
+    auth_username = None
+    auth_password = None
+
+    if args.auth:
+        if ':' in args.auth:
+            auth_username, auth_password = args.auth.split(':', 1)
+        else:
+            logger.error("Invalid --auth format. Must be username:password")
+            sys.exit(1)
+    elif args.host != '127.0.0.1' or args.enable_tunnel:
+        auth_username = 'admin'
+        alphabet = string.ascii_letters + string.digits
+        auth_password = ''.join(secrets.choice(alphabet) for i in range(12))
+        logger.warning(f"==================================================")
+        logger.warning(f"SECURITY: Server exposed but no --auth provided.")
+        logger.warning(f"Auto-generated credentials for Basic Auth:")
+        logger.warning(f"Username: {auth_username}")
+        logger.warning(f"Password: {auth_password}")
+        logger.warning(f"==================================================")
+        
+    if auth_username and auth_password:
+        app.config['BASIC_AUTH_USERNAME'] = auth_username
+        app.config['BASIC_AUTH_PASSWORD'] = auth_password
     
     if args.cli:
         logger.info("Running in pure CLI mode (headless). JSON events will be printed to stdout.")
@@ -618,19 +668,25 @@ def main():
     # 啟動 HTTPS 背景伺服器 (以支援手機端瀏覽器的 Secure Context)
     def run_https():
         try:
-            logger.info("Starting HTTPS Server on port 8443 for Secure Context (Local Wi-Fi)...")
-            app.run(host='0.0.0.0', port=8443, ssl_context='adhoc', threaded=True)
+            logger.info(f"Starting HTTPS Server on {args.host}:8443 for Secure Context (Local Wi-Fi)...")
+            app.run(host=args.host, port=8443, ssl_context='adhoc', threaded=True)
         except Exception as e:
             logger.error(f"Failed to start HTTPS server: {e}")
             
     https_thread = threading.Thread(target=run_https, daemon=True)
     https_thread.start()
     
-    logger.info(f"RenUniversal Agent Server starting on http://localhost:{args.port}")
-    logger.info(f"Mobile Access URL (HTTP): http://{local_ip}:{args.port}/mobile")
-    logger.info(f"Mobile Access URL (HTTPS Local): https://{local_ip}:8443/mobile")
-    start_tunnel(args.port)
-    app.run(host='0.0.0.0', port=args.port, threaded=True)
+    logger.info(f"RenUniversal Agent Server starting on http://{args.host}:{args.port}")
+    if args.host == '0.0.0.0':
+        logger.info(f"Mobile Access URL (HTTP): http://{local_ip}:{args.port}/mobile")
+        logger.info(f"Mobile Access URL (HTTPS Local): https://{local_ip}:8443/mobile")
+    
+    if args.enable_tunnel:
+        start_tunnel(args.port)
+    else:
+        logger.info("Intranet tunnel disabled. Use --enable-tunnel to enable.")
+        
+    app.run(host=args.host, port=args.port, threaded=True)
 
 
 import signal
