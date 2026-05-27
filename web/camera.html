@@ -76,9 +76,10 @@
                         </div>
                         <div id="local-qr-warning" class="hidden mt-2 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
                             <span class="text-xs text-red-400 font-bold block mb-1">⚠️ 內網伺服器未開啟</span>
-                            <span class="text-[10px] text-red-300">
-                                目前伺服器僅綁定在 localhost，手機無法連線。<br>
-                                請重新啟動程式並加入 <code>--host 0.0.0.0</code> 參數。
+                            <span class="text-[10px] text-red-300 leading-relaxed block">
+                                目前伺服器僅綁定在 localhost，手機無法透過區網連線。<br>
+                                請重新啟動程式並加入參數，例如：<br>
+                                <code>make start ARGS="--host 0.0.0.0"</code>
                             </span>
                         </div>
                     </div>
@@ -102,9 +103,10 @@
                         </div>
                         <div id="tunnel-qr-warning" class="hidden mt-2 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
                             <span class="text-xs text-red-400 font-bold block mb-1">⚠️ 遠端穿透未啟動</span>
-                            <span class="text-[10px] text-red-300">
-                                目前未啟用 localhost.run 穿透服務。<br>
-                                請重新啟動程式並加入 <code>--enable-tunnel</code> 參數。
+                            <span class="text-[10px] text-red-300 leading-relaxed block">
+                                目前未啟用 localhost.run 穿透服務，外網無法連線。<br>
+                                請重新啟動程式並加入參數，例如：<br>
+                                <code>make start ARGS="--enable-tunnel"</code>
                             </span>
                         </div>
                     </div>
