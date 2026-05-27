@@ -322,8 +322,6 @@ start:
 stop:
 	@echo "=== 停止 RenUniversal Agent 伺服器 ==="
 	@KILLED=0; \
-	\
-	# 層 1: PID 檔案
 	if [ -f "$(PID_FILE)" ]; then \
 		PID=$$(cat "$(PID_FILE)" 2>/dev/null || true); \
 		if [ -n "$$PID" ]; then \
@@ -338,8 +336,6 @@ stop:
 		fi; \
 		rm -f "$(PID_FILE)"; \
 	fi; \
-	\
-	# 層 2: pgrep 搜尋所有 stream_server.py 進程
 	PYPIDS=$$(pgrep -f "stream_server.py" 2>/dev/null || true); \
 	if [ -n "$$PYPIDS" ]; then \
 		for pid in $$PYPIDS; do \
@@ -352,8 +348,6 @@ stop:
 		done; \
 		KILLED=1; \
 	fi; \
-	\
-	# 層 3: lsof 端口強制清除
 	for port in $(PORT) $(PORT_HTTPS); do \
 		PORT_PIDS=$$(lsof -t -i :$$port 2>/dev/null || true); \
 		if [ -n "$$PORT_PIDS" ]; then \
@@ -364,7 +358,6 @@ stop:
 			KILLED=1; \
 		fi; \
 	done; \
-	\
 	rm -f "$(PID_FILE)"; \
 	if [ "$$KILLED" = "1" ]; then \
 		echo "✓ Agent 已停止"; \
