@@ -78,6 +78,7 @@ renuniversal.bat build --name MyPlugin --skills skills/lean skills/turn --events
 ## 🛠 開發先前條件 (Prerequisites)
 
 *   **作業系統**：macOS (12.0+), Linux (Ubuntu 20.04+), Windows 10/11
+    > ⚠️ **注意**：本系統理論上支援大部分作業系統，但**已知目前在 Windows 環境下，本機鏡頭調用 (OpenCV VideoCapture) 存在相容性問題**，可能無法正常取得本機畫面。Windows 使用者建議透過手機副鏡頭掃描 QR Code 連線作為替代方案，或在 WSL2 環境下搭配 USB 直通執行。
 *   **Python 版本**：**Python 3.8 至 Python 3.11** (因 MediaPipe 原生編譯二進制檔限制，不支援更高或更低版本)
 *   **硬體要求**：具備 UVC 協定的 USB 外接相機 或 行動裝置瀏覽器連線。
 
