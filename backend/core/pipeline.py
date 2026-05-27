@@ -491,8 +491,8 @@ class AgentPipeline:
                         min_x, max_x = max(0, min(xs)), min(1, max(xs))
                         min_y, max_y = max(0, min(ys)), min(1, max(ys))
                         
-                        pad_x = (max_x - min_x) * 0.2
-                        pad_y = (max_y - min_y) * 0.2
+                        pad_x = (max_x - min_x) * 0.6
+                        pad_y = (max_y - min_y) * 0.6
                         
                         px_min_x = max(0, int((min_x - pad_x) * w_f))
                         px_max_x = min(w_f, int((max_x + pad_x) * w_f))
