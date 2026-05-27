@@ -206,6 +206,7 @@ def status():
     status_data = state.get_status().model_dump()
     status_data['local_ip'] = get_local_ip()
     status_data['prefs'] = state.prefs
+    status_data['host_bind'] = app.config.get('HOST_BIND', '127.0.0.1')
     return jsonify(status_data)
 
 @app.route('/settings', methods=['GET', 'POST'])
@@ -628,7 +629,14 @@ def main():
     parser.add_argument('--cli', action='store_true', help='Run in pure CLI mode (headless, no web server)')
     parser.add_argument('--enable-tunnel', action='store_true', help='Enable intranet tunnel via localhost.run (WARNING: Exposes service to public internet)')
     parser.add_argument('--auth', type=str, default=None, help='Basic auth credentials in format username:password')
+    parser.add_argument('--disable-privacy', action='store_true', help='Disable face privacy protection mode by default')
     args = parser.parse_args()
+    
+    app.config['HOST_BIND'] = args.host
+    
+    if args.disable_privacy:
+        state.save_prefs({"privacy_mode": False})
+        state.update_status(privacy_mode=False)
     
     auth_username = None
     auth_password = None
