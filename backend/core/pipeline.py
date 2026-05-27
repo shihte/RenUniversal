@@ -494,6 +494,41 @@ class AgentPipeline:
         metrics_state = {}
         
         if landmarks:
+            # --- Face Privacy Blur ---
+            if getattr(status, "privacy_mode", True):
+                try:
+                    target_f = face_frame_tuple[1]
+                    if isinstance(landmarks, list):
+                        xs = [l.x for l in landmarks]
+                        ys = [l.y for l in landmarks]
+                    else:
+                        xs = [l.x for l in landmarks.landmark]
+                        ys = [l.y for l in landmarks.landmark]
+                        
+                    min_x, max_x = max(0, min(xs)), min(1, max(xs))
+                    min_y, max_y = max(0, min(ys)), min(1, max(ys))
+                    
+                    pad_x = (max_x - min_x) * 0.2
+                    pad_y = (max_y - min_y) * 0.2
+                    
+                    px_min_x = max(0, int((min_x - pad_x) * w_f))
+                    px_max_x = min(w_f, int((max_x + pad_x) * w_f))
+                    px_min_y = max(0, int((min_y - pad_y) * h_f))
+                    px_max_y = min(h_f, int((max_y + pad_y) * h_f))
+                    
+                    if px_max_x > px_min_x and px_max_y > px_min_y:
+                        roi = target_f[px_min_y:px_max_y, px_min_x:px_max_x]
+                        # 根據影像大小動態決定模糊強度
+                        ksize = int(min(w_f, h_f) * 0.15)
+                        if ksize % 2 == 0:
+                            ksize += 1
+                        if ksize >= 3:
+                            roi_blurred = cv2.GaussianBlur(roi, (ksize, ksize), 0)
+                            target_f[px_min_y:px_max_y, px_min_x:px_max_x] = roi_blurred
+                except Exception as e:
+                    logger.error(f"Failed to apply privacy blur: {e}")
+            # --------------------------
+
             eye_dist, nc_dist = self._extract_physical_features(landmarks, w_f, h_f)
             sh_width = 0.0
             sh_mid_x = 0.0
@@ -563,6 +598,7 @@ class AgentPipeline:
                     "face_landmarks": self.baseline_face_landmarks,
                     "pose_landmarks": self.baseline_pose_landmarks,
                     "_current_eye_distance": eye_dist,
+                    "_current_nose_chin_distance": nc_dist,
                     "_current_shoulder_width": sh_width,
                 }
                 state_history = {name: val for name, val in status.active_skills.items()}
