@@ -29,6 +29,7 @@ class DetectorStatus(BaseModel):
     camera_source: Union[str, List[str]] = Field("local_0", description="Selected camera source (local_0, local_1, phone, dual)")
     public_url: Optional[str] = Field(None, description="Public intranet tunnel URL")
     flip_enabled: bool = Field(True, description="Whether preview flipping is enabled")
+    privacy_mode: bool = Field(True, description="Enable face blurring for privacy")
     active_skills: dict = Field(default_factory=dict, description="States of all evaluated skills (e.g. {name: bool})")
     active_events: dict = Field(default_factory=dict, description="States of all evaluated compound event rules")
     metrics: dict = Field(default_factory=dict, description="Generic metrics calculated by active skills (e.g. {skill_name: float})")
@@ -44,6 +45,7 @@ class SettingsUpdate(BaseModel):
     lean_threshold: Optional[float] = None
     camera_source: Optional[Union[str, List[str]]] = None
     flip_enabled: Optional[bool] = None
+    privacy_mode: Optional[bool] = None
 
 class ControlCommand(BaseModel):
     """

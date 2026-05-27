@@ -166,16 +166,8 @@ class GenericActionDetector:
             return False, 0.0
 
         scale = 1.0
-        if pt1_pose and pt2_pose:
-            sw = baselines.get("shoulder_width", 0.0)
-            curr_sw = baselines.get("_current_shoulder_width", 0.0)
-            if sw > 0 and curr_sw > 0:
-                scale = sw / curr_sw
-        else:
-            ed = baselines.get("eye_distance", 0.0)
-            curr_ed = baselines.get("_current_eye_distance", 0.0)
-            if ed > 0 and curr_ed > 0:
-                scale = ed / curr_ed
+        # 應使用者要求：拿掉所有動態遠近補償，直接拿三秒初始值 (d_base) 當作 100% 進行比對。
+        # 這樣最直覺，轉頭距離縮短就是縮短，不會被補償機制給抵消。
 
         if op == "~~":
             # 膠囊型震動檢測
