@@ -477,6 +477,10 @@
                 if (flipCheckbox && !flipCheckbox.matches(':active')) {
                     flipCheckbox.checked = data.flip_enabled !== false;
                 }
+                const privacyCheckbox = document.getElementById('privacy-mode-checkbox');
+                if (privacyCheckbox && !privacyCheckbox.matches(':active')) {
+                    privacyCheckbox.checked = data.privacy_mode !== false;
+                }
 
                 // Sync Toggle
                 if (toggleEl && !toggleEl.matches(':active')) {
@@ -561,7 +565,7 @@
         async function updateSetting(key, value) {
             try {
                 let parsedVal = value;
-                if (key !== 'camera_source' && key !== 'flip_enabled') {
+                if (key !== 'camera_source' && key !== 'flip_enabled' && key !== 'privacy_mode') {
                     parsedVal = parseFloat(value);
                 }
                 await fetch('/settings', {
