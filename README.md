@@ -65,6 +65,16 @@ renuniversal.bat build --name MyPlugin --skills skills/lean skills/turn --events
 
 ---
 
+## 🛡 臉部隱私保護模式 (Face Privacy Protection)
+
+為了保障使用者與患者在復健過程中的個人隱私，RenUniversal 內建了**硬體層級的即時臉部打碼機制**：
+*   **多鏡頭零死角防護**：隱私模式深入影像處理底層，無論是主機鏡頭還是任意數量透過 Wi-Fi 連線的手機副鏡頭，只要畫面中偵測到臉部，就會立刻進行高強度高斯模糊。
+*   **超廣角包覆**：AI 會動態計算臉部追蹤點的邊界，並向外擴展 60% 的防護區域，確保除了五官之外，包含頭髮邊緣、耳朵及脖子等特徵皆被完美遮蔽。
+*   **不影響姿態判定**：系統的姿態追蹤點（如鼻尖、下巴）會疊加在模糊層之上，即使臉部被完全馬賽克，依然能夠精準判定低頭或代償等動作，兼顧隱私與實用性。
+*   **即時動態開關**：使用者可透過 Web 介面隨時一鍵開啟/關閉隱私模式，系統狀態會即時同步至 `preferences.json`，確保下次啟動時記住您的設定。
+
+---
+
 ## 🛠 開發先前條件 (Prerequisites)
 
 *   **作業系統**：macOS (12.0+), Linux (Ubuntu 20.04+), Windows 10/11
@@ -85,6 +95,7 @@ cd RenUniversal
 Windows 使用者請直接透過專屬的批次檔管理專案：
 1. **初始化與依賴安裝**：`renuniversal.bat setup` (具備動態進度顯示，無冗長日誌)
 2. **啟動系統伺服器**：`renuniversal.bat run`
+   > 💡 **進階參數：** 可在指令後加上參數，例如 `renuniversal.bat run --host 0.0.0.0 --enable-tunnel --auth admin:1234 --disable-privacy`
 3. **執行架構驗證測試**：`renuniversal.bat test`
 4. **清除快取與日誌**：`renuniversal.bat clean`
 5. **安裝外掛套件**：`renuniversal.bat install <路徑>`
@@ -94,6 +105,12 @@ Windows 使用者請直接透過專屬的批次檔管理專案：
 1. **初始化與依賴安裝**：`make setup`
 2. **前景啟動系統**：`make run`
 3. **背景守護進程啟動**：`make start` (執行日誌會轉拋至 agent.log)
+   > 💡 **進階啟動參數 (透過 ARGS 傳遞)：**
+   > 例如：`make start ARGS="--host 0.0.0.0 --enable-tunnel"`
+   > * `--host 0.0.0.0`：綁定所有網路介面（開放區網手機連線）
+   > * `--enable-tunnel`：啟動 localhost.run 遠端外網穿透服務
+   > * `--auth user:pass`：自訂連線帳號密碼（若無設定且對外開放，系統將自動產生隨機帳密並顯示在終端機）
+   > * `--disable-privacy`：預設關閉臉部隱私打碼模式
 4. **停止背景伺服器**：`make stop`
 5. **執行架構驗證測試**：`make test`
 6. **安裝外掛套件**：`make install PATH=<路徑>`
