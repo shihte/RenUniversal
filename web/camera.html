@@ -60,34 +60,52 @@
                             <span class="text-xs font-bold text-emerald-400">選項 A：本地 Wi-Fi 連線 (極速低延遲 &lt;30ms)</span>
                             <span class="text-[8px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold">推薦</span>
                         </div>
-                        <p class="text-[10px] text-slate-400">
-                            手機必須與電腦連接到<strong>同一個 Wi-Fi</strong>。請掃描下方 QR Code 或輸入網址（請手動指定 http）：
-                        </p>
-                        <div class="flex items-center gap-4 mt-2">
-                            <div class="bg-white p-2 rounded-lg shrink-0">
-                                <img id="local-qr" src="" alt="Local QR" class="w-24 h-24" />
+                        <div id="local-qr-content">
+                            <p class="text-[10px] text-slate-400">
+                                手機必須與電腦連接到<strong>同一個 Wi-Fi</strong>。請掃描下方 QR Code 或輸入網址（請手動指定 http）：
+                            </p>
+                            <div class="flex items-center gap-4 mt-2">
+                                <div class="bg-white p-2 rounded-lg shrink-0">
+                                    <img id="local-qr" src="" alt="Local QR" class="w-24 h-24" />
+                                </div>
+                                <div class="space-y-2 overflow-hidden min-w-0">
+                                    <a id="local-link" href="" target="_blank" class="text-xs text-emerald-400 underline block truncate font-mono"></a>
+                                    <span class="text-[9px] text-slate-400 block">⚠️ 如果手機未開 Wi-Fi 或連接不同網路，此連結會連不上。</span>
+                                </div>
                             </div>
-                            <div class="space-y-2 overflow-hidden min-w-0">
-                                <a id="local-link" href="" target="_blank" class="text-xs text-emerald-400 underline block truncate font-mono"></a>
-                                <span class="text-[9px] text-slate-400 block">⚠️ 如果手機未開 Wi-Fi 或連接不同網路，此連結會連不上。</span>
-                            </div>
+                        </div>
+                        <div id="local-qr-warning" class="hidden mt-2 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
+                            <span class="text-xs text-red-400 font-bold block mb-1">⚠️ 內網伺服器未開啟</span>
+                            <span class="text-[10px] text-red-300">
+                                目前伺服器僅綁定在 localhost，手機無法連線。<br>
+                                請重新啟動程式並加入 <code>--host 0.0.0.0</code> 參數。
+                            </span>
                         </div>
                     </div>
                     
                     <!-- Option B: Public Tunnel -->
                     <div id="public-tunnel-block" class="space-y-2 p-4 rounded-lg bg-slate-800/80 border border-blue-500/20">
                         <span class="text-xs font-bold text-blue-400">選項 B：遠端公網穿透連線 (延遲較高 1.5s+)</span>
-                        <p class="text-[10px] text-slate-400">
-                            當手機使用行動網路 (4G/5G) 或跨網段時使用。請掃描下方 QR Code：
-                        </p>
-                        <div class="flex items-center gap-4 mt-2">
-                            <div class="bg-white p-2 rounded-lg shrink-0">
-                                <img id="tunnel-qr" src="" alt="Tunnel QR" class="w-24 h-24" />
+                        <div id="tunnel-qr-content">
+                            <p class="text-[10px] text-slate-400">
+                                當手機使用行動網路 (4G/5G) 或跨網段時使用。請掃描下方 QR Code：
+                            </p>
+                            <div class="flex items-center gap-4 mt-2">
+                                <div class="bg-white p-2 rounded-lg shrink-0">
+                                    <img id="tunnel-qr" src="" alt="Tunnel QR" class="w-24 h-24" />
+                                </div>
+                                <div class="space-y-2 overflow-hidden min-w-0">
+                                    <a id="tunnel-link" href="" target="_blank" class="text-xs text-blue-400 underline block truncate font-mono"></a>
+                                    <span class="text-[9px] text-slate-400 block">✈️ 資料需繞行海外轉機點，延遲較高。建議切換手機至極速模式。</span>
+                                </div>
                             </div>
-                            <div class="space-y-2 overflow-hidden min-w-0">
-                                <a id="tunnel-link" href="" target="_blank" class="text-xs text-blue-400 underline block truncate font-mono"></a>
-                                <span class="text-[9px] text-slate-400 block">✈️ 資料需繞行海外轉機點，延遲較高。建議切換手機至極速模式。</span>
-                            </div>
+                        </div>
+                        <div id="tunnel-qr-warning" class="hidden mt-2 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
+                            <span class="text-xs text-red-400 font-bold block mb-1">⚠️ 遠端穿透未啟動</span>
+                            <span class="text-[10px] text-red-300">
+                                目前未啟用 localhost.run 穿透服務。<br>
+                                請重新啟動程式並加入 <code>--enable-tunnel</code> 參數。
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -515,15 +533,24 @@
                 // Sync Tunnel Connection Info
                 const tunnelContainer = document.getElementById('tunnel-info-container');
                 if (tunnelContainer) {
-                    // Always render Local QR
                     const localIp = data.local_ip || '127.0.0.1';
                     const localMobileUrl = `https://${localIp}:8443/mobile`; 
                     
                     const localLinkEl = document.getElementById('local-link');
-                    if (localLinkEl) {
-                        localLinkEl.href = localMobileUrl;
-                        localLinkEl.textContent = localMobileUrl;
-                        document.getElementById('local-qr').src = `https://quickchart.io/qr?size=150&text=${encodeURIComponent(localMobileUrl)}`;
+                    const localQrContent = document.getElementById('local-qr-content');
+                    const localQrWarning = document.getElementById('local-qr-warning');
+
+                    if (data.host_bind === '127.0.0.1') {
+                        if (localQrContent) localQrContent.classList.add('hidden');
+                        if (localQrWarning) localQrWarning.classList.remove('hidden');
+                    } else {
+                        if (localQrContent) localQrContent.classList.remove('hidden');
+                        if (localQrWarning) localQrWarning.classList.add('hidden');
+                        if (localLinkEl) {
+                            localLinkEl.href = localMobileUrl;
+                            localLinkEl.textContent = localMobileUrl;
+                            document.getElementById('local-qr').src = `https://quickchart.io/qr?size=150&text=${encodeURIComponent(localMobileUrl)}`;
+                        }
                     }
 
                     // Always show public block, but with a warning if not connected
@@ -531,7 +558,12 @@
                     if(ptb) ptb.classList.remove('hidden');
 
                     const linkEl = document.getElementById('tunnel-link');
+                    const tunnelQrContent = document.getElementById('tunnel-qr-content');
+                    const tunnelQrWarning = document.getElementById('tunnel-qr-warning');
+
                     if (data.public_url) {
+                        if (tunnelQrContent) tunnelQrContent.classList.remove('hidden');
+                        if (tunnelQrWarning) tunnelQrWarning.classList.add('hidden');
                         const mobileUrl = `${data.public_url}/mobile`;
                         if (linkEl) {
                             linkEl.href = mobileUrl;
@@ -539,11 +571,8 @@
                             document.getElementById('tunnel-qr').src = `https://quickchart.io/qr?size=150&text=${encodeURIComponent(mobileUrl)}`;
                         }
                     } else {
-                        if (linkEl) {
-                            linkEl.href = "#";
-                            linkEl.textContent = "未啟動 (Localhost.run 隧道未連線)";
-                            document.getElementById('tunnel-qr').src = `https://quickchart.io/qr?size=150&text=NotConnected`;
-                        }
+                        if (tunnelQrContent) tunnelQrContent.classList.add('hidden');
+                        if (tunnelQrWarning) tunnelQrWarning.classList.remove('hidden');
                     }
                 }
 
