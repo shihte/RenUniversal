@@ -31,6 +31,18 @@
                     </label>
                 </div>
 
+                <!-- Face Privacy Mode -->
+                <div class="flex items-center justify-between p-4 rounded-lg bg-slate-800/50 border border-slate-700/50 mt-4">
+                    <div class="space-y-1">
+                        <span class="text-xs font-bold text-white">臉部隱私保護 (Privacy Mode)</span>
+                        <p class="text-[10px] text-slate-300">開啟後，系統會以高斯模糊遮蔽您的臉部，同時保留追蹤點，保障您的隱私並方便檢視追蹤狀態。</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="privacy-mode-checkbox" class="sr-only peer" onchange="updateSetting('privacy_mode', this.checked)">
+                        <div class="w-10 h-5 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                    </label>
+                </div>
+
                 <!-- Dual connection info -->
                 <div id="tunnel-info-container" class="space-y-4 bg-slate-800/50 p-6 rounded-xl border border-blue-500/20">
                     <div class="space-y-1">
@@ -490,6 +502,11 @@
                     flipCheckbox.checked = data.flip_enabled !== false;
                 }
 
+                const privacyCheckbox = document.getElementById('privacy-mode-checkbox');
+                if (privacyCheckbox && !privacyCheckbox.matches(':active')) {
+                    privacyCheckbox.checked = data.privacy_mode !== false;
+                }
+
                 // Sync Toggle
                 if (toggleEl && !toggleEl.matches(':active')) {
                     toggleEl.checked = data.is_active !== false; // Default true if undefined
@@ -639,7 +656,7 @@
         async function updateSetting(key, value) {
             try {
                 let parsedVal = value;
-                if (key !== 'camera_source' && key !== 'flip_enabled') {
+                if (key !== 'camera_source' && key !== 'flip_enabled' && key !== 'privacy_mode') {
                     parsedVal = parseFloat(value);
                 }
                 await fetch('/settings', {

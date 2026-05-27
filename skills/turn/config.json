@@ -6,8 +6,9 @@
     "face_mesh": true,
     "pose": false
   },
-  "rule_syntax": "f33,f263 >< num=20%",
   "default_preferences": {
-    "turn_threshold": 0.2
-  }
+    "threshold": 0.1
+  },
+  "rule_syntax": "f33,f263 >< num=15%",
+  "rules": []
 }

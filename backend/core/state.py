@@ -35,7 +35,8 @@ class SharedState:
             sway_threshold=float(self.prefs.get("sway_threshold", 0.15) * 100),
             lean_threshold=float(self.prefs.get("lean_threshold", 0.10) * 100),
             camera_source=["local_0"], # ALWAYS default to local_0 regardless of preferences
-            flip_enabled=self.prefs.get("flip_enabled", True)
+            flip_enabled=self.prefs.get("flip_enabled", True),
+            privacy_mode=self.prefs.get("privacy_mode", True)
         )
         self.status_lock = threading.Lock()
         
@@ -51,7 +52,8 @@ class SharedState:
             "username": "User",
             "last_baseline_eye": 0.0,
             "camera_source": "local_0",
-            "flip_enabled": True
+            "flip_enabled": True,
+            "privacy_mode": True
         }
         if self.prefs_path.exists():
             try:
@@ -111,6 +113,9 @@ class SharedState:
                 
             if "flip_enabled" in new_prefs:
                 current_dict["flip_enabled"] = bool(new_prefs["flip_enabled"])
+                
+            if "privacy_mode" in new_prefs:
+                current_dict["privacy_mode"] = bool(new_prefs["privacy_mode"])
                 
             self.status = DetectorStatus(**current_dict)
             
