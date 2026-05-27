@@ -306,6 +306,7 @@ start:
 			echo ""; \
 			echo "  🔐 【安全連線提示】"; \
 			grep -E "Username:|Password:" "$(LOG_FILE)" | tail -n 2 | awk '{print "  " $$0}'; \
+			echo "  💡 提示：若要自訂帳密，請加上參數，例如：ARGS=\"--auth user:pass\""; \
 			echo ""; \
 		fi; \
 	else \

@@ -656,6 +656,7 @@ def main():
         logger.warning(f"Auto-generated credentials for Basic Auth:")
         logger.warning(f"Username: {auth_username}")
         logger.warning(f"Password: {auth_password}")
+        logger.warning(f"Hint: Use --auth user:pass to set custom credentials.")
         logger.warning(f"==================================================")
         
     if auth_username and auth_password:
