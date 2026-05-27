@@ -302,6 +302,12 @@ start:
 		echo "✓ Agent 啟動成功 (PID: $$PID)"; \
 		echo "  日誌: $(LOG_FILE)"; \
 		echo "  監控: http://localhost:$(PORT)"; \
+		if grep -q "SECURITY:" "$(LOG_FILE)"; then \
+			echo ""; \
+			echo "  🔐 【安全連線提示】"; \
+			grep -E "Username:|Password:" "$(LOG_FILE)" | tail -n 2 | awk '{print "  " $$0}'; \
+			echo ""; \
+		fi; \
 	else \
 		echo "✗ 進程已終止，檢查日誌："; \
 		tail -20 "$(LOG_FILE)" 2>/dev/null || true; \
