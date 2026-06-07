@@ -1,150 +1,122 @@
 {% extends "base.html" %}
 
 {% block content %}
-<main class="flex-1 p-6 md:p-8 overflow-y-auto relative z-0 h-screen">
-        <div class="max-w-6xl mx-auto space-y-8 pb-20">
-<!-- Tab 2: Camera View -->
-        <div id="view-camera" class="max-w-3xl mx-auto space-y-8 font-sans">
-            <div class="glass-panel shadow-lg rounded-xl p-8 space-y-8">
-                <h2 class="text-xs font-bold text-white uppercase tracking-[0.2em] border-b border-slate-700/50 pb-4"
-                    data-i18n="camera_source_label">鏡頭輸入來源 (Camera Source)</h2>
+<main class="flex-1 overflow-y-auto bg-slate-50 min-h-screen">
+    <!-- Header Band -->
+    <section class="w-full bg-slate-50 text-slate-900 py-12 px-4 border-b border-slate-200">
+        <div class="max-w-3xl mx-auto text-center space-y-4">
+            <h2 class="text-4xl font-semibold tracking-tight">相機設定 (Camera Settings)</h2>
+            <p class="text-lg text-[#6e6e73]">配置輸入來源、連線與隱私偏好。</p>
+        </div>
+    </section>
 
-                <div class="space-y-4">
-                    <label class="text-xs text-slate-300 font-medium">請選擇作用中的鏡頭裝置 (最少 1，最多 5)：</label>
-                    <div id="camera-checkboxes" class="flex flex-col gap-3 mt-2">
-                        <!-- Dynamically populated -->
-                    </div>
-                    <p class="text-[10px] text-slate-400 leading-relaxed italic" data-i18n="camera_source_desc" id="camera-source-desc">
-                        多鏡頭模式會自動分割畫面 (Grid Layout)。若選擇手機網路串流，請確保手機已掃描下方 QR Code 進行連線。
-                    </p>
+    <!-- Content Band -->
+    <section class="w-full bg-white text-slate-900 py-16 px-4">
+        <div class="max-w-3xl mx-auto space-y-8">
+            
+            <!-- Camera Source -->
+            <div class="bg-white border border-slate-200 p-8 space-y-6">
+                <div class="space-y-1">
+                    <h3 class="text-xl font-semibold tracking-tight" data-i18n="camera_source_label">鏡頭輸入來源 (Camera Source)</h3>
+                    <p class="text-sm text-slate-500">選擇目前啟用的鏡頭輸入。</p>
                 </div>
-
-                <!-- Mirror Preview Frame Option -->
-                <div class="flex items-center justify-between p-4 rounded-lg bg-slate-800/50 border border-slate-700/50 mt-4">
-                    <div class="space-y-1">
-                        <span class="text-xs font-bold text-white">鏡像翻轉預覽畫面 (Mirror Preview Frame)</span>
-                        <p class="text-[10px] text-slate-300">開啟後，預覽影像將水平翻轉（適合筆電前置鏡頭）；若使用手機後置鏡頭或 USB 外接相機，可關閉以取得正確方向。</p>
-                    </div>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="flip-enabled-checkbox" class="sr-only peer" onchange="updateSetting('flip_enabled', this.checked)">
-                        <div class="w-10 h-5 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-                    </label>
+                
+                <div id="camera-checkboxes" class="flex flex-col gap-px bg-hairline border border-slate-200 overflow-hidden rounded-none">
+                    <!-- Dynamically populated -->
                 </div>
+                <p class="text-[11px] text-slate-500 leading-relaxed" data-i18n="camera_source_desc" id="camera-source-desc">
+                    多鏡頭模式會自動分割畫面。若使用手機串流，請掃描下方 QR Code 連線。
+                </p>
+            </div>
 
-                <!-- Face Privacy Mode -->
-                <div class="flex items-center justify-between p-4 rounded-lg bg-slate-800/50 border border-slate-700/50 mt-4">
-                    <div class="space-y-1">
-                        <span class="text-xs font-bold text-white">臉部隱私保護 (Privacy Mode)</span>
-                        <p class="text-[10px] text-slate-300">開啟後，系統會以高斯模糊遮蔽您的臉部，同時保留追蹤點，保障您的隱私並方便檢視追蹤狀態。</p>
-                    </div>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="privacy-mode-checkbox" class="sr-only peer" onchange="updateSetting('privacy_mode', this.checked)">
-                        <div class="w-10 h-5 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-                    </label>
+            <!-- Removed Toggles (now in monitor.html) -->
+            
+            <!-- Mobile Connection Info -->
+            <div id="tunnel-info-container" class="space-y-6 pt-8">
+                <div class="space-y-2">
+                    <h3 class="text-xl font-semibold tracking-tight text-slate-900">手機連線選項 (Mobile Connection Options)</h3>
+                    <p class="text-sm text-slate-500">掃描下方 QR Code，將您的手機作為外部鏡頭串流裝置連線。</p>
                 </div>
-
-                <!-- Dual connection info -->
-                <div id="tunnel-info-container" class="space-y-4 bg-slate-800/50 p-6 rounded-xl border border-blue-500/20">
-                    <div class="space-y-1">
-                        <span class="text-xs font-bold text-blue-400 uppercase tracking-[0.15em] block">
-                            📱 手機連線配置 (Phone Connection Options)
-                        </span>
-                        <p class="text-[11px] text-slate-300 leading-normal">
-                            請使用手機掃描以下 QR Code 開啟前置相機進行高精度人臉與姿態辨識：
-                        </p>
-                    </div>
-                    
-                    <!-- Option A: Local Wi-Fi (Highly Recommended) -->
-                    <div class="space-y-2 p-4 rounded-lg bg-slate-800/80 border border-emerald-500/20">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-emerald-400">選項 A：本地 Wi-Fi 連線 (極速低延遲 &lt;30ms)</span>
-                            <span class="text-[8px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold">推薦</span>
+                
+                <div class="grid sm:grid-cols-2 gap-6">
+                    <!-- Option A: Local Wi-Fi -->
+                    <div class="bg-white border border-slate-200 p-6 flex flex-col h-full">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-base font-semibold tracking-tight text-slate-900">區域網路 (Local Wi-Fi)</span>
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-[#34c759] bg-[#34c759]/10 px-2 py-1 rounded-full">推薦使用 (Recommended)</span>
                         </div>
-                        <div id="local-qr-content">
-                            <p class="text-[10px] text-slate-400">
-                                手機必須與電腦連接到<strong>同一個 Wi-Fi</strong>。請掃描下方 QR Code 或輸入網址（請手動指定 http）：
-                            </p>
-                            <div class="flex items-center gap-4 mt-2">
-                                <div class="bg-white p-2 rounded-lg shrink-0">
-                                    <img id="local-qr" src="" alt="Local QR" class="w-24 h-24" />
-                                </div>
-                                <div class="space-y-2 overflow-hidden min-w-0">
-                                    <a id="local-link" href="" target="_blank" class="text-xs text-emerald-400 underline block truncate font-mono"></a>
-                                    <span class="text-[9px] text-slate-400 block">⚠️ 如果手機未開 Wi-Fi 或連接不同網路，此連結會連不上。</span>
-                                </div>
+                        <div id="local-qr-content" class="flex-1 flex flex-col space-y-4">
+                            <p class="text-[12px] text-slate-500">手機與電腦需在同一 Wi-Fi 網域。掃描後點擊下方按鈕切換來源。</p>
+                            <button onclick="switchToMobileCamera()" class="w-full bg-slate-900 text-white py-2 rounded-lg text-sm font-semibold hover:bg-slate-800 transition-colors">
+                                切換至手機鏡頭 (Switch to Mobile)
+                            </button>
+                            <div class="bg-white p-4 rounded-xl self-center border border-slate-200">
+                                <img id="local-qr" src="" alt="Local QR" class="w-32 h-32" />
                             </div>
+                            <a id="local-link" href="" target="_blank" class="text-[11px] text-primary hover:underline text-center break-all font-mono"></a>
                         </div>
-                        <div id="local-qr-warning" class="hidden mt-2 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
-                            <span class="text-xs text-red-400 font-bold block mb-1">⚠️ 內網伺服器未開啟</span>
-                            <span class="text-[10px] text-red-300 leading-relaxed block">
-                                目前伺服器僅綁定在 localhost，手機無法透過區網連線。<br>
-                                請重新啟動程式並加入參數，例如：<br>
-                                <code>make start ARGS="--host 0.0.0.0"</code>
+                        <div id="local-qr-warning" class="hidden mt-4 p-4 bg-[#ff3b30]/10 border border-[#ff3b30]/30 text-[#ff3b30] text-sm">
+                            <span class="font-bold block mb-1">區域網路未開放 (Local Network Offline)</span>
+                            <span class="text-[12px] leading-relaxed block">
+                                伺服器僅綁定本機。請使用以下指令重啟：<br>
+                                <code class="font-mono mt-1 block font-bold">make start ARGS="--host 0.0.0.0"</code>
                             </span>
                         </div>
                     </div>
                     
                     <!-- Option B: Public Tunnel -->
-                    <div id="public-tunnel-block" class="space-y-2 p-4 rounded-lg bg-slate-800/80 border border-blue-500/20">
-                        <span class="text-xs font-bold text-blue-400">選項 B：遠端公網穿透連線 (延遲較高 1.5s+)</span>
-                        <div id="tunnel-qr-content">
-                            <p class="text-[10px] text-slate-400">
-                                當手機使用行動網路 (4G/5G) 或跨網段時使用。請掃描下方 QR Code：
-                            </p>
-                            <div class="flex items-center gap-4 mt-2">
-                                <div class="bg-white p-2 rounded-lg shrink-0">
-                                    <img id="tunnel-qr" src="" alt="Tunnel QR" class="w-24 h-24" />
-                                </div>
-                                <div class="space-y-2 overflow-hidden min-w-0">
-                                    <a id="tunnel-link" href="" target="_blank" class="text-xs text-blue-400 underline block truncate font-mono"></a>
-                                    <span class="text-[9px] text-slate-400 block">✈️ 資料需繞行海外轉機點，延遲較高。建議切換手機至極速模式。</span>
-                                </div>
-                            </div>
+                    <div id="public-tunnel-block" class="bg-white border border-slate-200 p-6 flex flex-col h-full">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-base font-semibold tracking-tight text-slate-900">遠端隧道 (Remote Tunnel)</span>
                         </div>
-                        <div id="tunnel-qr-warning" class="hidden mt-2 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
-                            <span class="text-xs text-red-400 font-bold block mb-1">⚠️ 遠端穿透未啟動</span>
-                            <span class="text-[10px] text-red-300 leading-relaxed block">
-                                目前未啟用 localhost.run 穿透服務，外網無法連線。<br>
-                                請重新啟動程式並加入參數，例如：<br>
-                                <code>make start ARGS="--enable-tunnel"</code>
+                        <div id="tunnel-qr-content" class="flex-1 flex flex-col space-y-4">
+                            <p class="text-[12px] text-slate-500">適用於 4G/5G 行動網路環境。透過中繼伺服器會有些微延遲。</p>
+                            <div class="bg-white p-4 rounded-xl self-center border border-slate-200">
+                                <img id="tunnel-qr" src="" alt="Tunnel QR" class="w-32 h-32" />
+                            </div>
+                            <a id="tunnel-link" href="" target="_blank" class="text-[11px] text-primary hover:underline text-center break-all font-mono"></a>
+                        </div>
+                        <div id="tunnel-qr-warning" class="hidden mt-4 p-4 bg-[#ff3b30]/10 border border-[#ff3b30]/30 text-[#ff3b30] text-sm">
+                            <span class="font-bold block mb-1">遠端隧道未啟用 (Tunnel Offline)</span>
+                            <span class="text-[12px] leading-relaxed block">
+                                遠端隧道服務已關閉。請使用以下指令重啟：<br>
+                                <code class="font-mono mt-1 block font-bold">make start ARGS="--enable-tunnel"</code>
                             </span>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        
-<!-- ═══════════════════════════════════════════════════════════════
-         GLOBAL EDIT MODAL  — 點擊作用中項目之後展開
-    ═══════════════════════════════════════════════════════════════ -->
-    <div id="edit-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/70 backdrop-blur-sm">
-        <div class="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-5 mx-4">
-            <div class="flex justify-between items-center">
+        </div>
+    </section>
+
+    <!-- Global Edit Modal -->
+    <div id="edit-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/40 backdrop-blur-md">
+        <div class="bg-white border border-slate-200 p-8 w-full max-w-lg shadow-2xl mx-4 space-y-6">
+            <div class="flex justify-between items-start">
                 <div>
-                    <h3 id="modal-title" class="text-sm font-bold text-white"></h3>
-                    <p id="modal-subtitle" class="text-[10px] text-slate-400 mt-0.5"></p>
+                    <h3 id="modal-title" class="text-xl font-semibold tracking-tight text-slate-900"></h3>
+                    <p id="modal-subtitle" class="text-sm text-slate-500 mt-1"></p>
                 </div>
-                <button onclick="closeEditModal()" class="text-slate-400 hover:text-white text-xl leading-none">&times;</button>
+                <button onclick="closeEditModal()" class="text-slate-500 hover:text-slate-900 transition-colors">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
 
-            <!-- 語法顯示與編輯區 -->
             <div class="space-y-2">
-                <label class="text-[10px] text-slate-300 font-semibold block">目前語法 (Syntax)</label>
-                <textarea id="modal-syntax" rows="3"
-                    class="w-full bg-slate-900/80 border border-slate-700/50 text-white rounded-lg p-3 text-xs font-mono focus:outline-none focus:border-blue-500 resize-none"></textarea>
-                <p class="text-[9px] text-slate-400">可直接編輯語法，支持 AND / OR / NOT 及點位 ID 語法。</p>
+                <label class="text-sm font-semibold tracking-tight text-slate-900">邏輯語法 (Rule Syntax)</label>
+                <textarea id="modal-syntax" rows="4"
+                    class="w-full bg-white border border-slate-200 text-slate-900 rounded-none p-4 font-mono text-sm focus:outline-none focus:border-primary resize-none"></textarea>
+                <p class="text-[12px] text-slate-500">支援 AND / OR / NOT 等運算符。</p>
             </div>
 
-                        
-
-            <!-- 操作按鈕 -->
-            <div class="flex gap-3 pt-2">
-                <button onclick="closeEditModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs py-2.5 rounded-xl font-semibold">取消</button>
-                <button id="modal-save-btn" onclick="saveModalEdit()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all text-xs py-2.5 rounded-xl font-bold">儲存並套用</button>
+            <div class="flex gap-4 pt-4">
+                <button onclick="closeEditModal()" class="flex-1 bg-white hover:bg-[#e5e5ea] text-slate-900 py-3 font-semibold transition-colors">取消 (Cancel)</button>
+                <button id="modal-save-btn" onclick="saveModalEdit()" class="flex-1 bg-primary hover:bg-primary-active text-on-primary py-3 rounded-full font-semibold shadow-md shadow-primary/20 transition-all">儲存變更 (Save Changes)</button>
             </div>
         </div>
-    </div></main>
+    </div>
+</main>
 {% endblock %}
 
 {% block scripts %}
@@ -153,7 +125,7 @@
         // ─────────────────────────────────────────────────────────────────────────
         // EDIT MODAL LOGIC  (技能 / 事件 點擊彈出編輯)
         // ─────────────────────────────────────────────────────────────────────────
-        let _modalContext = { type: null, name: null };
+        var _modalContext = { type: null, name: null };
 
         function openEditModal(type, name) {
             _modalContext = { type, name };
@@ -278,7 +250,7 @@
 
         // ─────────────────────────────────────────────────────────────────────────
         // --- Internationalization ---
-        const translations = {
+        var translations = {
             'en': {
                 'monitor_dashboard': 'Monitor Dashboard',
                 'play_game': 'Play Game',
@@ -339,7 +311,7 @@
             }
         };
 
-        let currentLang = 'zh-TW';
+        var currentLang = 'zh-TW';
 
         function setLang(lang) {
             currentLang = lang;
@@ -371,14 +343,22 @@
 
         // --- Logic ---
 
-        const statusEl = document.getElementById('connection-status');
-        const liveIndicator = document.getElementById('live-indicator');
-        const toggleEl = document.getElementById('detection-toggle');
+        var currentHasNetworkStream = false;
 
         async function fetchStatus() {
+            var statusEl = document.getElementById('connection-status');
+            var liveIndicator = document.getElementById('live-indicator');
+            var toggleEl = document.getElementById('detection-toggle');
             try {
                 const res = await fetch('/status');
                 const data = await res.json();
+                
+                // 動態重新整理相機列表（如果手機連線狀態改變）
+                if (data.has_network_stream !== currentHasNetworkStream) {
+                    currentHasNetworkStream = !!data.has_network_stream;
+                    lastCamerasHash = ""; // 強制刷新
+                    loadCameras();
+                }
 
                 // Update Badge Colors
                 const colorClass = data.connected ? 'bg-green-500' : 'bg-red-500';
@@ -627,32 +607,58 @@
         }
 
         
-        let lastCamerasHash = "";
+        var lastCamerasHash = "";
         async function loadCameras() {
             try {
-                const res = await fetch('/cameras');
-                const data = await res.json();
+                // Ensure permission is requested so we get device labels
+                try { await navigator.mediaDevices.getUserMedia({video: true}); } catch(e){}
                 
-                const newHash = data.cameras.join(',');
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoInputs = devices.filter(d => d.kind === 'videoinput');
+                
+                const cameras = videoInputs.map(d => `local_${d.deviceId}`);
+                
+                // 動態判斷：如果後端回報有手機連線，才加入此選項
+                if (currentHasNetworkStream) {
+                    cameras.push('phone');
+                }
+
+                const newHash = cameras.join(',');
                 if (newHash === lastCamerasHash) return; // 不重複重建
                 lastCamerasHash = newHash;
                 
-                const container = document.getElementById('camera-checkboxes');
+                // Sync default 'local_0' to the actual first device ID so the checkbox gets checked
+                try {
+                    const statusRes = await fetch('/status');
+                    const statusData = await statusRes.json();
+                    var currentSources = statusData.camera_source;
+                    if (typeof currentSources === 'string') currentSources = [currentSources];
+                    if (!Array.isArray(currentSources)) currentSources = ['local_0'];
+                    
+                    if (currentSources.includes('local_0') && cameras.length > 0 && cameras[0].startsWith('local_')) {
+                        var newSources = currentSources.map(s => s === 'local_0' ? cameras[0] : s);
+                        await updateSetting('camera_source', newSources);
+                    }
+                } catch(e) {}
+                
+                var container = document.getElementById('camera-checkboxes');
                 container.innerHTML = '';
                 
-                const labels = {
-                    'local_0': '💻 電腦預設鏡頭 (Local Camera 0)',
-                    'local_1': '📹 外接相機 1 (Local Camera 1)',
-                    'local_2': '📹 外接相機 2 (Local Camera 2)',
-                    'phone': '📱 手機網路串流 (Mobile WiFi Stream)'
-                };
-                
-                data.cameras.forEach(cam => {
-                    const labelText = labels[cam] || `📹 未知相機 (${cam})`;
+                let localCount = 0;
+                cameras.forEach(cam => {
+                    let labelText = '';
+                    if (cam === 'phone') {
+                        labelText = '📱 手機網路串流 (Mobile WiFi Stream)';
+                    } else {
+                        const deviceId = cam.replace('local_', '');
+                        const device = videoInputs.find(d => d.deviceId === deviceId);
+                        labelText = device.label || `💻 電腦相機 (Local Camera ${localCount++})`;
+                    }
+                    
                     const html = `
-                        <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:border-blue-500/50 transition-colors">
-                            <input type="checkbox" value="${cam}" class="cam-chk w-4 h-4 text-blue-400 bg-slate-800/80 border-slate-600 rounded focus:ring-blue-500 focus:ring-2">
-                            <span class="text-xs text-white">${labelText}</span>
+                        <label class="flex items-center gap-4 cursor-pointer p-4 bg-white hover:bg-white transition-colors group">
+                            <input type="checkbox" value="${cam}" class="cam-chk w-5 h-5 text-primary border-slate-200 focus:ring-primary focus:ring-2 accent-primary">
+                            <span class="text-base text-slate-900 font-medium">${labelText}</span>
                         </label>
                     `;
                     container.insertAdjacentHTML('beforeend', html);
@@ -673,15 +679,27 @@
                             return;
                         }
                         await updateSetting('camera_source', checked);
-                        // 切換相機後自動重新校準
-                        try {
-                            await fetch('/recalibrate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
-                        } catch(e) { console.warn('Auto-recalibrate failed', e); }
+                        try { await fetch('/recalibrate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); } catch(e) {}
                     });
                 });
             } catch (e) {
                 console.error("Failed to load cameras", e);
             }
+        }
+        
+        async function switchToMobileCamera() {
+            await updateSetting('camera_source', ['phone']);
+            alert('已將視訊來源切換為手機！(Switched to Mobile Camera)');
+            // 重新讀取狀態更新 UI
+            fetchStatus();
+        }
+        
+        // Listen for USB camera plug/unplug events
+        if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+            navigator.mediaDevices.addEventListener('devicechange', () => {
+                lastCamerasHash = ""; // force refresh
+                loadCameras();
+            });
         }
 
         async function updateSetting(key, value) {
@@ -730,7 +748,7 @@
 
         // --- Skills Tab Actions ---
         window.loadedSkillsData = [];
-        let isUpdateMode = false;
+        var isUpdateMode = false;
 
         async function loadSkills() {
             try {
@@ -1021,7 +1039,7 @@
 
         // --- Events Tab Actions ---
         window.loadedEventsData = [];
-        let isEventUpdateMode = false;
+        var isEventUpdateMode = false;
 
         async function loadEvents() {
             try {

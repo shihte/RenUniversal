@@ -207,6 +207,7 @@ def status():
     status_data['local_ip'] = get_local_ip()
     status_data['prefs'] = state.prefs
     status_data['host_bind'] = app.config.get('HOST_BIND', '127.0.0.1')
+    status_data['has_network_stream'] = 'phone' in state.get_all_network_sources()
     return jsonify(status_data)
 
 @app.route('/settings', methods=['GET', 'POST'])
@@ -237,9 +238,12 @@ def settings():
             update_dict["camera_source"] = data.camera_source
         if data.flip_enabled is not None:
             update_dict["flip_enabled"] = data.flip_enabled
+        if data.privacy_mode is not None:
+            update_dict["privacy_mode"] = data.privacy_mode
             
         if update_dict:
             state.save_prefs(update_dict)
+            state.update_status(**update_dict)
             
         return jsonify({"success": True})
     except ValidationError as e:
@@ -269,6 +273,7 @@ def get_cameras():
 @app.route('/upload_frame', methods=['POST'])
 def upload_frame():
     try:
+        source_id = request.args.get('source', 'phone')
         data = request.data
         if not data:
             return jsonify({"error": "No image data"}), 400
@@ -277,7 +282,7 @@ def upload_frame():
         frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         if frame is None:
             return jsonify({"error": "Invalid image format"}), 400
-        state.update_network_frame(frame)
+        state.update_network_frame(frame, source_id)
         return jsonify({"success": True})
     except Exception as e:
         logger.error(f"Error processing uploaded frame: {e}")
@@ -637,6 +642,9 @@ def main():
     if args.disable_privacy:
         state.save_prefs({"privacy_mode": False})
         state.update_status(privacy_mode=False)
+    else:
+        state.save_prefs({"privacy_mode": True})
+        state.update_status(privacy_mode=True)
     
     auth_username = None
     auth_password = None
@@ -660,7 +668,9 @@ def main():
         logger.warning(f"==================================================")
         
     if auth_username and auth_password:
+        logger.info(f"Auth enabled. Username: {auth_username}, Password: {'*' * len(auth_password)}")
         app.config['BASIC_AUTH_USERNAME'] = auth_username
+
         app.config['BASIC_AUTH_PASSWORD'] = auth_password
     
     if args.cli:

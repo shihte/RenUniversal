@@ -1,133 +1,128 @@
 {% extends "base.html" %}
 
 {% block content %}
-<main class="flex-1 p-6 md:p-8 overflow-y-auto relative z-0 h-screen">
-        <div class="max-w-6xl mx-auto space-y-8 pb-20">
-<!-- Tab 4: Events View -->
-        <div id="view-events" class="space-y-8 font-sans">
-            <!-- Full Width Onboarding Tutorial Box for Events -->
-            <div class="glass-panel shadow-lg rounded-xl p-6 bg-slate-800/50 border border-blue-500/20 rounded-xl space-y-4 col-span-12">
-                <div class="flex items-center gap-3">
-                    <div class="p-2 rounded-lg bg-blue-500/10 text-blue-400">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <h2 class="text-sm font-bold text-white">🎛️ 事件處理中心 (Event Handling Hub)</h2>
-                        <p class="text-[11px] text-slate-300">使用簡單的 boolean 邏輯（AND, OR, NOT）來組合不同的動作偵測狀態，觸發更複雜的複合事件</p>
-                    </div>
+<main class="flex-1 overflow-y-auto bg-slate-50 min-h-screen">
+    <!-- Header Band -->
+    <section class="w-full bg-slate-50 text-slate-900 py-12 px-4 border-b border-slate-200">
+        <div class="max-w-4xl mx-auto text-center space-y-4">
+            <h2 class="text-4xl font-semibold tracking-tight">事件處理中心 (Events Hub)</h2>
+            <p class="text-lg text-[#6e6e73]">使用 boolean 邏輯來組合不同的動作技能，建立複雜的觸發事件。</p>
+        </div>
+    </section>
+
+    <!-- Content Band -->
+    <section class="w-full bg-white text-slate-900 py-16 px-4">
+        <div class="max-w-6xl mx-auto space-y-12">
+            
+            <!-- Onboarding Info Block for Events -->
+            <div class="bg-slate-50-elevated text-slate-900 p-8 border border-slate-200 space-y-6">
+                <div class="flex items-center gap-4">
+                    <h2 class="text-xl font-semibold tracking-tight">事件系統引導 (Event Handling Hub)</h2>
                 </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 text-[11px] leading-relaxed">
-                    <div class="p-3 rounded-lg bg-slate-900/80 border border-slate-700/50 space-y-1">
-                        <span class="font-bold text-emerald-400">邏輯語法規則</span>
-                        <p class="text-slate-300">您可以使用 <code>AND</code>, <code>OR</code>, <code>NOT</code> 與括號來組合動作包。例如：<code>slouch AND sway</code> 代表同時發生低頭與左右偏斜時觸發該事件。</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-slate-200 text-[13px] text-[#d2d2d7] leading-relaxed">
+                    <div class="space-y-2">
+                        <span class="font-bold text-slate-900 block">邏輯語法規則 (Logic Syntax Rules)</span>
+                        <p>您可以使用 <code>AND</code>, <code>OR</code>, <code>NOT</code> 與括號來組合作用中的技能。例如：<code class="font-mono text-[11px] text-primary">slouch AND sway</code>。</p>
                     </div>
-                    <div class="p-3 rounded-lg bg-slate-900/80 border border-slate-700/50 space-y-2">
+                    <div class="space-y-2">
                         <div class="flex justify-between items-center">
-                            <span class="font-bold text-blue-400">現有可用動作變數</span>
-                            <span class="text-[9px] text-slate-400">點擊變數可複製名稱</span>
+                            <span class="font-bold text-primary">可用變數 (Available Variables)</span>
+                            <span class="text-[11px] text-slate-500">點擊變數以複製</span>
                         </div>
-                        <div id="event-vars-panel" class="space-y-2 text-[10px]"></div>
+                        <div id="event-vars-panel" class="space-y-2 text-[12px] font-mono"></div>
                     </div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                <!-- Left Column: Active Events List -->
-                <div class="lg:col-span-6 space-y-6">
-                    <div class="flex justify-between items-center pb-2 border-b border-slate-700/50">
-                        <h2 class="text-sm font-bold text-white uppercase tracking-[0.15em]">自訂複合事件邏輯</h2>
-                        <button onclick="loadEvents()" class="text-blue-400 hover:underline text-xs">重新整理</button>
+            <div class="grid lg:grid-cols-2 gap-12">
+                <!-- Left: Active Events -->
+                <div class="space-y-6">
+                    <div class="flex justify-between items-end pb-4 border-b border-slate-200">
+                        <h2 class="text-2xl font-semibold tracking-tight">作用中事件 (Active Events)</h2>
+                        <button onclick="loadEvents()" class="text-primary hover:text-primary-active text-sm font-medium">重新整理</button>
                     </div>
-                    <div id="events-list-container" class="space-y-6">
-                        <!-- Dynamic event items list here -->
+                    <div id="events-list-container" class="space-y-px bg-hairline border border-slate-200 flex flex-col">
+                        <!-- Loaded dynamically via JS -->
                     </div>
                 </div>
 
-                <!-- Right Column: Create Event Form -->
-                <div class="lg:col-span-6 space-y-6">
-                    <div class="pb-2 border-b border-slate-700/50">
-                        <h2 class="text-sm font-bold text-white uppercase tracking-[0.15em]">事件邏輯建構器</h2>
+                <!-- Right: Event Builder Form -->
+                <div class="space-y-6">
+                    <div class="pb-4 border-b border-slate-200">
+                        <h2 class="text-2xl font-semibold tracking-tight">事件建構器 (Event Logic Builder)</h2>
                     </div>
-                    <div class="glass-panel shadow-lg rounded-xl p-6 space-y-6">
-                        <form id="create-event-form" onsubmit="submitCreateEvent(event)" class="space-y-5">
+                    <div class="bg-white border border-slate-200 p-8">
+                        <form id="create-event-form" onsubmit="submitCreateEvent(event)" class="space-y-6">
+                            
                             <div class="space-y-2">
-                                <label class="text-xs text-slate-300 font-semibold block">事件系統名稱 (ID)*</label>
+                                <label class="text-sm font-semibold tracking-tight block">事件 ID (Event ID)*</label>
                                 <input type="text" id="event-name" required placeholder="例如: heavy_fatigue" 
-                                    class="w-full bg-slate-800/50 border border-slate-700/50 text-white rounded-lg p-2.5 text-xs focus:outline-none focus:border-blue-500 font-mono">
-                                <p class="text-[9px] text-slate-400">限小寫英文、數字與底線，不可與現有事件重名。</p>
+                                    class="w-full bg-white border border-slate-200 p-3 text-sm focus:outline-none focus:border-primary font-mono text-slate-900 transition-colors">
+                                <p class="text-[12px] text-slate-500">限小寫英文、數字與底線，不可與現有事件重名。</p>
                             </div>
 
                             <div class="space-y-2">
-                                <label class="text-xs text-slate-300 font-semibold block">中文描述名稱</label>
+                                <label class="text-sm font-semibold tracking-tight block">描述 (Description)</label>
                                 <input type="text" id="event-desc" placeholder="例如: 嚴重疲勞警示" 
-                                    class="w-full bg-slate-800/50 border border-slate-700/50 text-white rounded-lg p-2.5 text-xs focus:outline-none focus:border-blue-500">
+                                    class="w-full bg-white border border-slate-200 p-3 text-sm focus:outline-none focus:border-primary text-slate-900 transition-colors">
                             </div>
 
-
-
-                            <div class="space-y-3 pt-3 border-t border-slate-700/50">
-                                <label class="text-xs text-slate-300 font-semibold block">觸發邏輯語法 (Rule Syntax)*</label>
+                            <div class="space-y-4 pt-6 border-t border-slate-200">
+                                <label class="text-sm font-semibold tracking-tight block">觸發邏輯語法 (Trigger Logic Syntax)*</label>
                                 <input type="text" id="event-syntax" required
-                                    class="w-full bg-slate-800/50 border border-slate-700/50 text-white rounded-lg p-2.5 text-xs focus:outline-none focus:border-blue-500 font-mono"
+                                    class="w-full bg-white border border-slate-200 p-3 text-sm focus:outline-none focus:border-primary font-mono text-slate-900 transition-colors"
                                     placeholder="例如: slouch AND sway">
-                                <div id="event-syntax-vars" class="flex flex-wrap gap-1"></div>
+                                <div id="event-syntax-vars" class="flex flex-wrap gap-2 mt-2"></div>
                             </div>
 
-                            <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50 text-[10px] text-slate-300 leading-relaxed space-y-1">
-                                <span class="font-bold text-white block">邏輯運算子說明：</span>
-                                <ul class="list-disc list-inside space-y-0.5">
-                                    <li><strong>AND</strong>：左右兩邊的動作均成立才觸發。</li>
-                                    <li><strong>OR</strong>：左右兩邊任一動作成立即觸發。</li>
-                                    <li><strong>NOT</strong>：動作不成立時才觸發。</li>
-                                    <li>支援括號 <code>( )</code> 來明確優先順序，如 <code>(slouch OR lean) AND sway</code></li>
+                            <div class="bg-white p-4 border border-slate-200 text-[12px] text-slate-500 leading-relaxed space-y-2">
+                                <span class="font-bold text-slate-900 block">邏輯運算子 (Logic Operators):</span>
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li><strong>AND</strong>: 兩邊條件均成立才觸發。</li>
+                                    <li><strong>OR</strong>: 任一條件成立即觸發。</li>
+                                    <li><strong>NOT</strong>: 條件不成立時觸發 (反向條件)。</li>
+                                    <li>支援使用括號 <code>( )</code> 來明確優先順序。</li>
                                 </ul>
                             </div>
 
                             <button type="submit" 
-                                class="bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all w-full py-3.5 text-xs font-bold uppercase tracking-[0.1em] rounded-xl flex justify-center items-center gap-2">
-                                建立並套用事件 (Deploy Event)
+                                class="w-full py-4 bg-primary hover:bg-primary-active text-on-primary rounded-full font-semibold transition-colors mt-8">
+                                部署自訂事件 (Deploy Event)
                             </button>
                         </form>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    
-<!-- ═══════════════════════════════════════════════════════════════
-         GLOBAL EDIT MODAL  — 點擊作用中項目之後展開
-    ═══════════════════════════════════════════════════════════════ -->
-    <div id="edit-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/70 backdrop-blur-sm">
-        <div class="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-5 mx-4">
-            <div class="flex justify-between items-center">
+    <!-- Global Edit Modal -->
+    <div id="edit-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/40 backdrop-blur-md">
+        <div class="bg-white border border-slate-200 p-8 w-full max-w-lg shadow-2xl mx-4 space-y-6">
+            <div class="flex justify-between items-start">
                 <div>
-                    <h3 id="modal-title" class="text-sm font-bold text-white"></h3>
-                    <p id="modal-subtitle" class="text-[10px] text-slate-400 mt-0.5"></p>
+                    <h3 id="modal-title" class="text-xl font-semibold tracking-tight text-slate-900"></h3>
+                    <p id="modal-subtitle" class="text-sm text-slate-500 mt-1"></p>
                 </div>
-                <button onclick="closeEditModal()" class="text-slate-400 hover:text-white text-xl leading-none">&times;</button>
+                <button onclick="closeEditModal()" class="text-slate-500 hover:text-slate-900 transition-colors">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
 
-            <!-- 語法顯示與編輯區 -->
             <div class="space-y-2">
-                <label class="text-[10px] text-slate-300 font-semibold block">目前語法 (Syntax)</label>
-                <textarea id="modal-syntax" rows="3"
-                    class="w-full bg-slate-900/80 border border-slate-700/50 text-white rounded-lg p-3 text-xs font-mono focus:outline-none focus:border-blue-500 resize-none"></textarea>
-                <p class="text-[9px] text-slate-400">可直接編輯語法，支持 AND / OR / NOT 及點位 ID 語法。</p>
+                <label class="text-sm font-semibold tracking-tight text-slate-900">語法 (Rule Syntax)</label>
+                <textarea id="modal-syntax" rows="4"
+                    class="w-full bg-white border border-slate-200 text-slate-900 rounded-none p-4 font-mono text-sm focus:outline-none focus:border-primary resize-none"></textarea>
+                <p class="text-[12px] text-slate-500">支援 AND / OR / NOT 運算子。</p>
             </div>
 
-                        
-
-            <!-- 操作按鈕 -->
-            <div class="flex gap-3 pt-2">
-                <button onclick="closeEditModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs py-2.5 rounded-xl font-semibold">取消</button>
-                <button id="modal-save-btn" onclick="saveModalEdit()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all text-xs py-2.5 rounded-xl font-bold">儲存並套用</button>
+            <div class="flex gap-4 pt-4">
+                <button onclick="closeEditModal()" class="flex-1 bg-white hover:bg-[#e5e5ea] text-slate-900 py-3 font-semibold transition-colors">取消 (Cancel)</button>
+                <button id="modal-save-btn" onclick="saveModalEdit()" class="flex-1 bg-primary hover:bg-primary-active text-on-primary py-3 rounded-full font-semibold shadow-md shadow-primary/20 transition-all">儲存變更 (Save Changes)</button>
             </div>
         </div>
-    </div></main>
+    </div>
+</main>
 {% endblock %}
 
 {% block scripts %}
@@ -456,9 +451,9 @@
                         card.className = 'glass-panel shadow-lg rounded-xl p-5';
                         
                         let label = `${name.toUpperCase()} Count`;
-                        if (name === 'slouch') label = 'Slouch Count';
-                        if (name === 'sway') label = 'Sway Count';
-                        if (name === 'lean') label = 'Lean Count';
+                        if (name === 'slouch') label = '駝背次數';
+                        if (name === 'sway') label = '搖晃次數';
+                        if (name === 'lean') label = '前傾次數';
                         
                         card.innerHTML = `
                             <div class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-1">${label}</div>
@@ -542,10 +537,10 @@
                             const badge = document.createElement('span');
                             if (isActive) {
                                 badge.className = 'text-[10px] bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full font-mono font-bold animate-pulse';
-                                badge.innerText = `${name.toUpperCase()} (Active)`;
+                                badge.innerText = `${name.toUpperCase()} (執行中)`;
                             } else {
                                 badge.className = 'text-[10px] bg-gray-500/10 text-gray-400 border border-gray-500/20 px-2 py-0.5 rounded-full font-mono';
-                                badge.innerText = `${name.toUpperCase()} (Idle)`;
+                                badge.innerText = `${name.toUpperCase()} (待命中)`;
                             }
                             activeSkillsContainer.appendChild(badge);
                         });
@@ -563,10 +558,10 @@
                             const badge = document.createElement('span');
                             if (isActive) {
                                 badge.className = 'text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-full font-mono font-bold animate-bounce';
-                                badge.innerText = `${name.toUpperCase()} (Triggered)`;
+                                badge.innerText = `${name.toUpperCase()} (已觸發)`;
                             } else {
                                 badge.className = 'text-[10px] bg-gray-500/10 text-gray-400 border border-gray-500/20 px-2 py-0.5 rounded-full font-mono';
-                                badge.innerText = `${name.toUpperCase()} (Normal)`;
+                                badge.innerText = `${name.toUpperCase()} (正常)`;
                             }
                             activeEventsContainer.appendChild(badge);
                         });
@@ -930,7 +925,7 @@
                 
                 if (events.length === 0) {
                     container.innerHTML = `
-                        <div class="glass-panel shadow-lg rounded-xl p-8 text-center text-xs text-slate-300 italic">
+                        <div class="bg-white p-8 text-center text-sm text-slate-500 italic border border-slate-200">
                             尚未建立任何複合事件規則。請在右側表單建立第一個規則。
                         </div>
                     `;
@@ -939,31 +934,29 @@
                 
                 events.forEach(event => {
                     const card = document.createElement('div');
-                    card.className = 'glass-panel shadow-lg rounded-xl p-6 space-y-4';
+                    card.className = 'bg-white p-8 flex flex-col gap-6 cursor-pointer hover:bg-white transition-colors group border-b border-slate-200 last:border-b-0';
                     
                     const isEnabled = event.enabled !== false;
+                    const ruleSyntax = (event.rules && Array.isArray(event.rules)) ? event.rules.join(' ') : (event.rule_syntax || '');
                     
                     card.innerHTML = `
-                        <div class="flex justify-between items-start">
-                            <div class="space-y-1 flex-1 cursor-pointer hover:opacity-80 transition-opacity" onclick="openEditModal('event','${event.name}')" title="點擊編輯語法">
-                                <div class="flex items-center gap-2">
-                                    <h3 class="text-sm font-bold text-white font-heading">${event.name.toUpperCase()}</h3>
-                                    <span class="text-[8px] text-slate-300 italic">✏️ 點擊編輯</span>
-                                </div>
-                                <p class="text-xs text-slate-300">${event.description || ''}</p>
-                                <div class="mt-2 bg-slate-800/50 p-2 rounded border border-slate-700/50 font-mono text-[10px] text-white">
-                                    語法: <span class="text-blue-400">${(event.rules && Array.isArray(event.rules)) ? event.rules.join(' ') : (event.rule_syntax || '')}</span>
-                                </div>
+                        <div class="flex justify-between items-start" onclick="openEditModal('event','${event.name}')">
+                            <div class="space-y-1 flex-1 min-w-0 pr-4">
+                                <h3 class="text-xl font-semibold tracking-tight text-slate-900 group-hover:text-primary transition-colors">${event.name}</h3>
+                                <p class="text-sm text-slate-500 break-words leading-relaxed">${event.description || ''}</p>
                             </div>
                             
-                            <div class="flex items-center gap-3 ml-3 flex-shrink-0">
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" class="sr-only peer" ${isEnabled ? 'checked' : ''} 
-                                        onchange="toggleEvent('${event.name}', this.checked)" onclick="event.stopPropagation()">
-                                    <div class="w-10 h-5 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                            <div class="flex items-center gap-4 shrink-0">
+                                <label class="relative inline-flex items-center cursor-pointer" onclick="event.stopPropagation()">
+                                    <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="toggleEvent('${event.name}', this.checked)" class="sr-only peer">
+                                    <div class="w-12 h-6 bg-[#d2d2d7] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-[#d2d2d7] after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                                 </label>
-                                <button onclick="event.stopPropagation(); deleteEvent('${event.name}')" class="text-blue-400 hover:text-red-400 text-xs transition-colors p-1">🗑</button>
+                                <button onclick="event.stopPropagation(); deleteEvent('${event.name}')" class="text-primary hover:text-red-500 text-sm transition-colors p-1" title="Delete">🗑</button>
                             </div>
+                        </div>
+                        
+                        <div class="p-3 bg-white border border-slate-200 font-mono text-[12px] text-slate-900 break-all rounded-md">
+                            ${ruleSyntax}
                         </div>
                     `;
                     container.appendChild(card);
