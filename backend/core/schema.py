@@ -28,7 +28,7 @@ class DetectorStatus(BaseModel):
     lean_ratio: float = Field(0.0, description="Torso lean ratio percentage")
     camera_source: Union[str, List[str]] = Field("local_0", description="Selected camera source (local_0, local_1, phone, dual)")
     public_url: Optional[str] = Field(None, description="Public intranet tunnel URL")
-    flip_enabled: bool = Field(True, description="Whether preview flipping is enabled")
+    flip_enabled: bool = Field(False, description="Whether preview flipping is enabled")
     privacy_mode: bool = Field(True, description="Enable face blurring for privacy")
     active_skills: dict = Field(default_factory=dict, description="States of all evaluated skills (e.g. {name: bool})")
     active_events: dict = Field(default_factory=dict, description="States of all evaluated compound event rules")

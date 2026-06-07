@@ -422,34 +422,18 @@ class AgentPipeline:
         frames = [] # list of (src_name, frame)
         
         for src in camera_sources:
-            if src == "phone":
-                net_frame, last_time = self.state.get_network_frame()
-                import time as t_mod
-                if net_frame is not None and (t_mod.time() - last_time) < 3.0:
-                    frames.append((src, net_frame.copy()))
-            elif src.startswith("local_"):
-                try: idx = int(src.split("_")[1])
-                except: idx = 0
-                
-                # Check if we need to start it
-                if src not in self.captures:
-                    from backend.services.video_capture.logic import VideoCaptureSkill
-                    from backend.services.video_capture.schema import CaptureConfig
-                    logger.info(f"Starting local webcam {src}")
-                    self.captures[src] = VideoCaptureSkill(CaptureConfig(src=idx)).start()
-                
-                frame_data = self.captures[src].read()
-                if frame_data.grabbed and frame_data.frame is not None:
-                    # flip if it's local and flip_enabled
-                    f = frame_data.frame.copy()
-                    if status.flip_enabled:
-                        f = cv2.flip(f, 1)
-                    frames.append((src, f))
+            # We now treat all sources as network sources (uploaded from frontend)
+            # to avoid macOS TCC permission blocking and Windows OpenCV bugs.
+            net_frame, last_time = self.state.get_network_frame(src)
+            import time as t_mod
+            if net_frame is not None and (t_mod.time() - last_time) < 3.0:
+                f = net_frame.copy()
+                if status.flip_enabled:
+                    f = cv2.flip(f, 1)
+                frames.append((src, f))
                     
-        # 清理不再使用的 local cameras
-        active_locals = [s for s in camera_sources if s.startswith("local_")]
-        to_remove = [s for s in self.captures if s not in active_locals]
-        for s in to_remove:
+        # 清理不再使用的 local cameras (如果有的話)
+        for s in list(self.captures.keys()):
             logger.info(f"Stopping unused camera {s}")
             self.captures[s].stop()
             del self.captures[s]
@@ -466,6 +450,7 @@ class AgentPipeline:
         
         frames_rgb = [(src, frame, cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)) for src, frame in frames]
         
+        faces_by_src = {}
         landmarks = None
         face_frame_tuple = frames[0]
         for src, frame, rgb in frames_rgb:
@@ -475,6 +460,7 @@ class AgentPipeline:
                 if landmarks is None:
                     landmarks = res.face_landmarks[0]
                     face_frame_tuple = (src, frame)
+                faces_by_src[src] = res.face_landmarks[0]
                 
                 # --- Face Privacy Blur (套用於所有偵測到臉的鏡頭) ---
                 if getattr(status, "privacy_mode", True):
@@ -491,8 +477,8 @@ class AgentPipeline:
                         min_x, max_x = max(0, min(xs)), min(1, max(xs))
                         min_y, max_y = max(0, min(ys)), min(1, max(ys))
                         
-                        pad_x = (max_x - min_x) * 0.6
-                        pad_y = (max_y - min_y) * 0.6
+                        pad_x = (max_x - min_x) * 1.5
+                        pad_y = (max_y - min_y) * 1.5
                         
                         px_min_x = max(0, int((min_x - pad_x) * w_f))
                         px_max_x = min(w_f, int((max_x + pad_x) * w_f))
@@ -510,30 +496,30 @@ class AgentPipeline:
                     except Exception as e:
                         logger.error(f"Failed to apply privacy blur: {e}")
                 
+        poses_by_src = {}
         pose_landmarks = None
         pose_frame_tuple = frames[0]
         for src, frame, rgb in frames_rgb:
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
             res = self.pose_landmarker.detect(mp_image)
             if res and res.pose_landmarks and len(res.pose_landmarks) > 0:
-                pose_landmarks = res.pose_landmarks[0]
-                pose_frame_tuple = (src, frame)
-                break
+                if pose_landmarks is None:
+                    pose_landmarks = res.pose_landmarks[0]
+                    pose_frame_tuple = (src, frame)
+                poses_by_src[src] = res.pose_landmarks[0]
+                poses_by_src[src] = res.pose_landmarks[0]
             
         inference_time_ms = int((time.perf_counter() - inference_start) * 1000)
         
-        # 進行動作引擎分析 (綁定到 face_frame_tuple 畫面上，因為特徵大多在臉部)
-        h_f, w_f, _ = face_frame_tuple[1].shape
+        # 進行動作引擎分析
         active_skills_state = {}
         metrics_state = {}
+        h_f, w_f, _ = face_frame_tuple[1].shape
         
         if landmarks:
-            # Privacy blur is now handled in the detection loop for all cameras.
-
+            # 校準只使用第一個抓到的主鏡頭
             eye_dist, nc_dist = self._extract_physical_features(landmarks, w_f, h_f)
-            sh_width = 0.0
-            sh_mid_x = 0.0
-            sh_mid_y = 0.0
+            sh_width, sh_mid_x, sh_mid_y = 0.0, 0.0, 0.0
             if pose_landmarks:
                 sh_width, sh_mid_x, sh_mid_y = self._extract_shoulder_features(pose_landmarks, w_f, h_f)
                 
@@ -589,35 +575,50 @@ class AgentPipeline:
                         connection_drawing_spec=self.mp_drawing_styles.get_default_face_mesh_tesselation_style()
                     )
             else:
-                # 動作分析 — 使用正確的 evaluate_all() 介面
-                baselines_for_eval = {
-                    "eye_distance": self.baseline_eye_distance,
-                    "nose_chin_distance": self.baseline_nose_chin_distance,
-                    "shoulder_width": self.baseline_shoulder_width,
-                    "shoulder_midpoint_x": self.baseline_shoulder_midpoint_x,
-                    "shoulder_midpoint_y": self.baseline_shoulder_midpoint_y,
-                    "face_landmarks": self.baseline_face_landmarks,
-                    "pose_landmarks": self.baseline_pose_landmarks,
-                    "_current_eye_distance": eye_dist,
-                    "_current_nose_chin_distance": nc_dist,
-                    "_current_shoulder_width": sh_width,
-                }
+                # 動作分析 — 遍歷所有鏡頭，進行 OR 邏輯運算
                 state_history = {name: val for name, val in status.active_skills.items()}
-
-                results = self.action_engine.evaluate_all(
-                    landmarks,
-                    pose_landmarks,
-                    face_dim=(w_f, h_f),
-                    body_dim=(w_f, h_f),
-                    baselines=baselines_for_eval,
-                    preferences=self.state.prefs,
-                    state_history=state_history
-                )
-
-                # 整理結果 — evaluate_all 回傳 {name: (is_triggered, metric_val, debug_info)}
-                for name, (is_triggered, metric_val, debug_info) in results.items():
-                    active_skills_state[name] = bool(is_triggered)
-                    metrics_state[name] = float(metric_val)
+                
+                for src, frame, _ in frames_rgb:
+                    f_lm = faces_by_src.get(src)
+                    p_lm = poses_by_src.get(src)
+                    if not f_lm: continue
+                    
+                    c_hf, c_wf, _ = frame.shape
+                    c_eye_dist, c_nc_dist = self._extract_physical_features(f_lm, c_wf, c_hf)
+                    c_sh_width, c_sh_mid_x, c_sh_mid_y = 0.0, 0.0, 0.0
+                    if p_lm:
+                        c_sh_width, c_sh_mid_x, c_sh_mid_y = self._extract_shoulder_features(p_lm, c_wf, c_hf)
+                        
+                    baselines_for_eval = {
+                        "eye_distance": self.baseline_eye_distance,
+                        "nose_chin_distance": self.baseline_nose_chin_distance,
+                        "shoulder_width": self.baseline_shoulder_width,
+                        "shoulder_midpoint_x": self.baseline_shoulder_midpoint_x,
+                        "shoulder_midpoint_y": self.baseline_shoulder_midpoint_y,
+                        "face_landmarks": self.baseline_face_landmarks,
+                        "pose_landmarks": self.baseline_pose_landmarks,
+                        "_current_eye_distance": c_eye_dist,
+                        "_current_nose_chin_distance": c_nc_dist,
+                        "_current_shoulder_width": c_sh_width,
+                    }
+                    
+                    results = self.action_engine.evaluate_all(
+                        f_lm,
+                        p_lm,
+                        face_dim=(c_wf, c_hf),
+                        body_dim=(c_wf, c_hf),
+                        baselines=baselines_for_eval,
+                        preferences=self.state.prefs,
+                        state_history=state_history
+                    )
+                    
+                    # 合併結果
+                    for name, (is_triggered, metric_val, debug_info) in results.items():
+                        active_skills_state[name] = active_skills_state.get(name, False) or bool(is_triggered)
+                        if name not in metrics_state or float(metric_val) > metrics_state[name]:
+                            metrics_state[name] = float(metric_val)
+                
+                self.state.update_status(active_skills=active_skills_state, metrics=metrics_state)
 
                 # --- 繪製可視化 (Visualization) ---
                 # 不再繪製整張網格，而是繪製已啟用技能的連線與點位
