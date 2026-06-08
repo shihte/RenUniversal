@@ -12,6 +12,10 @@ RenUniversal 起初是作為一個 Web/Python 架構的專案，但為了解決�
 
 👉 **[下載 RenUniversal iOS 1.0 (砸殼版 IPA)](../releases/RenUniversal_v1.0_iOS.ipa)** *(大小約 19MB)*
 
+> 🛡️ **安全與防偽驗證 (Anti-Tampering Hash)**
+> 為避免有心人士二次打包植入惡意程式碼（釣魚或木馬），請在下載後核對檔案的唯一哈希值（SHA-256 Checksum）：
+> `c0ef7799ea87d9fa87c566f9f4374e3774651d45d0fb60fb9ea74af789bc0654`
+
 ### 安裝方式 (無須 Mac)
 若您沒有 Mac 電腦，可以透過以下任一主流側載工具將 App 安裝至您的 iPhone/iPad：
 *   **[TrollStore](https://trollstore.app/)** (推薦：永久簽名免越獄)
