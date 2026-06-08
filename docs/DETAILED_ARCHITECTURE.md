@@ -78,55 +78,42 @@ $$\text{Slope} = \frac{y_{S_R} - y_{S_L}}{x_{S_R} - x_{S_L}}$$
 
 ---
 
-## 3. 動態規則引擎 (Dynamic Action Judgment Engine)
+## 3. 動態規則引擎與視覺化幾何判定 (Action Engine & Geometric Rules)
 
-### 3.1 插件式掃描與熱載入機制
-`backend/core/action_engine.py` 提供一個動態插件載入器，能夠在免重啟服務的前提下重載判定規則：
+### 3.1 插件式掃描與熱載入 (Python Backend)
+Python 伺服器端提供一個動態插件載入器，能夠在免重啟服務的前提下重載判定規則：
 *   **掃描路徑**：`skills/` 目錄。
-*   **判斷包結構**：
-    ```text
-    skills/custom_action/
-    ├── config.json  # 宣告特徵匹配規則與預設門檻
-    └── logic.py     # 統一複製自 core/skill_template.py 的通用解析邏輯
-    ```
-
-### 3.2 規則 Schema 與比較操作
-`config.json` 定義了條件規則鏈：
-```json
-{
-  "name": "shoulder_tilt",
-  "description": "肩部倾斜度檢測",
-  "enabled": true,
-  "requirements": {
-    "face_mesh": false,
-    "pose": true
-  },
-  "rules": [
-    {
-      "feature": "shoulder_slope",
-      "operator": ">",
-      "threshold_key": "shoulder_tilt_threshold"
-    }
-  ],
-  "default_preferences": {
-    "shoulder_tilt_threshold": 0.15
-  }
-}
-```
 *   **支援特徵字串**：`nose_chin_ratio`, `torso_sway`, `torso_lean`, `shoulder_slope`, `yaw_deviation`。
-*   **比較運算元**：`>`, `<`, `>=`, `<=`, `==`。
+
+### 3.2 視覺化拓樸選點與物理層級判定 (iOS Native)
+iOS 原生端拋棄了傳統的命名變數，採用全新的**「視覺化特徵對應 (Visual Topology Point Selection)」**與**「螢幕物理對齊」**：
+*   **點位宣告**：使用者透過雙指縮放，直接從 500+ 個面部與身體節點中指定任意兩點 (如 `p11`, `p12` 雙肩，或 `f4`, `f152` 鼻尖下巴)。
+*   **物理空間精準計算**：`RuleEngine.swift` 會將特徵的 Normalized 座標轉換為符合手機螢幕長寬比的物理像素幾何距離，避免因設備比例差異造成的橢圓誤差。
+
+### 3.3 新世代幾何運算元 (Next-Gen Operators)
+無論是 iOS 或 Web 介面，新版引擎支援以下高級幾何運算，直接處理點與點之間的空間變化：
+*   **變長 / 變短 (`>`, `<`)**：計算任意兩點間距離是否大於或小於校準基準值的特定百分比或像素值。
+*   **產生改變 (`><`)**：動態位移檢測。只要兩點間的距離相較於校準時「變長或變短」超過閥值，即觸發。
+*   **超出範圍 (`~~`)**：**雙獨立球體越界檢測**。系統不再以線段長度判斷，而是記住兩點在校準時的「絕對空間座標」，並以該座標為中心畫出物理級別的正圓形防護網。只要任一端點飄出自己的防護圈，瞬間觸發。這完美解決了代償動作（例如頭沒歪，但整個身體平移）的防守死角。
 
 ---
 
 ## 4. 代碼映射與設計模式 (Implementation Map)
 
-| 原始碼檔案 | 責任範疇 | 使用之設計模式 (Design Pattern) |
+### 4.1 Python Backend 核心組件
+| 原始碼檔案 | 責任範疇 | 使用之設計模式 |
 | :--- | :--- | :--- |
-| [pipeline.py](file:///Users/shihte.hsiao/Downloads/RenUniversal/backend/core/pipeline.py) | 核心流水線驅動、MediaPipe 控制、影像特徵提取 | **Pipeline Pattern** (管線模式), **Facade** (外觀模式) |
-| [action_engine.py](file:///Users/shihte.hsiao/Downloads/RenUniversal/backend/core/action_engine.py) | 動態發現與載入 `/skills/` 底下所有動作判斷包 | **Plugin Pattern** (插件模式), **Registry** (註冊表) |
-| [state.py](file:///Users/shihte.hsiao/Downloads/RenUniversal/backend/core/state.py) | 線程安全的狀態同步、配置持久化讀寫 | **State Pattern** (狀態模式), **Singleton-like Context** |
-| [video_capture/logic.py](file:///Users/shihte.hsiao/Downloads/RenUniversal/backend/services/video_capture/logic.py) | 影像讀取硬體封裝、多執行緒緩衝、自動防禦重連 | **Wrapper Pattern** (包裝器), **Active Object** |
-| [calibration_wizard/logic.py](file:///Users/shihte.hsiao/Downloads/RenUniversal/backend/services/calibration_wizard/logic.py) | 提供基準值平均採樣邏輯，將常態值寫回狀態 | **Inversion of Control** (控制反轉) |
+| `backend/core/pipeline.py` | 核心流水線驅動、影像特徵提取 | **Pipeline Pattern** |
+| `backend/core/action_engine.py`| 動態發現與載入 `/skills/` 動作包 | **Plugin Pattern** |
+| `backend/core/state.py` | 線程安全的狀態同步、持久化讀寫 | **State Pattern** |
+
+### 4.2 iOS Native 核心組件 (Swift)
+| 原始碼檔案 | 責任範疇 | 使用之設計模式 |
+| :--- | :--- | :--- |
+| `MediaPipeService.swift` | 封裝 Google MediaPipe Tasks Vision C++ | **Adapter Pattern** |
+| `RuleEngine.swift` | 處理 `~~`, `><` 等進階空間幾何運算與長寬比修正 | **Strategy Pattern** |
+| `OverlayView.swift` | 根據幾何引擎結果，即時繪製完美的紅色/綠色防護圈與連線 | **Observer Pattern** |
+| `PointReferenceView.swift` | 視覺化拓樸點位雙指縮放與拖曳選擇器 | **Interactive View Component** |
 
 ---
 
