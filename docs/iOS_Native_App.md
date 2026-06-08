@@ -6,6 +6,20 @@ RenUniversal 起初是作為一個 Web/Python 架構的專案，但為了解決�
 
 ---
 
+## 📥 立即下載 (Direct Install)
+
+為了實現我們「零門檻阿公級臨床部署」的初衷，我們準備了已經砸殼 (Decrypted) 的越獄/側載直裝版 IPA 檔案：
+
+👉 **[下載 RenUniversal iOS 1.0 (砸殼版 IPA)](../releases/RenUniversal_v1.0_iOS.ipa)** *(大小約 19MB)*
+
+### 安裝方式 (無須 Mac)
+若您沒有 Mac 電腦，可以透過以下任一主流側載工具將 App 安裝至您的 iPhone/iPad：
+*   **[TrollStore](https://trollstore.app/)** (推薦：永久簽名免越獄)
+*   **[AltStore](https://altstore.io/)** / **[SideStore](https://sidestore.io/)** (需每 7 天重簽)
+*   **[Sideloadly](https://sideloadly.io/)** (支援 Windows / Mac 簽名部署)
+
+---
+
 ## 🚀 為什麼 iOS 原生版比網頁版更好？
 
 ### 1. 效能的絕對輾壓 (Apple Neural Engine)
