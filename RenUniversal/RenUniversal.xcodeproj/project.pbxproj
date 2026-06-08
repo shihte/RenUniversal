@@ -6,8 +6,15 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		EA5F3B9AE9F2D2B6987E917A /* Pods_RenUniversal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 988A640152C48E63C499575F /* Pods_RenUniversal.framework */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
+		170C72D3631417C7B35321EA /* Pods-RenUniversal.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RenUniversal.release.xcconfig"; path = "Target Support Files/Pods-RenUniversal/Pods-RenUniversal.release.xcconfig"; sourceTree = "<group>"; };
 		834810952FD582E70056C9A5 /* RenUniversal.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RenUniversal.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		988A640152C48E63C499575F /* Pods_RenUniversal.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RenUniversal.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D734558993BFCBDAF6E367E6 /* Pods-RenUniversal.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RenUniversal.debug.xcconfig"; path = "Target Support Files/Pods-RenUniversal/Pods-RenUniversal.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -23,6 +30,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EA5F3B9AE9F2D2B6987E917A /* Pods_RenUniversal.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -34,6 +42,8 @@
 			children = (
 				834810972FD582E70056C9A5 /* RenUniversal */,
 				834810962FD582E70056C9A5 /* Products */,
+				EEA5C02B28330225029D0018 /* Pods */,
+				86AB1788782253E40018F560 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -45,6 +55,23 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		86AB1788782253E40018F560 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				988A640152C48E63C499575F /* Pods_RenUniversal.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		EEA5C02B28330225029D0018 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				D734558993BFCBDAF6E367E6 /* Pods-RenUniversal.debug.xcconfig */,
+				170C72D3631417C7B35321EA /* Pods-RenUniversal.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -52,6 +79,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 834810A02FD582E80056C9A5 /* Build configuration list for PBXNativeTarget "RenUniversal" */;
 			buildPhases = (
+				96D0FDE0A39DBC4C9F7DCC1D /* [CP] Check Pods Manifest.lock */,
 				834810912FD582E70056C9A5 /* Sources */,
 				834810922FD582E70056C9A5 /* Frameworks */,
 				834810932FD582E70056C9A5 /* Resources */,
@@ -64,8 +92,6 @@
 				834810972FD582E70056C9A5 /* RenUniversal */,
 			);
 			name = RenUniversal;
-			packageProductDependencies = (
-			);
 			productName = RenUniversal;
 			productReference = 834810952FD582E70056C9A5 /* RenUniversal.app */;
 			productType = "com.apple.product-type.application";
@@ -91,6 +117,7 @@
 			knownRegions = (
 				en,
 				Base,
+				"zh-Hant",
 			);
 			mainGroup = 8348108C2FD582E70056C9A5;
 			minimizedProjectReferenceProxies = 1;
@@ -113,6 +140,31 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		96D0FDE0A39DBC4C9F7DCC1D /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-RenUniversal-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		834810912FD582E70056C9A5 /* Sources */ = {
@@ -243,6 +295,7 @@
 		};
 		834810A12FD582E80056C9A5 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = D734558993BFCBDAF6E367E6 /* Pods-RenUniversal.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -254,6 +307,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "用於MP偵測";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -287,6 +341,7 @@
 		};
 		834810A22FD582E80056C9A5 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 170C72D3631417C7B35321EA /* Pods-RenUniversal.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -298,6 +353,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "用於MP偵測";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

@@ -16,3 +16,5 @@ preferences.json
 .DS_Store
 xcuserdata/
 *.xcuserstate
+Pods/
+Podfile.lock
