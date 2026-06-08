@@ -1,0 +1,8 @@
+// Generated automatically. Do not edit.
+import Foundation
+
+struct BundledData {
+    static let skillsJSON: [String: String] = ["lean": "{\"name\": \"lean\", \"description\": \"\\u80a9\\u8180\\u6aa2\\u6e2c\\u524d\\u50be (\\u5bec\\u5ea6\\u653e\\u5927)\", \"enabled\": true, \"requirements\": {\"face_mesh\": true, \"pose\": true}, \"default_preferences\": {\"threshold\": 0.1}, \"rule_syntax\": \"p11,p12 <> num=15% OR p11,p12 ~~ num=30px\", \"rules\": []}", "slouch": "{\"name\": \"slouch\", \"description\": \"\\u9f3b\\u5b50\\u3001\\u4e0b\\u5df4\\u6aa2\\u6e2c\\u7e2e\\u77ed\\uff08\\u4f4e\\u982d\\uff09\", \"enabled\": true, \"requirements\": {\"face_mesh\": true, \"pose\": false}, \"rule_syntax\": \"f1,f152 >< num=20%\", \"default_preferences\": {\"slouch_threshold\": 0.2}}", "turn": "{\"name\": \"turn\", \"description\": \"\\u5169\\u773c\\u6aa2\\u6e2c\\u7e2e\\u77ed\\uff08\\u8f49\\u982d\\uff09\", \"enabled\": true, \"requirements\": {\"face_mesh\": true, \"pose\": false}, \"default_preferences\": {\"threshold\": 0.1}, \"rule_syntax\": \"f33,f263 >< num=15%\", \"rules\": []}"]
+    
+    static let eventsJSON: [String: String] = ["ctar_tuck": "{\"name\": \"ctar_tuck\", \"description\": \"\\u6709\\u6548\\u4e0b\\u5df4\\u5167\\u6536 (\\u4f4e\\u982d\\u4e14\\u672a\\u8f49\\u982d\\u3001\\u672a\\u524d\\u50be)\", \"enabled\": true, \"rule_syntax\": \"slouch AND (!turn) AND (!lean)\", \"default_preferences\": {}}", "bad_posture": "{\"name\": \"bad_posture\", \"description\": \"\\u932f\\u8aa4\\u4ee3\\u511f\\u52d5\\u4f5c (\\u524d\\u50be\\u6216\\u8f49\\u982d)\", \"enabled\": true, \"rule_syntax\": \"lean OR turn\", \"default_preferences\": {}}"]
+}
