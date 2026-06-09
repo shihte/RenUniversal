@@ -3,85 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RenUniversal | 次世代智慧姿態監控平台</title>
-    <meta name="description" content="RenUniversal 是一個基於邊緣運算的 AI 生理姿態回饋與即時監控系統，完全榨乾 Apple Neural Engine 效能，提供零門檻的臨床部署體驗。">
+    <title>RenUniversal | Edge AI Platform</title>
+    <meta name="description" content="A Next-Generation Agentic Edge Computing Platform for Clinical Posture Monitoring.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="ambient-background">
-        <div class="glow glow-1"></div>
-        <div class="glow glow-2"></div>
-    </div>
-
-    <nav class="navbar glass">
-        <div class="nav-content">
-            <div class="logo">
-                <span class="logo-icon"></span>
-                <span class="logo-text">RenUniversal</span>
-            </div>
+    <nav class="top-nav">
+        <a href="#" class="nav-logo">
+            <div class="nav-logo-mark"></div>
+            RenUniversal
+        </a>
+        <div class="nav-links">
             <a href="https://github.com/shihte/RenUniversal" class="nav-link" target="_blank">GitHub</a>
+            <a href="iOS_Native_App.html" class="nav-link">iOS App</a>
+            <a href="DETAILED_ARCHITECTURE.html" class="nav-link">Architecture</a>
         </div>
     </nav>
 
     <main>
-        <section class="hero">
-            <div class="hero-content reveal">
-                <div class="badge">v1.0.1 正式釋出</div>
-                <h1 class="title">邊緣運算的<br><span class="gradient-text">極致展現</span></h1>
-                <p class="subtitle">完全不依賴電腦伺服器，直接在您的 iPhone 上利用 Apple Neural Engine 進行光速 AI 姿態與臉部網格捕捉。為吞嚥復健與臨床監控量身打造的終極原生型態。</p>
-                <div class="cta-group">
-                    <a href="https://github.com/shihte/RenUniversal/releases/latest/download/RenUniversal_v1.0_iOS.ipa" class="btn btn-primary">
-                        下載 iOS 砸殼版 (19MB)
-                    </a>
-                    <a href="iOS_Native_App.html" class="btn btn-secondary">
-                        閱讀安裝指南
-                    </a>
-                </div>
-                <p class="hash-text">SHA-256: <code>c0ef7799ea87d9fa87c566f9f4374e3774651d45d0fb60fb9ea74af789bc0654</code></p>
+        <section class="hero-band-dark">
+            <div class="io-logo-mark-hero">
+                <!-- Abstract I/O style geometry -->
+                <div class="io-mark-line"></div>
+                <div class="io-mark-circle"></div>
+            </div>
+            
+            <h1 class="t-display-xl">Catch up on<br>RenUniversal</h1>
+            <p class="t-body-md">次世代智慧姿態監控平台。結合動態邊緣伺服器、多代理人技能架構與極致效能的原生神經網路引擎。</p>
+            
+            <div class="cta-group">
+                <a href="https://github.com/shihte/RenUniversal/releases/latest/download/RenUniversal_v1.0_iOS.ipa" class="button-primary t-body-strong">
+                    下載 iOS 砸殼直裝版
+                </a>
+                <a href="https://github.com/shihte/RenUniversal/blob/main/docs/iOS_Native_App.md" class="button-secondary t-body-strong" target="_blank">
+                    安裝指南
+                </a>
+            </div>
+            <div style="margin-top: 16px; color: var(--colors-on-dark-soft); font-family: monospace; font-size: 14px;">
+                SHA-256: c0ef7799ea87d9fa87c566f9f4374e3774651d45d0fb60fb9ea74af789bc0654
             </div>
         </section>
 
-        <section class="features">
-            <div class="section-title reveal">
-                <h2>突破性的技術革新</h2>
-                <p>結合全新的視覺化操作與高階物理幾何引擎</p>
+        <section class="keynote-section">
+            <div class="section-header">
+                <h2 class="t-display-md">Project architecture</h2>
+                <p class="t-body-md">RenUniversal 的核心不僅限於單一應用，而是由強大的邊緣計算後端與靈活的客戶端組成。</p>
             </div>
             
-            <div class="grid">
-                <div class="card glass reveal">
-                    <div class="card-icon">🧠</div>
-                    <h3>100% Neural Engine 效能</h3>
-                    <p>告別網頁版延遲。底層整合 Google MediaPipe C++ 核心，直接榨乾 iOS 裝置的神經網路引擎，實現無發熱、60 FPS 滿血運行的即時追蹤。</p>
+            <div class="keynote-grid">
+                <div class="keynote-card">
+                    <h3 class="t-title-lg">Agentic Skills</h3>
+                    <p class="t-body-md">動態外掛引擎，支援熱插拔的判定邏輯。開發者可以隨時載入新的姿態判定包 (Skills) 與事件鏈 (Events)，將單一的 CTAR 復健擴展至無限可能的體感互動場景。</p>
+                    <div class="card-footer">
+                        <a href="https://github.com/shihte/RenUniversal/tree/main/skills" class="button-primary button-small" target="_blank">探索技能模組</a>
+                    </div>
                 </div>
-                
-                <div class="card glass reveal" style="transition-delay: 0.1s;">
-                    <div class="card-icon">👆</div>
-                    <h3>視覺化拓樸選點系統</h3>
-                    <p>雙指縮放、直覺點擊。直接在畫布上從 500+ 個節點中選取您的監控特徵，完全告別查表盲猜的時代，將設定難度降至零門檻。</p>
+
+                <div class="keynote-card">
+                    <h3 class="t-title-lg">Edge Server</h3>
+                    <p class="t-body-md">Python 驅動的邊緣運算後端。支援多台手機或 Webcam 作為分散式相機陣列，透過 Wi-Fi 將影像串流匯集至主機端進行高效能的 FaceMesh 與 Pose 運算。</p>
+                    <div class="card-footer">
+                        <a href="https://github.com/shihte/RenUniversal/blob/main/README.md" class="button-primary button-small" target="_blank">部署伺服器</a>
+                    </div>
                 </div>
-                
-                <div class="card glass reveal" style="transition-delay: 0.2s;">
-                    <div class="card-icon">📐</div>
-                    <h3>物理級動態幾何引擎</h3>
-                    <p>引進全新的 <code>~~</code> 雙獨立球體越界檢測，自動消除長寬比誤差，將防護圈精準對齊物理像素，完美解決代償動作死角。</p>
+
+                <div class="keynote-card">
+                    <h3 class="t-title-lg">iOS Native</h3>
+                    <p class="t-body-md">無需電腦伺服器的終極型態。直接封裝 Google MediaPipe C++，完全榨乾 Apple Neural Engine 算力。配備「視覺化拓樸選點」與「雙獨立球體越界判定」引擎。</p>
+                    <div class="card-footer">
+                        <a href="https://github.com/shihte/RenUniversal/blob/main/docs/iOS_Native_App.md" class="button-primary button-small" target="_blank">了解原生版</a>
+                    </div>
                 </div>
-                
-                <div class="card glass reveal" style="transition-delay: 0.3s;">
-                    <div class="card-icon">🛡️</div>
-                    <h3>硬體級隱私防護</h3>
-                    <p>影像處理底層即時抹除五官，向外擴展 150% 防護區域完美遮蔽臉部，同時完全不干擾底層的 AI 點位捕捉。</p>
-                </div>
+            </div>
+        </section>
+
+        <section class="topic-section">
+            <div class="section-header">
+                <h2 class="t-display-md">Explore topics</h2>
+            </div>
+            <div class="topic-grid">
+                <a href="#" class="topic-pill">
+                    <span class="t-body-strong">Geometric Math Rules</span>
+                    <span class="topic-arrow">→</span>
+                </a>
+                <a href="#" class="topic-pill">
+                    <span class="t-body-strong">Apple Neural Engine</span>
+                    <span class="topic-arrow">→</span>
+                </a>
+                <a href="#" class="topic-pill">
+                    <span class="t-body-strong">Zero-Latency Inference</span>
+                    <span class="topic-arrow">→</span>
+                </a>
+                <a href="#" class="topic-pill">
+                    <span class="t-body-strong">Hardware Privacy Mask</span>
+                    <span class="topic-arrow">→</span>
+                </a>
             </div>
         </section>
     </main>
 
-    <footer class="glass">
-        <p>© 2026 RenUniversal Project Contributors. Licensed under MIT.</p>
-    </footer>
+    <div class="editorial-symbol-strip"></div>
 
-    <script src="script.js"></script>
+    <footer>
+        <div class="nav-logo">
+            <div class="nav-logo-mark"></div>
+            RenUniversal
+        </div>
+        <div class="footer-links">
+            <a href="#" class="nav-link">Privacy</a>
+            <a href="#" class="nav-link">Terms</a>
+            <a href="https://github.com/shihte/RenUniversal" class="nav-link" target="_blank">GitHub Repository</a>
+        </div>
+    </footer>
 </body>
 </html>
