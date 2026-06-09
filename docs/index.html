@@ -7,8 +7,52 @@
     <meta name="description" content="基於多代理人架構與邊緣運算的 AI 生理姿態回饋系統。從 CTAR 吞嚥復健出發，擴展至無限可能的體感互動場景。">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .code-block {
+            background-color: #000000;
+            border: 1px solid var(--colors-hairline);
+            border-radius: 12px;
+            padding: 24px;
+            font-family: monospace;
+            color: var(--colors-on-dark-soft);
+            overflow-x: auto;
+            margin: 24px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .content-section {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 var(--spacing-xl) 120px;
+        }
+        .content-section h2 {
+            margin-bottom: 32px;
+            color: var(--colors-on-dark);
+        }
+        .content-section h3 {
+            margin-top: 48px;
+            margin-bottom: 24px;
+            color: var(--colors-on-dark);
+        }
+        .content-section p {
+            color: var(--colors-on-dark-soft);
+            margin-bottom: 24px;
+            line-height: 1.8;
+            font-size: 18px;
+        }
+        .content-section ul {
+            color: var(--colors-on-dark-soft);
+            margin-bottom: 24px;
+            padding-left: 24px;
+            font-size: 18px;
+            line-height: 1.8;
+        }
+        .content-section li {
+            margin-bottom: 12px;
+        }
+    </style>
 </head>
 <body>
     <nav class="top-nav">
@@ -24,8 +68,7 @@
     </nav>
 
     <main>
-        <section class="hero-band">
-            
+        <section class="hero-band-dark">
             <h1 class="t-display-xl">Redefining<br>Clinical Edge AI</h1>
             <p class="t-body-md" style="max-width: 720px; font-size: 20px; line-height: 1.6; margin-bottom: 64px;">
                 起初，我們只為了輔助患者進行 CTAR 下巴內縮抗阻力吞嚥復健；現在，它已進化為一套具備「多代理人技能架構」與「動態幾何規則引擎」的終極邊緣運算平台。
@@ -35,7 +78,7 @@
                 <a href="https://github.com/shihte/RenUniversal/releases/latest/download/RenUniversal_v1.0_iOS.ipa" class="button-primary t-body-strong">
                     下載 iOS 原生直裝版 (19MB)
                 </a>
-                <a href="https://github.com/shihte/RenUniversal" class="button-secondary t-body-strong" target="_blank">
+                <a href="#quick-start" class="button-secondary t-body-strong">
                     取得開源伺服器原始碼
                 </a>
             </div>
@@ -44,76 +87,65 @@
             </div>
         </section>
 
-        <!-- Feature Pillar Section 1: iOS Native -->
-        <section class="keynote-section">
-            <div class="section-header">
-                <h2 class="t-display-md">iOS Native Experience</h2>
-                <p class="t-body-md">為了實現「零門檻阿公級部署」，我們徹底打破網頁版的效能天花板，將整個系統封裝進 iOS 原生應用中。</p>
-            </div>
+        <!-- Main Content from README -->
+        <div class="content-section">
+            <h2 class="t-display-md">核心技術與模組化架構</h2>
+            <p>系統摒棄了傳統的硬編碼與線性判定邏輯，導入了高度模組化與高通用性的 <strong>多代理人技能架構（Agent Skills Architecture）</strong> 與 第三方外掛安裝機制，使臨床人員或開發者能輕易抽換、擴充不同的姿態判定邏輯與體感應用遊戲。</p>
             
-            <div class="keynote-grid" style="grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));">
-                <div class="keynote-card">
-                    <h3 class="t-title-lg">100% Neural Engine 算力</h3>
-                    <p class="t-body-md" style="margin-bottom: 24px;">完全拋棄瀏覽器 WebGL 與伺服器連線的束縛。底層透過 Swift 封裝 Google MediaPipe C++ 核心，直接調用 Apple 內建的硬體神經網路引擎。即使在舊款 iPhone 上，也能實現極低發熱與 60 FPS 滿血無延遲的骨架捕捉。</p>
-                    <div class="card-footer">
-                        <a href="iOS_Native_App.html" class="button-primary button-small">查看 iOS 開發文檔</a>
-                    </div>
-                </div>
-
-                <div class="keynote-card">
-                    <h3 class="t-title-lg">視覺化拓樸選點系統</h3>
-                    <p class="t-body-md" style="margin-bottom: 24px;">告別過去需要查表尋找代號 (如 p11, f152) 的痛苦體驗。我們開發了 PointReferenceView 互動選擇器，支援如同 Apple Maps 般的雙指縮放與拖曳，只需輕觸螢幕，即可從 500+ 個精密特徵點中直接指定監控目標。</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Feature Pillar Section 2: Architecture & Math -->
-        <section class="keynote-section" style="padding-top: 0;">
-            <div class="section-header">
-                <h2 class="t-display-md">Geometric Rule Engine</h2>
-                <p class="t-body-md">摒棄傳統的硬編碼，導入動態熱插拔的物理特徵數學評估演算法。</p>
-            </div>
+            <h3 class="t-title-lg">智慧動態多鏡頭掃描</h3>
+            <p>系統支援<strong>多相機陣列並行運算</strong>。無論你是用電腦鏡頭拍臉、手機拍身體，或是隨意擺放，底層 AI 流水線會強制掃描所有連線中的鏡頭畫面，自動標定含有完整臉部 (FaceMesh) 或身體骨架 (Pose) 的鏡頭源並進行特徵無縫融合，完全免除手動指定鏡頭順序的麻煩，實現零死角追蹤。</p>
             
-            <div class="keynote-grid">
-                <div class="keynote-card">
-                    <h3 class="t-title-lg">雙獨立球體越界判定 (~~)</h3>
-                    <p class="t-body-md" style="margin-bottom: 24px;">傳統的距離判定容易在代償動作中出現盲區（例如身體整體平移）。我們獨創了 `~~` 運算元，系統會為指定節點各自繪製絕對空間的防護圈，只要任一端點飄出，即刻觸發飆紅警告。同時自動校正不同裝置的長寬比誤差，實現像素級精準。</p>
-                </div>
-
-                <div class="keynote-card">
-                    <h3 class="t-title-lg">動態狀態偏移 (><)</h3>
-                    <p class="t-body-md" style="margin-bottom: 24px;">除了靜態的變長或變短 ( `<` , `>` ) 限制外，系統支援偵測相對位移變化量。透過預校準，只要監控距離超過閥值上限或下限，立即捕捉異狀。內建磁滯抗噪濾波器 (Hysteresis Filter)，徹底杜絕高頻抖動誤報。</p>
-                </div>
-
-                <div class="keynote-card">
-                    <h3 class="t-title-lg">硬體層級隱私打碼</h3>
-                    <p class="t-body-md" style="margin-bottom: 24px;">為保護患者與使用者隱私，我們在影像處理最底層實作了即時抹除機制。精準擷取輪廓並向外延伸 150%，覆蓋五官、邊緣與特徵，但完全不干擾其上方疊加的 AI 點位與幾何判定。</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Feature Pillar Section 3: Server & Plugins -->
-        <section class="keynote-section" style="padding-top: 0;">
-            <div class="section-header">
-                <h2 class="t-display-md">Agentic Plugin System</h2>
-                <p class="t-body-md">除了手機端，我們的 Python 邊緣伺服器提供了強大的第三方外掛擴充能力。</p>
-            </div>
+            <h3 class="t-title-lg">三維姿態幾何評估與抗噪濾波</h3>
+            <p>系統利用 MediaPipe Landmark 提取特徵座標進行三維向量投影，量化人體生理姿態（例如計算鼻尖與下巴的垂直比例變化來判定低頭角度，或是肩峰點連線斜率以偵測軀幹代償偏移）。同時內建<strong>磁滯抗噪濾波器 (Hysteresis Filter)</strong>，防止臨界狀態震盪，大幅降低高頻環境抖動引起的誤報。</p>
             
-            <div class="keynote-grid" style="grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));">
-                <div class="keynote-card">
-                    <h3 class="t-title-lg">多相機無縫融合陣列</h3>
-                    <p class="t-body-md" style="margin-bottom: 24px;">後端伺服器支援同時連線多支 UVC 網路攝影機或手機 QR Code 串流。底層 AI 流水線會並行掃描所有畫面，自動標定含有最完整人體或臉部特徵的鏡頭源進行融合切換，達到真正意義上的零死角空間追蹤。</p>
-                </div>
+            <h3 class="t-title-lg">臉部隱私保護與硬體級打碼</h3>
+            <p>多鏡頭零死角防護：隱私模式深入影像處理底層，只要畫面中偵測到臉部，就會立刻進行高強度高斯模糊。AI 會動態計算臉部追蹤點的邊界，並向外擴展 150% 的防護區域，確保除了五官之外，包含頭髮邊緣、耳朵及脖子等特徵皆被完美遮蔽。重點是，<strong>不影響姿態判定</strong>：系統的姿態追蹤點（如鼻尖、下巴）會疊加在模糊層之上。</p>
+        </div>
 
-                <div class="keynote-card">
-                    <h3 class="t-title-lg">第三方 .renuniversal 封裝</h3>
-                    <p class="t-body-md" style="margin-bottom: 24px;">任何人都可以開發專屬的體感遊戲或判定邏輯。將 `skills/` 與 `events/` 打包，透過我們提供的工具即可生成單一安裝檔。使用終端機指令 `make install` 即可將新外掛熱載入至核心引擎中，擴展出深蹲檢測、平衡遊戲等多元應用。</p>
-                    <div class="card-footer">
-                        <a href="https://github.com/shihte/RenUniversal#第三方外掛安裝框架-plugin-manager" class="button-secondary button-small" target="_blank">查看打包教學</a>
-                    </div>
-                </div>
-            </div>
-        </section>
+        <div class="content-section" id="quick-start">
+            <h2 class="t-display-md">快速部署引導</h2>
+            <p>RenUniversal 支援跨平台運行，相容 macOS (12.0+)、Linux (Ubuntu 20.04+) 及 Windows 10/11。只需簡單幾個步驟即可啟動邊緣運算伺服器。</p>
+
+            <h3 class="t-title-lg">複製專案庫</h3>
+            <div class="code-block">git clone https://github.com/shihte/RenUniversal.git
+cd RenUniversal</div>
+
+            <h3 class="t-title-lg">Windows 環境初始化與運行</h3>
+            <p>Windows 使用者請直接透過專屬的批次檔管理專案：</p>
+            <ul>
+                <li><strong>初始化與依賴安裝</strong>：<code>renuniversal.bat setup</code></li>
+                <li><strong>啟動系統伺服器</strong>：<code>renuniversal.bat run --host 0.0.0.0 --enable-tunnel</code></li>
+                <li><strong>執行架構驗證測試</strong>：<code>renuniversal.bat test</code></li>
+            </ul>
+
+            <h3 class="t-title-lg">Mac / Linux 環境初始化與運行</h3>
+            <p>使用 Makefile 工具包：</p>
+            <ul>
+                <li><strong>初始化與依賴安裝</strong>：<code>make setup</code></li>
+                <li><strong>背景守護進程啟動</strong>：<code>make start ARGS="--host 0.0.0.0 --enable-tunnel"</code></li>
+                <li><strong>停止伺服器</strong>：<code>make stop</code></li>
+            </ul>
+        </div>
+
+        <div class="content-section">
+            <h2 class="t-display-md">第三方外掛安裝框架 (Plugin Manager)</h2>
+            <p>RenUniversal 現在支援一鍵安裝第三方開發者製作的動作、事件與網頁遊戲。開發者只需要將功能打包成資料夾，並在內附帶一個 <code>.renuniversal</code> 宣告檔：</p>
+
+            <div class="code-block">{
+  "name": "AppleCatchGame",
+  "version": "1.0",
+  "skills": ["skills/lean", "skills/squat"],
+  "events": ["events/jump_event"],
+  "apps": ["apps/apple_catch.html"]
+}</div>
+
+            <p>下載後，只需透過指令安裝：</p>
+            <ul>
+                <li><strong>Mac/Linux</strong>: <code>make install PATH=../下載的外掛資料夾</code></li>
+                <li><strong>Windows</strong>: <code>renuniversal.bat install ..\下載的外掛資料夾</code></li>
+            </ul>
+            <p>系統會自動解析並將所有模組安裝至正確的核心引擎目錄中，無需重啟核心引擎！</p>
+        </div>
 
         <section class="topic-section">
             <div class="section-header">
@@ -129,16 +161,18 @@
                     <span class="topic-arrow">→</span>
                 </a>
                 <a href="iOS_Native_App.html" class="topic-pill">
-                    <span class="t-body-strong">iOS 安裝與砸殼教學</span>
+                    <span class="t-body-strong">iOS 安裝與教學</span>
                     <span class="topic-arrow">→</span>
                 </a>
-                <a href="https://github.com/shihte/RenUniversal/blob/main/README.md#快速部署引導-cloning--setup" class="topic-pill" target="_blank">
-                    <span class="t-body-strong">伺服器部署指南</span>
+                <a href="https://github.com/shihte/RenUniversal/blob/main/README.md" class="topic-pill" target="_blank">
+                    <span class="t-body-strong">完整 Readme</span>
                     <span class="topic-arrow">→</span>
                 </a>
             </div>
         </section>
     </main>
+
+    <div class="editorial-symbol-strip"></div>
 
     <footer>
         <div class="nav-logo">
