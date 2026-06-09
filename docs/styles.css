@@ -126,11 +126,11 @@ body {
 
     background-color: #ffffff;
     background-image: 
-        radial-gradient(circle closest-side, #4285F4 0%, transparent 100%),
-        radial-gradient(circle closest-side, #EA4335 0%, transparent 100%),
-        radial-gradient(circle closest-side, #FBBC05 0%, transparent 100%),
-        radial-gradient(circle closest-side, #34A853 0%, transparent 100%);
-    background-size: 200% 200%, 150% 150%, 180% 180%, 160% 160%;
+        radial-gradient(circle, #4285F4 0%, transparent 80%),
+        radial-gradient(circle, #EA4335 0%, transparent 80%),
+        radial-gradient(circle, #FBBC05 0%, transparent 80%),
+        radial-gradient(circle, #34A853 0%, transparent 80%);
+    background-size: 250% 250%;
     background-repeat: no-repeat;
     -webkit-background-clip: text;
     background-clip: text;
