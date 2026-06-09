@@ -126,34 +126,41 @@ body {
 
     background-color: #ffffff;
     background-image: 
-        /* Group 1: 40px tiles, Top layer */
-        radial-gradient(circle at 10% 10%, rgba(66,133,244,0.9) 0%, transparent 60%),
-        radial-gradient(circle at 90% 90%, rgba(234,67,53,0.9) 0%, transparent 60%),
-        radial-gradient(circle at 10% 90%, rgba(251,188,5,0.9) 0%, transparent 60%),
-        radial-gradient(circle at 90% 10%, rgba(52,168,83,0.9) 0%, transparent 60%),
+        /* Set 1 */
+        radial-gradient(circle at 20% 20%, rgba(66,133,244,1) 0%, rgba(66,133,244,0.8) 30%, transparent 60%),
+        radial-gradient(circle at 70% 30%, rgba(234,67,53,1) 0%, rgba(234,67,53,0.8) 30%, transparent 60%),
+        radial-gradient(circle at 50% 50%, rgba(251,188,5,1) 0%, rgba(251,188,5,0.8) 30%, transparent 60%),
+        radial-gradient(circle at 40% 40%, rgba(52,168,83,1) 0%, rgba(52,168,83,0.8) 30%, transparent 60%),
 
-        /* Group 2: 50px tiles, Middle layer */
-        radial-gradient(circle at 50% 10%, rgba(66,133,244,0.8) 0%, transparent 60%),
-        radial-gradient(circle at 50% 90%, rgba(234,67,53,0.8) 0%, transparent 60%),
-        radial-gradient(circle at 10% 50%, rgba(251,188,5,0.8) 0%, transparent 60%),
-        radial-gradient(circle at 90% 50%, rgba(52,168,83,0.8) 0%, transparent 60%),
+        /* Set 2 */
+        radial-gradient(circle at 80% 60%, rgba(66,133,244,1) 0%, rgba(66,133,244,0.8) 30%, transparent 60%),
+        radial-gradient(circle at 10% 70%, rgba(234,67,53,1) 0%, rgba(234,67,53,0.8) 30%, transparent 60%),
+        radial-gradient(circle at 90% 40%, rgba(251,188,5,1) 0%, rgba(251,188,5,0.8) 30%, transparent 60%),
+        radial-gradient(circle at 10% 30%, rgba(52,168,83,1) 0%, rgba(52,168,83,0.8) 30%, transparent 60%),
 
-        /* Group 3: 60px tiles, Bottom layer */
-        radial-gradient(circle at 50% 50%, rgba(66,133,244,0.7) 0%, transparent 60%),
-        radial-gradient(circle at 30% 30%, rgba(234,67,53,0.7) 0%, transparent 60%),
-        radial-gradient(circle at 70% 30%, rgba(251,188,5,0.7) 0%, transparent 60%),
-        radial-gradient(circle at 30% 70%, rgba(52,168,83,0.7) 0%, transparent 60%);
+        /* Set 3 */
+        radial-gradient(circle at 40% 80%, rgba(66,133,244,1) 0%, rgba(66,133,244,0.8) 30%, transparent 60%),
+        radial-gradient(circle at 80% 90%, rgba(234,67,53,1) 0%, rgba(234,67,53,0.8) 30%, transparent 60%),
+        radial-gradient(circle at 20% 90%, rgba(251,188,5,1) 0%, rgba(251,188,5,0.8) 30%, transparent 60%),
+        radial-gradient(circle at 60% 90%, rgba(52,168,83,1) 0%, rgba(52,168,83,0.8) 30%, transparent 60%),
+
+        /* Set 4 */
+        radial-gradient(circle at 90% 10%, rgba(66,133,244,1) 0%, rgba(66,133,244,0.8) 30%, transparent 60%),
+        radial-gradient(circle at 30% 10%, rgba(234,67,53,1) 0%, rgba(234,67,53,0.8) 30%, transparent 60%),
+        radial-gradient(circle at 60% 10%, rgba(251,188,5,1) 0%, rgba(251,188,5,0.8) 30%, transparent 60%),
+        radial-gradient(circle at 80% 20%, rgba(52,168,83,1) 0%, rgba(52,168,83,0.8) 30%, transparent 60%);
 
     background-size: 
-        40px 40px, 40px 40px, 40px 40px, 40px 40px,
-        50px 50px, 50px 50px, 50px 50px, 50px 50px,
-        60px 60px, 60px 60px, 60px 60px, 60px 60px;
+        80px 80px, 85px 85px, 90px 90px, 95px 95px,
+        100px 100px, 105px 105px, 110px 110px, 115px 115px,
+        120px 120px, 125px 125px, 130px 130px, 135px 135px,
+        140px 140px, 145px 145px, 150px 150px, 155px 155px;
 
     background-repeat: repeat;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    animation: spray-drift-google 8s infinite linear;
+    animation: spray-drift-google 25s infinite ease-in-out;
 }
 
 @keyframes spray-drift-google {
@@ -161,13 +168,29 @@ body {
         background-position: 
             0px 0px, 0px 0px, 0px 0px, 0px 0px,
             0px 0px, 0px 0px, 0px 0px, 0px 0px,
+            0px 0px, 0px 0px, 0px 0px, 0px 0px,
             0px 0px, 0px 0px, 0px 0px, 0px 0px;
+    }
+    33% {
+        background-position: 
+            100px -50px, -80px 120px, 150px 80px, -120px -100px,
+            -90px 130px, 140px -70px, -110px -150px, 130px 90px,
+            120px 110px, -130px -80px, 90px -140px, -150px 120px,
+            -140px -130px, 110px 150px, -100px 70px, 80px -90px;
+    }
+    66% {
+        background-position: 
+            -70px 140px, 130px -90px, -100px -130px, 110px 110px,
+            150px -110px, -120px 100px, 140px 120px, -80px -140px,
+            -110px -120px, 90px 140px, -150px 80px, 120px -130px,
+            130px 100px, -140px -110px, 80px 150px, -90px -120px;
     }
     100% {
         background-position: 
-            120px 120px, -120px 120px, 120px -120px, -120px -120px,
-            -150px 0px, 150px 0px, 0px -150px, 0px 150px,
-            180px 180px, -180px -180px, 180px -180px, -180px 180px;
+            0px 0px, 0px 0px, 0px 0px, 0px 0px,
+            0px 0px, 0px 0px, 0px 0px, 0px 0px,
+            0px 0px, 0px 0px, 0px 0px, 0px 0px,
+            0px 0px, 0px 0px, 0px 0px, 0px 0px;
     }
 }
 
