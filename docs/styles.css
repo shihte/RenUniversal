@@ -108,28 +108,42 @@ body {
 }
 
 .nav-logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: var(--colors-on-dark);
+    position: relative;
+    display: inline-block;
     text-decoration: none;
-    font-size: 18px;
-    font-weight: 500;
-    letter-spacing: -0.02em;
+    overflow: hidden;
+    border-radius: 4px;
 }
 
-.nav-logo-mark {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: conic-gradient(
-        var(--colors-spectrum-blue),
-        var(--colors-spectrum-green),
-        var(--colors-spectrum-yellow),
-        var(--colors-spectrum-red),
-        var(--colors-spectrum-violet),
-        var(--colors-spectrum-blue)
-    );
+.nav-logo-spray {
+    position: absolute;
+    top: -20px; left: -20px; right: -20px; bottom: -20px;
+    background: radial-gradient(circle at 30% 50%, var(--colors-spectrum-blue), transparent 60%),
+                radial-gradient(circle at 70% 50%, var(--colors-spectrum-red), transparent 60%),
+                radial-gradient(circle at 50% 20%, var(--colors-spectrum-yellow), transparent 60%);
+    filter: blur(12px);
+    z-index: 1;
+    animation: spray-drift 8s infinite alternate ease-in-out;
+}
+
+@keyframes spray-drift {
+    0% { transform: scale(1) translate(0, 0); }
+    100% { transform: scale(1.2) translate(5px, 5px); }
+}
+
+.nav-logo-text {
+    position: relative;
+    z-index: 2;
+    font-family: 'HanWangTeHei', '王漢宗特黑體', '王漢宗特黑', 'Arial Black', sans-serif;
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    background-color: var(--colors-canvas); /* Black background masks the spray */
+    color: #ffffff; /* White text becomes transparent with multiply */
+    mix-blend-mode: multiply;
+    padding: 4px 8px;
+    margin: 0;
+    line-height: 1;
 }
 
 .nav-links {
