@@ -110,39 +110,30 @@ body {
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@900&display=swap');
 
 .nav-logo {
-    position: relative;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     text-decoration: none;
-    border-radius: 4px;
-}
-
-.nav-logo-spray {
-    display: none;
 }
 
 .nav-logo-text {
-    position: relative;
-    z-index: 2;
-    /* 加入所有可能的王漢宗特黑名稱，並以 Noto Sans TC Black 墊底 */
     font-family: '王漢宗特黑體繁', 'HanWangTeHei', 'wt014', '王漢宗特黑體', '王漢宗特黑', 'Noto Sans TC', 'Arial Black', sans-serif;
-    font-size: 26px; /* Slightly larger to show the colors better */
+    font-size: 28px;
     font-weight: 900;
     letter-spacing: 1px;
-    padding: 4px 8px;
     margin: 0;
     line-height: 1;
+    padding: 0;
 
-    /* Use background-clip text for a perfect punch-out without artifacts */
     background-image: 
-        radial-gradient(circle closest-side, #4285F4 0%, transparent 100%), /* Google Blue */
-        radial-gradient(circle closest-side, #EA4335 0%, transparent 100%), /* Google Red */
-        radial-gradient(circle closest-side, #FBBC05 0%, transparent 100%), /* Google Yellow */
-        radial-gradient(circle closest-side, #34A853 0%, transparent 100%); /* Google Green */
-    background-size: 80px 80px, 70px 70px, 90px 90px, 75px 75px;
+        radial-gradient(circle closest-side, #4285F4 0%, transparent 100%),
+        radial-gradient(circle closest-side, #EA4335 0%, transparent 100%),
+        radial-gradient(circle closest-side, #FBBC05 0%, transparent 100%),
+        radial-gradient(circle closest-side, #34A853 0%, transparent 100%);
+    background-size: 200% 200%, 150% 150%, 180% 180%, 160% 160%;
     background-repeat: no-repeat;
-    color: transparent;
     -webkit-background-clip: text;
     background-clip: text;
+    color: transparent;
     animation: spray-drift-google 12s infinite alternate ease-in-out;
 }
 
