@@ -113,13 +113,26 @@ body {
     position: relative;
     display: inline-block;
     text-decoration: none;
-    overflow: hidden;
     border-radius: 4px;
 }
 
 .nav-logo-spray {
-    position: absolute;
-    top: -30px; left: -30px; right: -30px; bottom: -30px;
+    display: none;
+}
+
+.nav-logo-text {
+    position: relative;
+    z-index: 2;
+    /* 加入所有可能的王漢宗特黑名稱，並以 Noto Sans TC Black 墊底 */
+    font-family: '王漢宗特黑體繁', 'HanWangTeHei', 'wt014', '王漢宗特黑體', '王漢宗特黑', 'Noto Sans TC', 'Arial Black', sans-serif;
+    font-size: 26px; /* Slightly larger to show the colors better */
+    font-weight: 900;
+    letter-spacing: 1px;
+    padding: 4px 8px;
+    margin: 0;
+    line-height: 1;
+
+    /* Use background-clip text for a perfect punch-out without artifacts */
     background-image: 
         radial-gradient(circle closest-side, #4285F4 0%, transparent 100%), /* Google Blue */
         radial-gradient(circle closest-side, #EA4335 0%, transparent 100%), /* Google Red */
@@ -127,8 +140,9 @@ body {
         radial-gradient(circle closest-side, #34A853 0%, transparent 100%); /* Google Green */
     background-size: 80px 80px, 70px 70px, 90px 90px, 75px 75px;
     background-repeat: no-repeat;
-    filter: blur(10px);
-    z-index: 1;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
     animation: spray-drift-google 12s infinite alternate ease-in-out;
 }
 
@@ -138,22 +152,6 @@ body {
     50%  { background-position: 60% 10%, 90% 80%, 10% 70%, 50% 90%; }
     75%  { background-position: 80% 40%, 10% 50%, 70% 90%, 20% 80%; }
     100% { background-position: 100% 100%, 0% 100%, 100% 0%, 0% 0%; }
-}
-
-.nav-logo-text {
-    position: relative;
-    z-index: 2;
-    /* 加入所有可能的王漢宗特黑名稱，並以 Noto Sans TC Black 墊底 */
-    font-family: '王漢宗特黑體繁', 'HanWangTeHei', 'wt014', '王漢宗特黑體', '王漢宗特黑', 'Noto Sans TC', 'Arial Black', sans-serif;
-    font-size: 24px;
-    font-weight: 900;
-    letter-spacing: 1px;
-    background-color: var(--colors-canvas);
-    color: #ffffff;
-    mix-blend-mode: multiply;
-    padding: 4px 8px;
-    margin: 0;
-    line-height: 1;
 }
 
 .nav-links {
