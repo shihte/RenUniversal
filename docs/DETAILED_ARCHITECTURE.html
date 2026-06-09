@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detailed Architecture | RenUniversal</title>
+    <meta name="description" content="RenUniversal 的系統拓撲、核心演算法以及動態規則引擎完整技術導覽。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .hero-band-dark {
+            padding: 80px var(--spacing-xl) 80px;
+        }
+        .hero-band-dark h1 {
+            font-size: clamp(48px, 6vw, 80px);
+        }
+        .arch-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 var(--spacing-xl) 120px;
+            color: var(--colors-on-dark-soft);
+        }
+        .arch-content h2 {
+            color: var(--colors-on-dark);
+            margin: 64px 0 24px;
+        }
+        .arch-content h3 {
+            color: var(--colors-on-dark);
+            margin: 40px 0 16px;
+        }
+        .arch-content p {
+            margin-bottom: 24px;
+            line-height: 1.8;
+            font-size: 18px;
+        }
+        .arch-content ul {
+            margin-bottom: 24px;
+            padding-left: 24px;
+            font-size: 18px;
+            line-height: 1.8;
+        }
+        .arch-content li {
+            margin-bottom: 12px;
+        }
+        .formula-card {
+            background-color: var(--colors-surface-card);
+            border: 1px solid var(--colors-hairline);
+            border-radius: var(--rounded-md);
+            padding: 32px;
+            margin: 32px 0;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 16px;
+            color: var(--colors-spectrum-green);
+        }
+        .math-comment {
+            color: var(--colors-hairline);
+            margin-bottom: 16px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="index.html" class="nav-logo">
+            <div class="nav-logo-mark"></div>
+            RenUniversal
+        </a>
+        <div class="nav-links">
+            <a href="index.html" class="nav-link">Home</a>
+            <a href="iOS_Native_App.html" class="nav-link">iOS 部署</a>
+            <a href="DETAILED_ARCHITECTURE.html" class="nav-link" style="color: var(--colors-on-dark);">架構文檔</a>
+            <a href="https://github.com/shihte/RenUniversal" class="nav-link" target="_blank">GitHub</a>
+        </div>
+    </nav>
+
+    <main>
+        <section class="hero-band-dark">
+            <h1 class="t-display-xl" style="letter-spacing: -0.03em;">System Architecture</h1>
+            <p class="t-body-lg">
+                系統拓撲、邊緣狀態隔離層，以及動態幾何規則引擎的精確規範與設計模式。
+            </p>
+        </section>
+
+        <section class="arch-content">
+            <h2 class="t-display-md">System Topology</h2>
+            <p>RenUniversal 採用單向數據流與邊緣運算設計。影像從本地鏡頭或手機串流輸入 <strong>Agent Pipeline</strong> 進行 30FPS 的採樣，經由 MediaPipe 提取特徵後，傳送至 <strong>Action Judgment Engine</strong>。</p>
+            <p>判定引擎會動態掃描 <code>skills/</code> 目錄下的規則模組，評估異常狀態，並將結果寫入 <strong>Shared State</strong>。最終由 Flask Web 渲染層或 iOS 原生視圖呈現。</p>
+
+            <h2 class="t-display-md">幾何運算元 (Next-Gen Operators)</h2>
+            <p>無論是 iOS 或 Web 介面，新版引擎支援高級幾何運算，直接處理點與點之間的空間變化：</p>
+            <ul>
+                <li><strong>變長 / 變短 (<code>></code>, <code><</code>)</strong>：計算兩點間距離是否大於或小於校準基準值的特定百分比。</li>
+                <li><strong>動態狀態偏移 (<code>><</code>)</strong>：只要兩點間的距離相較於校準時「變長或變短」超過閥值，即觸發偏移警報。</li>
+                <li><strong>雙獨立球體越界 (<code>~~</code>)</strong>：系統記住兩點在校準時的「絕對空間座標」，並為兩端點各自畫出物理級別的圓形防護網。只要任一端點飄出專屬防護圈，瞬間觸發。完美解決代償動作盲區。</li>
+            </ul>
+
+            <h2 class="t-display-md">數學特徵模型 (Math Models)</h2>
+            
+            <h3 class="t-title-lg">低頭比例 (Nose-Chin Ratio)</h3>
+            <p>基於 3D 面部網格在投影面上的長度變化。當頭部前傾時，鼻尖與下巴底端在影像上的垂直距離會縮短。</p>
+            <div class="formula-card">
+                <span class="math-comment">// d_nose-chin = y_chin - y_nose</span><br>
+                <span class="math-comment">// Ratio is negative when looking down</span><br>
+                Ratio = (d_nose-chin - baseline_d) / baseline_d
+            </div>
+
+            <h3 class="t-title-lg">軀幹搖晃比 (Torso Sway)</h3>
+            <p>以肩膀中點相對於影像寬度的偏離值來衡量水平位移。偏離基準越遠數值越高。</p>
+            <div class="formula-card">
+                <span class="math-comment">// Center_S = (Shoulder_L + Shoulder_R) / 2</span><br>
+                Sway = abs(x_Center_S - x_baseline) / Frame_Width
+            </div>
+
+            <h2 class="t-display-md">設計模式與代碼映射</h2>
+            <p>系統底層採用了大量經典的設計模式以維持高度的靈活性與執行緒安全：</p>
+            <ul>
+                <li><strong>Pipeline Pattern</strong>：<code>pipeline.py</code> 負責核心流水線驅動與影像特徵提取。</li>
+                <li><strong>Plugin Pattern</strong>：<code>action_engine.py</code> 負責於運行時動態發現與載入 <code>/skills/</code> 動作包。</li>
+                <li><strong>State Pattern</strong>：<code>state.py</code> 提供跨執行緒安全的狀態同步與持久化讀寫。</li>
+                <li><strong>Strategy Pattern</strong>：iOS 原生端的 <code>RuleEngine.swift</code> 負責實作 <code>~~</code> 與 <code>><</code> 等進階空間策略。</li>
+            </ul>
+        </section>
+
+    </main>
+
+    <div class="editorial-symbol-strip"></div>
+
+    <footer>
+        <div class="nav-logo">
+            <div class="nav-logo-mark"></div>
+            RenUniversal
+        </div>
+        <div class="footer-links">
+            <a href="index.html" class="nav-link">Home</a>
+            <a href="https://github.com/shihte/RenUniversal" class="nav-link" target="_blank">View on GitHub</a>
+        </div>
+    </footer>
+</body>
+</html>
