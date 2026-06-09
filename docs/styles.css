@@ -124,6 +124,7 @@ body {
     line-height: 1;
     padding: 0;
 
+    background-color: #ffffff;
     background-image: 
         radial-gradient(circle closest-side, #4285F4 0%, transparent 100%),
         radial-gradient(circle closest-side, #EA4335 0%, transparent 100%),
