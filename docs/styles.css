@@ -286,7 +286,6 @@ body {
     position: relative;
     z-index: 2;
 }
-
 .bento-card p {
     color: var(--colors-on-dark-soft);
     position: relative;
@@ -294,16 +293,6 @@ body {
     max-width: 480px;
 }
 
-.bento-graphic {
-    position: absolute;
-    top: 48px;
-    right: 48px;
-    width: 200px;
-    height: 200px;
-    border-radius: 50%;
-    background: radial-gradient(circle at top right, var(--colors-surface-soft) 0%, transparent 70%);
-    z-index: 1;
-}
 
 /* Developer Experience Section */
 .dx-section {
