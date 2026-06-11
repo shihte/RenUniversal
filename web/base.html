@@ -8,7 +8,7 @@
     <script src="/tailwind.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         theme: {
@@ -16,111 +16,82 @@
             colors: {
               'surface-bg': '#000000',
               'surface-card': '#0c0c0f',
-              'primary': '#1a73e8',
+              'primary': '#4285F4',
+              'google-blue': '#4285F4',
+              'google-green': '#34A853',
+              'google-yellow': '#FBBC05',
+              'google-red': '#EA4335',
               'text-main': '#ffffff',
               'text-muted': '#8f8f9e',
               'border-subtle': '#1f1f23',
             },
             fontFamily: {
               sans: ['Outfit', 'system-ui', '-apple-system', 'sans-serif'],
+              mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
             }
           }
         }
       }
     </script>
     <style>
+        :root {
+            --bg-color: #000000;
+            --card-bg: #0a0a0c;
+            --border-color: #1f1f23;
+            --text-primary: #ffffff;
+            --text-secondary: #8f8f9e;
+            --font-sans: 'Outfit', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --google-blue: #4285F4;
+            --google-green: #34A853;
+            --google-yellow: #FBBC05;
+            --google-red: #EA4335;
+            --accent-gradient: linear-gradient(135deg, #4285F4 0%, #34A853 33%, #FBBC05 66%, #EA4335 100%);
+            --transition-spring: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * { box-sizing: border-box; }
+
         body {
             background-color: #000000;
             color: #ffffff;
-            font-family: 'Outfit', 'Inter', sans-serif;
+            font-family: var(--font-sans);
             -webkit-font-smoothing: antialiased;
         }
 
-        /* Override slate/white background classes globally to dark theme */
-        .bg-white, .bg-slate-50, .bg-slate-100, .bg-slate-50-elevated {
+        /* ── Global Dark Overrides ─────────────────────────────── */
+        .bg-white, .bg-slate-50, .bg-slate-100 {
             background-color: #0c0c0f !important;
             color: #ffffff !important;
         }
         
         .bg-slate-50-elevated {
-            background-color: #121216 !important;
-            border-color: #222226 !important;
+            background-color: #111115 !important;
+            border-color: #222228 !important;
         }
         
-        .border, .border-slate-200, .border-slate-100, .border-border-subtle, .border-slate-700\/30, .border-b, .border-r, .border-l {
+        .border, .border-slate-200, .border-slate-100, .border-border-subtle,
+        .border-slate-700\/30, .border-b, .border-r, .border-l {
             border-color: #1f1f23 !important;
         }
         
-        /* Sidebar layout background overrides */
         aside, #left-sidebar, #right-sidebar {
-            background-color: #08080a !important;
-            border-color: #1a1a1e !important;
+            background-color: #080809 !important;
+            border-color: #191920 !important;
         }
         
         aside *, #left-sidebar *, #right-sidebar * {
-            border-color: #1a1a1e !important;
+            border-color: #191920 !important;
         }
 
-        /* Typography overrides */
-        .text-slate-900, .text-slate-800, .text-slate-700, .text-slate-600, .text-text-main {
-            color: #ffffff !important;
-        }
+        /* ── Typography ──────────────────────────────────────── */
+        .text-slate-900, .text-slate-800, .text-slate-700,
+        .text-slate-600, .text-text-main { color: #ffffff !important; }
         
-        .text-slate-500, .text-text-muted, .text-[#6e6e73], .text-slate-400 {
-            color: #8f8f9e !important;
-        }
-        
-        /* Navbar styling: Sleek glassmorphism */
-        nav.bg-white {
-            background-color: rgba(0, 0, 0, 0.7) !important;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid #1a1a1e !important;
-            color: #ffffff !important;
-        }
-        
-        nav a {
-            color: #9e9e9e !important;
-            position: relative;
-            transition: color 0.3s ease;
-        }
-        
-        nav a:hover, nav a.text-primary {
-            color: #ffffff !important;
-        }
-        
-        nav a.text-primary::after {
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            left: 12px;
-            right: 12px;
-            height: 2px;
-            background: linear-gradient(90deg, #4285F4, #34A853, #FBBC05, #EA4335);
-            border-radius: 9999px;
-        }
-        
-        /* Premium custom input fields */
-        input[type="text"], input[type="number"], select, textarea {
-            background-color: #121216 !important;
-            border: 1px solid #2a2a32 !important;
-            color: #ffffff !important;
-            border-radius: 8px !important;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-        
-        input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
-            border-color: #4285F4 !important;
-            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.15) !important;
-        }
+        .text-slate-500, .text-text-muted,
+        .text-[#6e6e73], .text-slate-400 { color: #8f8f9e !important; }
 
-        /* Premium scrollbar */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #000000; }
-        ::-webkit-scrollbar-thumb { background: #222228; border-radius: 9999px; }
-        ::-webkit-scrollbar-thumb:hover { background: #33333f; }
-        
-        /* Google I/O Gradient typography */
+        /* Gradient text */
         .gradient-text {
             background: linear-gradient(135deg, #4285F4 0%, #34A853 30%, #FBBC05 60%, #EA4335 100%) !important;
             -webkit-background-clip: text !important;
@@ -128,76 +99,246 @@
             color: transparent !important;
         }
 
-        /* Cards styles with hover glow effects */
-        .bg-surface-card, .anthropic-card, .glass-panel, .bg-white.p-8, .bg-white.p-6, #create-skill-form, #create-event-form {
+        /* ── Nav ─────────────────────────────────────────────── */
+        nav.bg-white {
+            background-color: rgba(0, 0, 0, 0.75) !important;
+            backdrop-filter: blur(24px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+            color: #ffffff !important;
+        }
+        
+        nav a {
+            color: #8f8f9e !important;
+            position: relative;
+            transition: color 0.25s ease;
+            padding-bottom: 4px;
+        }
+        
+        nav a:hover { color: #ffffff !important; }
+        
+        nav a.text-primary {
+            color: #ffffff !important;
+            font-weight: 600;
+        }
+        
+        nav a.text-primary::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #4285F4, #34A853, #FBBC05, #EA4335);
+            border-radius: 9999px;
+            animation: fadeInBar 0.3s ease;
+        }
+
+        @keyframes fadeInBar {
+            from { opacity: 0; transform: scaleX(0.5); }
+            to { opacity: 1; transform: scaleX(1); }
+        }
+
+        /* ── Inputs ──────────────────────────────────────────── */
+        input[type="text"], input[type="number"], select, textarea {
+            background-color: #111115 !important;
+            border: 1px solid #2a2a32 !important;
+            color: #ffffff !important;
+            border-radius: 10px !important;
+            font-family: var(--font-sans) !important;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            outline: none !important;
+        }
+        
+        input[type="text"]:focus, input[type="number"]:focus,
+        select:focus, textarea:focus {
+            border-color: #4285F4 !important;
+            box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.12) !important;
+        }
+
+        input[type="text"]::placeholder, textarea::placeholder {
+            color: #44444c !important;
+        }
+
+        /* ── Scrollbar ───────────────────────────────────────── */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #22222a; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #33333f; }
+
+        /* ── Cards ───────────────────────────────────────────── */
+        .bg-surface-card, .anthropic-card, .glass-panel,
+        .bg-white.p-8, .bg-white.p-6,
+        #create-skill-form, #create-event-form {
             background-color: #0c0c0f !important;
             border: 1px solid #1f1f23 !important;
-            border-radius: 20px !important;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4) !important;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            border-radius: 16px !important;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4) !important;
+            transition: var(--transition-spring) !important;
         }
         
-        .bg-surface-card:hover, .anthropic-card:hover, .glass-panel:hover, .bg-white.p-8:hover, .bg-white.p-6:hover {
-            border-color: #3b82f6 !important;
-            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.08) !important;
-            transform: translateY(-2px);
+        .bg-surface-card:hover, .anthropic-card:hover,
+        .glass-panel:hover, .bg-white.p-8:hover, .bg-white.p-6:hover {
+            border-color: rgba(66, 133, 244, 0.3) !important;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 24px rgba(66, 133, 244, 0.04) !important;
+            transform: translateY(-3px);
         }
-        
-        /* Premium Buttons */
+
+        /* ── Buttons ─────────────────────────────────────────── */
         button, .btn, a[href^="/app/"], a.card-link {
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            transition: var(--transition-spring) !important;
         }
         
         button.bg-primary, input[type="submit"], button[type="submit"] {
-            background: linear-gradient(90deg, #1a73e8, #1557b0) !important;
+            background: linear-gradient(135deg, #4285F4, #1a73e8) !important;
             color: #ffffff !important;
             border: none !important;
-            box-shadow: 0 4px 15px rgba(26, 115, 232, 0.3) !important;
+            box-shadow: 0 4px 16px rgba(66, 133, 244, 0.25) !important;
             border-radius: 9999px !important;
         }
         
-        button.bg-primary:hover, input[type="submit"]:hover, button[type="submit"]:hover {
-            box-shadow: 0 6px 20px rgba(26, 115, 232, 0.5) !important;
-            transform: scale(1.02);
+        button.bg-primary:hover, input[type="submit"]:hover,
+        button[type="submit"]:hover {
+            box-shadow: 0 6px 24px rgba(66, 133, 244, 0.45) !important;
+            transform: translateY(-1px) scale(1.01);
         }
         
-        a[href^="/app/"], a.card-link {
-            border-radius: 12px !important;
-        }
+        a[href^="/app/"], a.card-link { border-radius: 12px !important; }
         
-        /* Trigger table row glow */
-        tr {
-            transition: background-color 0.2s ease;
-        }
-        tr:hover {
-            background-color: rgba(255, 255, 255, 0.02) !important;
-        }
+        /* ── Table rows ──────────────────────────────────────── */
+        tr { transition: background-color 0.2s ease; }
+        tr:hover { background-color: rgba(255, 255, 255, 0.02) !important; }
 
-        /* 溫和的範圍選擇器 */
+        /* ── Range sliders ───────────────────────────────────── */
         input[type=range] {
             width: 100%;
-            height: 6px;
+            height: 4px;
             background-color: #1a1a22;
-            border-radius: 9999px;
+            border-radius: 9999px !important;
             -webkit-appearance: none;
             appearance: none;
             cursor: pointer;
+            border: none !important;
+            box-shadow: none !important;
         }
 
         input[type=range]::-webkit-slider-thumb {
-            height: 16px;
-            width: 16px;
+            height: 18px;
+            width: 18px;
             border-radius: 50%;
             background-color: #ffffff;
-            border: 2px solid #1a73e8;
+            border: 2px solid #4285F4 !important;
             -webkit-appearance: none;
             cursor: pointer;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            transition: transform 0.1s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            transition: transform 0.15s ease;
         }
 
-        input[type=range]::-webkit-slider-thumb:hover {
-            transform: scale(1.15);
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+        input[type=range]::-webkit-slider-runnable-track {
+            background: linear-gradient(90deg, #4285F4 var(--val, 50%), #1a1a22 var(--val, 50%));
+            border-radius: 9999px;
+            height: 4px;
+        }
+
+        /* ── Metric / Stat cards in sidebar ──────────────────── */
+        .metric-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 12px;
+            gap: 4px;
+            background-color: #080809;
+            border-right: 1px solid #191920;
+        }
+        .metric-cell:last-child { border-right: none; }
+        .metric-label {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #55555f;
+        }
+        .metric-value {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #ffffff;
+        }
+        .metric-value.accent { color: #4285F4; }
+        .metric-value.green { color: #34A853; }
+
+        /* ── Pill badge ──────────────────────────────────────── */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+        .status-pill.online {
+            background-color: rgba(52, 168, 83, 0.1);
+            border: 1px solid rgba(52, 168, 83, 0.2);
+            color: #34A853;
+        }
+        .status-pill.offline {
+            background-color: rgba(234, 67, 53, 0.1);
+            border: 1px solid rgba(234, 67, 53, 0.2);
+            color: #EA4335;
+        }
+        .status-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background-color: currentColor;
+        }
+        .status-dot.pulsing { animation: pulse 1.5s ease-in-out infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.5); }
+        }
+
+        /* ── Section headings ────────────────────────────────── */
+        .section-eyebrow {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #4285F4;
+            margin-bottom: 8px;
+        }
+
+        /* ── Skill / Event row items ─────────────────────────── */
+        .skill-row, .event-row {
+            background: #0c0c0f;
+            border: 1px solid #1f1f23;
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: var(--transition-spring);
+            cursor: default;
+        }
+        .skill-row:hover, .event-row:hover {
+            border-color: rgba(66, 133, 244, 0.25);
+            background: #0f0f14;
+            transform: translateX(2px);
+        }
+
+        /* ── Monospace code inline ───────────────────────────── */
+        code {
+            font-family: var(--font-mono) !important;
+            background-color: #111115;
+            border: 1px solid #2a2a32;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 0.85em;
+            color: #34A853;
         }
 
         {% block extra_head %}{% endblock %}
@@ -218,27 +359,35 @@
     
     <div id="camera-container" hx-preserve="true" style="display:none;"></div>
     
-    <!-- 導覽列：簡化並留白 -->
-    <nav class="w-full bg-white text-text-main h-16 flex items-center justify-between px-6 z-50 fixed top-0 border-b border-border-subtle shadow-sm">
-        <div class="flex items-center gap-10 max-w-6xl mx-auto w-full">
-            <h1 class="text-lg font-bold tracking-tight text-primary">RenUniversal</h1>
-            <div class="hidden md:flex gap-6 text-sm font-medium">
-                <a href="/" class="transition-colors {% if active_page == 'monitor' %}text-primary{% else %}text-text-muted hover:text-text-main{% endif %}">Monitor</a>
-                <a href="/camera" class="transition-colors {% if active_page == 'camera' %}text-primary{% else %}text-text-muted hover:text-text-main{% endif %}">Camera</a>
-                <a href="/skills" class="transition-colors {% if active_page == 'skills' %}text-primary{% else %}text-text-muted hover:text-text-main{% endif %}">Skills</a>
-                <a href="/events" class="transition-colors {% if active_page == 'events' %}text-primary{% else %}text-text-muted hover:text-text-main{% endif %}">Events</a>
-                <a href="/apps" class="transition-colors {% if active_page == 'apps' %}text-primary{% else %}text-text-muted hover:text-text-main{% endif %}">Apps</a>
+    <!-- Premium Nav -->
+    <nav class="w-full bg-white text-text-main h-16 flex items-center z-50 fixed top-0 border-b border-border-subtle">
+        <div class="flex items-center gap-8 max-w-7xl mx-auto w-full px-6">
+            <!-- Brand -->
+            <a href="/" class="flex items-center gap-2 no-underline shrink-0" style="text-decoration:none;">
+                <span style="font-size:17px;font-weight:850;letter-spacing:-0.8px;background:linear-gradient(135deg,#4285F4,#34A853,#FBBC05,#EA4335);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">RenUniversal</span>
+            </a>
+
+            <!-- Divider -->
+            <div style="width:1px;height:20px;background:#1f1f23;"></div>
+
+            <!-- Nav links -->
+            <div class="hidden md:flex gap-1 text-sm">
+                <a href="/" style="padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;transition:all 0.2s ease;text-decoration:none;{% if active_page == 'monitor' %}color:#fff;background:rgba(255,255,255,0.06);{% else %}color:#8f8f9e;{% endif %}" {% if active_page == 'monitor' %}class="text-primary"{% endif %} onmouseover="if(!this.classList.contains('text-primary'))this.style.color='#fff'" onmouseout="if(!this.classList.contains('text-primary'))this.style.color='#8f8f9e'">Monitor</a>
+                <a href="/camera" style="padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;transition:all 0.2s ease;text-decoration:none;{% if active_page == 'camera' %}color:#fff;background:rgba(255,255,255,0.06);{% else %}color:#8f8f9e;{% endif %}" {% if active_page == 'camera' %}class="text-primary"{% endif %} onmouseover="if(!this.classList.contains('text-primary'))this.style.color='#fff'" onmouseout="if(!this.classList.contains('text-primary'))this.style.color='#8f8f9e'">Camera</a>
+                <a href="/skills" style="padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;transition:all 0.2s ease;text-decoration:none;{% if active_page == 'skills' %}color:#fff;background:rgba(255,255,255,0.06);{% else %}color:#8f8f9e;{% endif %}" {% if active_page == 'skills' %}class="text-primary"{% endif %} onmouseover="if(!this.classList.contains('text-primary'))this.style.color='#fff'" onmouseout="if(!this.classList.contains('text-primary'))this.style.color='#8f8f9e'">Skills</a>
+                <a href="/events" style="padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;transition:all 0.2s ease;text-decoration:none;{% if active_page == 'events' %}color:#fff;background:rgba(255,255,255,0.06);{% else %}color:#8f8f9e;{% endif %}" {% if active_page == 'events' %}class="text-primary"{% endif %} onmouseover="if(!this.classList.contains('text-primary'))this.style.color='#fff'" onmouseout="if(!this.classList.contains('text-primary'))this.style.color='#8f8f9e'">Events</a>
+                <a href="/apps" style="padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;transition:all 0.2s ease;text-decoration:none;{% if active_page == 'apps' %}color:#fff;background:rgba(255,255,255,0.06);{% else %}color:#8f8f9e;{% endif %}" {% if active_page == 'apps' %}class="text-primary"{% endif %} onmouseover="if(!this.classList.contains('text-primary'))this.style.color='#fff'" onmouseout="if(!this.classList.contains('text-primary'))this.style.color='#8f8f9e'">Apps</a>
             </div>
-            
-            <div class="ml-auto flex items-center gap-4">
-                <div class="text-xs text-text-muted text-right flex flex-col leading-tight">
-                    <span id="conn-status-text" class="font-medium">OFFLINE</span>
-                    <span id="conn-fps-sidebar" class="opacity-80">0 FPS</span>
+
+            <!-- Status pill (right) -->
+            <div class="ml-auto flex items-center gap-3">
+                <span id="conn-fps-sidebar" class="text-xs font-mono" style="color:#55555f;">0 FPS</span>
+                <div id="conn-status-pill" class="status-pill offline">
+                    <span class="status-dot" id="conn-status-dot"></span>
+                    <span id="conn-status-text" style="font-size:11px;">OFFLINE</span>
                 </div>
-                <div class="relative flex items-center justify-center w-8 h-8 rounded-full bg-slate-50 border border-slate-100">
-                    <div id="conn-indicator-sidebar" class="w-2.5 h-2.5 rounded-full bg-red-500"></div>
-                    <div id="conn-ping-sidebar" class="absolute w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping hidden"></div>
-                </div>
+                <div id="conn-ping-sidebar" class="hidden"></div>
+                <div id="conn-indicator-sidebar" class="hidden"></div>
             </div>
         </div>
     </nav>
