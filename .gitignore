@@ -18,3 +18,5 @@ xcuserdata/
 *.xcuserstate
 Pods/
 Podfile.lock
+.gemini/
+.claude/
