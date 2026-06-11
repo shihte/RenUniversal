@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture — RenUniversal</title>
+    <meta name="description" content="RenUniversal 的系統拓撲、核心演算法以及動態規則引擎完整技術導覽。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+
+    <nav class="nav" id="nav">
+        <div class="nav-inner">
+            <a href="index.html" class="brand">
+                <svg class="brand-icon" width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="13" cy="13" r="11" stroke="url(#g-nav)" stroke-width="1.5"/>
+                    <circle cx="13" cy="13" r="4.5" fill="url(#g-nav)"/>
+                    <line x1="13" y1="2" x2="13" y2="7" stroke="url(#g-nav)" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="13" y1="19" x2="13" y2="24" stroke="url(#g-nav)" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="2" y1="13" x2="7" y2="13" stroke="url(#g-nav)" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="19" y1="13" x2="24" y2="13" stroke="url(#g-nav)" stroke-width="1.5" stroke-linecap="round"/>
+                    <defs>
+                        <linearGradient id="g-nav" x1="2" y1="2" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#00D4FF"/>
+                            <stop offset="100%" stop-color="#7C3AFF"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <span class="brand-name">RenUniversal</span>
+            </a>
+            <div class="nav-links">
+                <a href="DETAILED_ARCHITECTURE.html" class="nav-link" style="color: var(--text-primary);">Architecture</a>
+                <a href="iOS_Native_App.html" class="nav-link">iOS App</a>
+                <a href="https://github.com/shihte/RenUniversal" class="nav-link" target="_blank">Docs</a>
+            </div>
+            <a href="https://github.com/shihte/RenUniversal" class="nav-cta" target="_blank">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                GitHub
+            </a>
+        </div>
+    </nav>
+
+    <main>
+        <section class="hero-band-dark">
+            <div class="hero-badge">
+                <span class="badge-pulse" style="background-color: var(--google-yellow);"></span>
+                Technical Specification
+            </div>
+            <h1>System Architecture</h1>
+            <p>
+                系統拓撲、邊緣狀態隔離層，以及動態幾何規則引擎的精確規範與設計模式。
+            </p>
+        </section>
+
+        <section class="arch-content">
+            <h2>System Topology</h2>
+            <p>RenUniversal 採用單向數據流與邊緣運算設計。影像從本地鏡頭或手機串流輸入 <strong>Agent Pipeline</strong> 進行 30FPS 的採樣，經由 MediaPipe 提取特徵後，傳送至 <strong>Action Judgment Engine</strong>。</p>
+            <p>判定引擎會動態掃描 <code>skills/</code> 目錄下的規則模組，評估異常狀態，並將結果寫入 <strong>Shared State</strong>。最終由 Flask Web 渲染層或 iOS 原生視圖呈現。</p>
+
+            <h2>幾何運算元 (Next-Gen Operators)</h2>
+            <p>無論是 iOS 或 Web 介面，新版引擎支援高級幾何運算，直接處理點與點之間的空間變化：</p>
+            <ul>
+                <li><strong>變長 / 變短 (<code>&gt;</code>, <code>&lt;</code>)</strong>：計算兩點間距離是否大於或小於校準基準值的特定百分比。</li>
+                <li><strong>動態狀態偏移 (<code>&gt;&lt;</code>)</strong>：只要兩點間的距離相較於校準時「變長或變短」超過閥值，即觸發偏移警報。</li>
+                <li><strong>雙獨立球體越界 (<code>~~</code>)</strong>：系統記住兩點在校準時的「絕對空間座標」，並為兩端點各自畫出物理級別的圓形防護網。任一端點飄出專屬防護圈時觸發，完美解決代償動作盲區。</li>
+            </ul>
+
+            <h2>數學特徵模型 (Math Models)</h2>
+            
+            <h3>低頭比例 (Nose-Chin Ratio)</h3>
+            <p>基於 3D 面部網格在投影面上的長度變化。當頭部前傾時，鼻尖與下巴底端在影像上的垂直距離會縮短。</p>
+            <div class="formula-card">
+                <span class="math-comment">// d_nose-chin = y_chin - y_nose</span><br>
+                <span class="math-comment">// Ratio is negative when looking down</span><br>
+                Ratio = (d_nose-chin - baseline_d) / baseline_d
+            </div>
+
+            <h3>軀幹搖晃比 (Torso Sway)</h3>
+            <p>以肩膀中點相對於影像寬度的偏離值來衡量水平位移。偏離基準越遠數值越高。</p>
+            <div class="formula-card">
+                <span class="math-comment">// Center_S = (Shoulder_L + Shoulder_R) / 2</span><br>
+                Sway = abs(x_Center_S - x_baseline) / Frame_Width
+            </div>
+
+            <h2>設計模式與代碼映射</h2>
+            <p>系統底層採用了大量經典的設計模式以維持高度的靈活性與執行緒安全：</p>
+            <ul>
+                <li><strong>Pipeline Pattern</strong>：<code>pipeline.py</code> 負責核心流水線驅動與影像特徵提取。</li>
+                <li><strong>Plugin Pattern</strong>：<code>action_engine.py</code> 負責於運行時動態發現與載入 <code>/skills/</code> 動作包。</li>
+                <li><strong>State Pattern</strong>：<code>state.py</code> 提供跨執行緒安全的狀態同步與持久化讀寫。</li>
+                <li><strong>Strategy Pattern</strong>：iOS 原生端的 <code>RuleEngine.swift</code> 負責實作 <code>~~</code> 與 <code>&gt;&lt;</code> 等進階空間策略。</li>
+            </ul>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <a href="index.html" class="brand">
+                    <svg class="brand-icon" width="22" height="22" viewBox="0 0 26 26" fill="none">
+                        <circle cx="13" cy="13" r="11" stroke="url(#g-foot)" stroke-width="1.5"/>
+                        <circle cx="13" cy="13" r="4.5" fill="url(#g-foot)"/>
+                        <line x1="13" y1="2" x2="13" y2="7" stroke="url(#g-foot)" stroke-width="1.5" stroke-linecap="round"/>
+                        <line x1="13" y1="19" x2="13" y2="24" stroke="url(#g-foot)" stroke-width="1.5" stroke-linecap="round"/>
+                        <line x1="2" y1="13" x2="7" y2="13" stroke="url(#g-foot)" stroke-width="1.5" stroke-linecap="round"/>
+                        <line x1="19" y1="13" x2="24" y2="13" stroke="url(#g-foot)" stroke-width="1.5" stroke-linecap="round"/>
+                        <defs>
+                            <linearGradient id="g-foot" x1="2" y1="2" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stop-color="#00D4FF"/>
+                                <stop offset="100%" stop-color="#7C3AFF"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span class="brand-name">RenUniversal</span>
+                </a>
+                <p class="footer-tagline">Open Platform for Clinical Edge AI</p>
+            </div>
+            <div class="footer-right">
+                <span class="footer-copy">MIT License · Copyright © 2026</span>
+                <div class="footer-links">
+                    <a href="https://github.com/shihte/RenUniversal" class="footer-link" target="_blank">GitHub</a>
+                    <a href="DETAILED_ARCHITECTURE.html" class="footer-link">Architecture</a>
+                    <a href="iOS_Native_App.html" class="footer-link">iOS App</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script src="script.js"></script>
+</body>
+</html>
