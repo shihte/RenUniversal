@@ -12,6 +12,18 @@ class SharedState: ObservableObject {
     @Published var isCameraEnabled: Bool = false
     @Published var isFaceBlurEnabled: Bool = false
     
+    // Apps
+    @Published var apps: [AppConfig] = [] {
+        didSet {
+            if let data = try? JSONEncoder().encode(apps) {
+                UserDefaults.standard.set(data, forKey: "ren_universal_apps")
+            }
+        }
+    }
+    
+    // History
+    @Published var triggerCounts: [String: Int] = [:]
+    
     // Triggers (Unified Skills and Events)
     @Published var triggers: [TriggerConfig] = [] {
         didSet {
@@ -56,6 +68,30 @@ class SharedState: ObservableObject {
                 TriggerConfig(id: "ctar_tuck", description: "有效下巴內收 (低頭且未轉頭、未前傾)", enabled: true, type: .logic, logicRule: LogicRule(conditions: [LogicCondition(isNot: false, triggerId: "slouch"), LogicCondition(isNot: true, triggerId: "turn"), LogicCondition(isNot: true, triggerId: "lean")], joinOperator: "AND"))
             ]
         }
+        
+        let defaultApps = [
+            AppConfig(id: "ctar_counter", name: "CTAR 計數器", description: "計算下巴內收 (CTAR Tuck) 的狀態與總次數", url: "local://ctar_counter", enabled: true),
+            AppConfig(id: "flappy_bird", name: "Flappy Ctar", description: "像素鳥！做 CTAR Tuck 讓鳥拍動翅膀飛行", url: "local://flappy_bird", enabled: true, html: BundledGames.flappyBirdHtml),
+            AppConfig(id: "dino_run", name: "Dino Run", description: "恐龍跑酷！做 CTAR Tuck 來跨越仙人掌", url: "local://dino_run", enabled: true, html: BundledGames.dinoHtml)
+        ]
+        
+        if let appsData = UserDefaults.standard.data(forKey: "ren_universal_apps"),
+           let savedApps = try? JSONDecoder().decode([AppConfig].self, from: appsData) {
+            self.apps = savedApps
+            if self.apps.isEmpty {
+                self.apps = defaultApps
+            } else {
+                // To help the user see the new games if they already have apps saved,
+                // we'll inject them if they don't exist.
+                for defApp in defaultApps {
+                    if !self.apps.contains(where: { $0.id == defApp.id }) {
+                        self.apps.append(defApp)
+                    }
+                }
+            }
+        } else {
+            self.apps = defaultApps
+        }
     }
     
     func setupPipeline() {
@@ -70,6 +106,7 @@ class SharedState: ObservableObject {
         calibrating: Bool? = nil,
         calibrationProgress: Double? = nil,
         activeTriggers: [String: Bool]? = nil,
+        triggerCounts: [String: Int]? = nil,
         faceLandmarks: [NormalizedLandmark]? = nil,
         poseLandmarks: [NormalizedLandmark]? = nil
     ) {
@@ -78,6 +115,7 @@ class SharedState: ObservableObject {
             if let calibrating = calibrating { self.calibrating = calibrating }
             if let calibrationProgress = calibrationProgress { self.calibrationProgress = calibrationProgress }
             if let activeTriggers = activeTriggers { self.activeTriggers = activeTriggers }
+            if let triggerCounts = triggerCounts { self.triggerCounts = triggerCounts }
             if let face = faceLandmarks { self.currentFaceLandmarks = face }
             if let pose = poseLandmarks { self.currentPoseLandmarks = pose }
         }

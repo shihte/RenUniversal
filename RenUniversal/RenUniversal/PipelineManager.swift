@@ -75,8 +75,14 @@ class PipelineManager: MediaPipeServiceDelegate, CameraManagerDelegate {
         
         var anyTriggered = false
         var activeTriggers: [String: Bool] = [:]
+        var newTriggerCounts = sharedState.triggerCounts
         
         for (name, result) in results {
+            let wasActive = sharedState.activeTriggers[name] ?? false
+            if result && !wasActive {
+                newTriggerCounts[name] = (newTriggerCounts[name] ?? 0) + 1
+            }
+            
             activeTriggers[name] = result
             if result {
                 anyTriggered = true
@@ -91,6 +97,7 @@ class PipelineManager: MediaPipeServiceDelegate, CameraManagerDelegate {
         sharedState.updateStatus(
             latencyMs: latencyMs,
             activeTriggers: activeTriggers,
+            triggerCounts: newTriggerCounts,
             faceLandmarks: faceLandmarks,
             poseLandmarks: poseLandmarks
         )
