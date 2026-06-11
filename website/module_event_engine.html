@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>事件引擎 Event Engine — RenUniversal</title>
+    <meta name="description" content="底層偵測到的單一動作特徵，會被傳遞給 Event Engine 進行高階邏輯判定。技能模組化與事件分離的架構讓系統不再侷限於單一復健動作。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        :root { --io-black:#000; --io-border:#373737; --io-muted:#9aa0a6; --io-radius:20px; }
+        body { background: #000; }
+        .io-page-wrap { max-width: 1360px; margin: 0 auto; padding: 0 40px 120px; }
+        @media (max-width: 768px) { .io-page-wrap { padding: 0 20px 80px; } }
+
+        .io-hero { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 120px 20px 80px; }
+        .io-hero-eyebrow { font-family: 'Google Sans', sans-serif; font-size: 14px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--io-muted); margin-bottom: 24px; }
+        .io-hero h1 { font-family: 'Google Sans', sans-serif; font-size: clamp(48px, 8vw, 112px); font-weight: 700; line-height: 1.0; letter-spacing: -0.03em; color: #fff; max-width: 900px; margin-bottom: 32px; }
+        .io-hero p { font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(16px, 2vw, 20px); color: var(--io-muted); max-width: 600px; line-height: 1.7; margin-bottom: 48px; }
+        .io-cta-row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+        .io-btn-primary { font-family: 'Google Sans', sans-serif; font-size: 16px; font-weight: 500; padding: 14px 28px; border-radius: 1000px; background: #fff; color: #000; text-decoration: none; transition: opacity 0.2s; }
+        .io-btn-primary:hover { opacity: 0.85; }
+        .io-btn-ghost { font-family: 'Google Sans', sans-serif; font-size: 16px; font-weight: 500; padding: 14px 28px; border-radius: 1000px; border: 1px solid var(--io-border); color: #fff; text-decoration: none; transition: border-color 0.2s; }
+        .io-btn-ghost:hover { border-color: #fff; }
+
+        .io-section-title { font-family: 'Google Sans', sans-serif; font-size: clamp(32px, 5vw, 56px); font-weight: 700; color: #fff; text-align: center; margin-bottom: 48px; line-height: 1.1; }
+
+        /* Pipeline diagram */
+        .io-pipeline { display: flex; align-items: center; gap: 0; margin-bottom: 60px; overflow-x: auto; padding: 8px 0; }
+        .io-pipe-node {
+            flex: 1;
+            min-width: 140px;
+            border: 1px solid var(--io-border);
+            border-radius: var(--io-radius);
+            background: linear-gradient(#cccccc1a 0%, #cccccc05 130.2%);
+            padding: 24px 20px;
+            text-align: center;
+            position: relative;
+        }
+        .io-pipe-node-icon { font-size: 28px; margin-bottom: 10px; }
+        .io-pipe-node h4 { font-family: 'Google Sans', sans-serif; font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 6px; }
+        .io-pipe-node p { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; color: var(--io-muted); line-height: 1.4; }
+        .io-pipe-arrow { font-size: 24px; color: var(--io-border); padding: 0 8px; flex-shrink: 0; }
+
+        /* Card grid */
+        .io-card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        @media (max-width: 768px) { .io-card-grid { grid-template-columns: 1fr; } }
+        .io-card-link { display: flex; border: 1px solid var(--io-border); border-radius: var(--io-radius); background: linear-gradient(#cccccc1a 0%, #cccccc05 130.2%); text-decoration: none; color: #fff; overflow: hidden; transition: border-color 0.3s; }
+        .io-card-link:hover { border-color: #fff; }
+        .io-card-link:hover img { filter: brightness(0) invert(); }
+        .io-card-link-header { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 20px 24px; }
+        .io-card-link h3 { font-family: 'Google Sans', sans-serif; font-size: 18px; font-weight: 500; color: #fff; }
+
+        /* Stat row */
+        .io-stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 60px; }
+        @media (max-width: 768px) { .io-stat-row { grid-template-columns: 1fr; } }
+        .io-stat-card { border: 1px solid var(--io-border); border-radius: var(--io-radius); padding: 36px 28px; background: linear-gradient(#cccccc1a 0%, #cccccc05 130.2%); }
+        .io-stat-number { font-family: 'Google Sans', sans-serif; font-size: 56px; font-weight: 700; line-height: 1; margin-bottom: 12px; background: linear-gradient(135deg, #4285f4, #0f9d58, #f4b400, #db4437); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .io-stat-label { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; color: var(--io-muted); line-height: 1.5; }
+
+        /* Feature card */
+        .io-feature-card { border: 1px solid var(--io-border); border-radius: var(--io-radius); background: linear-gradient(#cccccc1a 0%, #cccccc05 130.2%); padding: 48px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+        @media (max-width: 768px) { .io-feature-card { grid-template-columns: 1fr; padding: 32px 24px; } }
+        .io-feature-tag { font-family: 'Google Sans', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--io-muted); margin-bottom: 16px; }
+        .io-feature-card h3 { font-family: 'Google Sans', sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 700; color: #fff; margin-bottom: 16px; line-height: 1.2; }
+        .io-feature-card p { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; color: var(--io-muted); line-height: 1.7; }
+
+        .io-code-block { background: #0d0d0d; border: 1px solid #222; border-radius: 16px; padding: 28px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.8; color: #9aa0a6; overflow-x: auto; }
+        .io-code-block .kw { color: #4285f4; }
+        .io-code-block .st { color: #34a853; }
+        .io-code-block .cm { color: #5f6368; }
+        .io-code-block .ok { color: #34a853; }
+        .io-code-block .hi { color: #fbbc04; }
+
+        /* Skills list card */
+        .io-skills-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+        @media (max-width: 768px) { .io-skills-grid { grid-template-columns: 1fr; } }
+        .io-skill-pill { border: 1px solid var(--io-border); border-radius: 12px; padding: 20px 24px; background: linear-gradient(#cccccc1a 0%, #cccccc05 130.2%); }
+        .io-skill-pill-label { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #4285f4; margin-bottom: 6px; }
+        .io-skill-pill-desc { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; color: var(--io-muted); line-height: 1.4; }
+    </style>
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+
+    <nav class="nav" id="nav">
+        <div class="nav-inner">
+            <a href="index.html" class="brand">
+                <svg class="brand-icon" width="26" height="26" viewBox="0 0 26 26" fill="none">
+                    <circle cx="13" cy="13" r="11" stroke="url(#g-nav)" stroke-width="1.5"/>
+                    <circle cx="13" cy="13" r="4.5" fill="url(#g-nav)"/>
+                    <line x1="13" y1="2" x2="13" y2="7" stroke="url(#g-nav)" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="13" y1="19" x2="13" y2="24" stroke="url(#g-nav)" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="2" y1="13" x2="7" y2="13" stroke="url(#g-nav)" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="19" y1="13" x2="24" y2="13" stroke="url(#g-nav)" stroke-width="1.5" stroke-linecap="round"/>
+                    <defs>
+                        <linearGradient id="g-nav" x1="2" y1="2" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#00D4FF"/>
+                            <stop offset="100%" stop-color="#7C3AFF"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <span class="brand-name">RenUniversal</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">首頁</a>
+                <a href="DETAILED_ARCHITECTURE.html" class="nav-link">Architecture</a>
+                <a href="iOS_Native_App.html" class="nav-link">iOS App</a>
+            </div>
+            <a href="https://github.com/shihte/RenUniversal" class="nav-cta" target="_blank">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                GitHub
+            </a>
+        </div>
+    </nav>
+
+    <main>
+        <div class="io-hero">
+            <p class="io-hero-eyebrow">Core Architecture · RenUniversal</p>
+            <h1>事件引擎<br>Event Engine</h1>
+            <p>底層「特徵」與高層「事件」徹底解耦。ActionEngine 動態反射掃描 skills/ 目錄，讓系統無需重新編譯即可熱插拔全新的動作判定邏輯。</p>
+            <div class="io-cta-row">
+                <a href="https://github.com/shihte/RenUniversal" class="io-btn-primary" target="_blank">查看原始碼</a>
+                <a href="index.html" class="io-btn-ghost">← 返回首頁</a>
+            </div>
+        </div>
+
+        <div class="io-page-wrap">
+            <!-- Pipeline -->
+            <div style="margin-bottom: 60px;">
+                <h2 class="io-section-title">兩層解耦架構</h2>
+                <div class="io-pipeline">
+                    <div class="io-pipe-node">
+                        <div class="io-pipe-node-icon">📷</div>
+                        <h4>鏡頭輸入</h4>
+                        <p>Multi-Camera<br>MediaPipe</p>
+                    </div>
+                    <div class="io-pipe-arrow">→</div>
+                    <div class="io-pipe-node" style="border-color: #4285f4;">
+                        <div class="io-pipe-node-icon">⚡</div>
+                        <h4>ActionEngine</h4>
+                        <p>動態掃描<br>skills/ 目錄</p>
+                    </div>
+                    <div class="io-pipe-arrow">→</div>
+                    <div class="io-pipe-node">
+                        <div class="io-pipe-node-icon">🧠</div>
+                        <h4>Skill 判定</h4>
+                        <p>JSON 規則<br>動作特徵</p>
+                    </div>
+                    <div class="io-pipe-arrow">→</div>
+                    <div class="io-pipe-node" style="border-color: #34a853;">
+                        <div class="io-pipe-node-icon">🎯</div>
+                        <h4>Event Engine</h4>
+                        <p>高階邏輯<br>組合判定</p>
+                    </div>
+                    <div class="io-pipe-arrow">→</div>
+                    <div class="io-pipe-node">
+                        <div class="io-pipe-node-icon">🎮</div>
+                        <h4>輸出 / 回饋</h4>
+                        <p>遊戲觸發<br>臨床回饋</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="io-stat-row">
+                <div class="io-stat-card">
+                    <div class="io-stat-number">0</div>
+                    <div class="io-stat-label">新增 Skill 需要<br>重新編譯次數</div>
+                </div>
+                <div class="io-stat-card">
+                    <div class="io-stat-number">∞</div>
+                    <div class="io-stat-label">可熱插拔的<br>第三方技能包數量</div>
+                </div>
+                <div class="io-stat-card">
+                    <div class="io-stat-number">JSON</div>
+                    <div class="io-stat-label">唯一所需的<br>技能配置格式</div>
+                </div>
+            </div>
+
+            <!-- Feature cards -->
+            <div class="io-feature-card">
+                <div>
+                    <div class="io-feature-tag">Hot-Pluggable Skills</div>
+                    <h3>熱插拔技能架構</h3>
+                    <p>ActionEngine 於運行時會動態反射式掃描 <code style="color:#4285f4;font-family:monospace;">skills/</code> 目錄下的判定包。開發者只需依照 JSON 配置規則新增目錄，無需重寫或重新編譯核心框架，即可為系統擴充全新的身體動作特徵判定技能。</p>
+                </div>
+                <div class="io-code-block">
+<span class="cm"># skills/lean/config.json</span>
+{
+  <span class="st">"name"</span>: <span class="ok">"lean_detection"</span>,
+  <span class="st">"version"</span>: <span class="ok">"1.0"</span>,
+  <span class="st">"landmarks"</span>: [<span class="hi">11</span>, <span class="hi">12</span>],
+  <span class="st">"threshold"</span>: <span class="hi">0.08</span>,
+  <span class="st">"hysteresis"</span>: <span class="hi">0.02</span>,
+  <span class="st">"event"</span>: <span class="ok">"LEAN_DETECTED"</span>
+}
+
+<span class="cm"># ActionEngine 自動偵測並載入 ↑</span>
+<span class="kw">❯</span> make run
+<span class="ok">✓</span> Loaded: lean_detection v1.0
+<span class="ok">✓</span> Loaded: squat_detection v2.1
+<span class="ok">✓</span> Loaded: chin_tuck v1.3
+                </div>
+            </div>
+
+            <div class="io-feature-card">
+                <div class="io-code-block" style="font-size:12px;">
+<span class="cm"># events/jump_event.py</span>
+<span class="kw">class</span> JumpEvent(BaseEvent):
+
+    <span class="kw">def</span> <span class="hi">evaluate</span>(self, state):
+        <span class="cm"># 高階組合：squat → stand</span>
+        squat = state[<span class="ok">"squat_detection"</span>]
+        stand = state[<span class="ok">"stand_detection"</span>]
+
+        <span class="st">if</span> self.prev == squat <span class="st">and</span> stand:
+            <span class="st">return</span> <span class="ok">Event("JUMP")</span>
+
+        self.prev = squat
+                </div>
+                <div>
+                    <div class="io-feature-tag">Event Decoupling</div>
+                    <h3>高階事件組合</h3>
+                    <p>底層偵測到的單一動作特徵，會被傳遞給 Event Engine 進行高階邏輯判定。這種底層「特徵」與高層「事件」解耦的設計，讓系統不再侷限於單一復健動作，可以任意組合多個特徵來觸發複雜的互動事件。</p>
+                </div>
+            </div>
+
+            <!-- Skills showcase -->
+            <div style="margin-top: 60px; margin-bottom: 80px;">
+                <h2 class="io-section-title">內建技能包一覽</h2>
+                <div class="io-skills-grid">
+                    <div class="io-skill-pill">
+                        <div class="io-skill-pill-label">chin_tuck</div>
+                        <div class="io-skill-pill-desc">CTAR 低頭判定，磁滯濾波</div>
+                    </div>
+                    <div class="io-skill-pill">
+                        <div class="io-skill-pill-label">lean_detection</div>
+                        <div class="io-skill-pill-desc">軀幹側傾偵測</div>
+                    </div>
+                    <div class="io-skill-pill">
+                        <div class="io-skill-pill-label">squat</div>
+                        <div class="io-skill-pill-desc">蹲站動作判定</div>
+                    </div>
+                    <div class="io-skill-pill">
+                        <div class="io-skill-pill-label">shoulder_shrug</div>
+                        <div class="io-skill-pill-desc">聳肩代償偵測</div>
+                    </div>
+                    <div class="io-skill-pill">
+                        <div class="io-skill-pill-label">arm_raise</div>
+                        <div class="io-skill-pill-desc">手臂上舉判定</div>
+                    </div>
+                    <div class="io-skill-pill">
+                        <div class="io-skill-pill-label">balance_shift</div>
+                        <div class="io-skill-pill-desc">重心轉移偵測</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Related -->
+            <div>
+                <h2 class="io-section-title">探索其他模組</h2>
+                <div class="io-card-grid">
+                    <a href="module_pose_estimation.html" class="io-card-link">
+                        <div class="io-card-link-header">
+                            <h3>多鏡頭 AI 姿態判定</h3>
+                            <img src="arrow-right.svg" width="28" height="28" aria-hidden="true" alt="">
+                        </div>
+                    </a>
+                    <a href="module_ctar.html" class="io-card-link">
+                        <div class="io-card-link-header">
+                            <h3>CTAR 吞嚥復健訓練</h3>
+                            <img src="arrow-right.svg" width="28" height="28" aria-hidden="true" alt="">
+                        </div>
+                    </a>
+                    <a href="module_games.html" class="io-card-link">
+                        <div class="io-card-link-header">
+                            <h3>體感互動遊戲</h3>
+                            <img src="arrow-right.svg" width="28" height="28" aria-hidden="true" alt="">
+                        </div>
+                    </a>
+                    <a href="iOS_Native_App.html" class="io-card-link">
+                        <div class="io-card-link-header">
+                            <h3>原生 iOS App</h3>
+                            <img src="arrow-right.svg" width="28" height="28" aria-hidden="true" alt="">
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <a href="index.html" class="brand"><span class="brand-name">RenUniversal</span></a>
+                <p class="footer-tagline">Open Platform for Clinical Edge AI</p>
+            </div>
+            <div class="footer-right">
+                <span class="footer-copy">MIT License · Copyright © 2026</span>
+                <div class="footer-links">
+                    <a href="index.html" class="footer-link">首頁</a>
+                    <a href="https://github.com/shihte/RenUniversal" class="footer-link" target="_blank">GitHub</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script src="script.js"></script>
+</body>
+</html>

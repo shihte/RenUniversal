@@ -29,7 +29,10 @@ struct ContentView: View {
                     .tabItem { Label(t("metrics"), systemImage: "chart.bar.xaxis") }
                 
                 TriggersView(state: sharedState)
-                    .tabItem { Label(t("triggers_manager"), systemImage: "slider.horizontal.3") }
+                    .tabItem {
+                        Image(systemName: "bolt.horizontal")
+                        Text("Triggers")
+                    }
                 
                 AppsView(state: sharedState)
                     .tabItem { Label(t("apps_launcher"), systemImage: "gamecontroller.fill") }
@@ -175,6 +178,8 @@ struct ContentView: View {
         .padding(.horizontal, 20)
     }
     
+    @State private var showingProfileManager = false
+
     // MARK: - Tab 2: Metrics
     private var metricsTab: some View {
         NavigationView {
@@ -255,6 +260,30 @@ struct ContentView: View {
                                 .padding()
                                 .background(Color(white: 0.15))
                                 .cornerRadius(12)
+                            }
+                            
+                            // Profile Import/Export Button
+                            Button(action: {
+                                showingProfileManager = true
+                            }) {
+                                HStack {
+                                    Image(systemName: "square.and.arrow.up.on.square")
+                                        .font(.title2)
+                                        .foregroundColor(.gray)
+                                        .frame(width: 40)
+                                    Text("Profile Import/Export")
+                                        .font(.subheadline)
+                                        .foregroundColor(.white)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .foregroundColor(.gray)
+                                }
+                                .padding()
+                                .background(Color(white: 0.15))
+                                .cornerRadius(12)
+                            }
+                            .sheet(isPresented: $showingProfileManager) {
+                                ProfileImportExportView(state: sharedState, isPresented: $showingProfileManager)
                             }
                         }
                         .padding(.horizontal)
