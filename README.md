@@ -32,6 +32,7 @@ make setup && make run      # Windows: renuniversal.bat setup && renuniversal.ba
 | 🧩 開發自己的動作判斷技能 | [動作判斷包開發](docs/skills-development.md) |
 | 📦 打包／安裝第三方外掛 | [外掛打包與安裝](docs/plugins.md) |
 | 🏛 理解系統架構與演算法 | [系統架構與演算法](docs/DETAILED_ARCHITECTURE.md) |
+| 🔬 深入核心實作與生命週期 | [進階技術細節 (Internals)](docs/internals/README.md) |
 | 🛡 了解隱私保護與資安 | [隱私保護與資安](docs/privacy-and-security.md) |
 
 ---
