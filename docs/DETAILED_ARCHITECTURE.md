@@ -139,3 +139,14 @@ RenUniversal 的可維護性建立在清晰的關注點分離上：
 | **Safe Evaluation** | `safe_eval.py` | 以 AST 白名單取代 `eval`，杜絕規則注入 |
 
 > 啟動與運行指令請見 [安裝與快速啟動](getting-started.md)；對外部署的安全注意事項見 [隱私保護與資安](privacy-and-security.md)。
+
+---
+
+## 6. 深入實作 (Internals)
+
+本文件為高層概覽；若要深入單一模組的內部流程與生命週期，請見 **[進階技術細節 (Internals)](internals/README.md)**：
+
+- [Agent Pipeline 實作與生命週期](internals/pipeline.md) — `run_cycle()` 流程圖、多鏡頭融合、效能特性
+- [狀態管理與並行模型](internals/state-and-concurrency.md) — 執行緒拓撲、三把鎖、來源驅逐
+- [規則求值內部流程](internals/rule-evaluation.md) — 轉換管線、幾何判定、AST 安全求值
+- [HTTP API 與請求生命週期](internals/http-api.md) — 認證守門、端點清單、輸入防護
