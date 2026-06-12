@@ -1,6 +1,8 @@
-# RenUniversal 次世代智慧姿態監控代理系統：精確技術規範與架構說明
+# 🏛 系統架構與演算法 (Architecture & Algorithms)
 
-本文件提供 RenUniversal 專案的系統拓撲、核心演算法以及動態規則引擎的完整技術導覽，適用於系統架駕者與研發人員。
+本文件提供 RenUniversal 專案的系統拓撲、核心演算法以及動態規則引擎的完整技術導覽，適用於系統架構者與研發人員。
+
+> 回到 [文件中心](README.md)
 
 ---
 
@@ -38,7 +40,7 @@ sequenceDiagram
         Pipeline->>Pipeline: MediaPipe 關鍵點估算 (Face & Pose)
         Pipeline->>Pipeline: 計算物理幾何特徵向量
         Pipeline->>Engine: 送入姿態評估集 (Evaluate features)
-        Engine->>Engine: 動態比對 rules.json 門檻規則
+        Engine->>Engine: 動態比對 config.json 門檻規則
         Engine->>State: 更新當前異常狀態 (Ratio, Latency, Flags)
         Pipeline->>State: 更新最新標註影格 (Annotated Frame)
     end
@@ -57,7 +59,7 @@ sequenceDiagram
 核心幾何計算由 `backend/core/pipeline.py` 完成。系統提取以下特徵向量以判定坐姿健康度：
 
 ### 2.1 低頭比例 (Nose-Chin Ratio)
-低頭判定基於 3D 面部網格在投影面上的長度變化。當頭部前傾時，鼻尖（Landmark 4）與下巴底端（Landmark 152）在影像上的垂直距離會縮短：
+低頭判定基於 3D 面部網格在投影面上的長度變化。當頭部前傾時，鼻尖（Landmark 1）與下巴底端（Landmark 152）在影像上的垂直距離會縮短：
 $$\Delta d_{\text{nose-chin}} = y_{\text{chin}} - y_{\text{nose}}$$
 $$\text{Ratio} = \frac{\Delta d_{\text{nose-chin}} - d_{\text{baseline}}}{d_{\text{baseline}}}$$
 *   **物理特性**：低頭時比率為負值（如 $-0.20$ 代表相較基準縮短了 20%）。
@@ -81,9 +83,11 @@ $$\text{Slope} = \frac{y_{S_R} - y_{S_L}}{x_{S_R} - x_{S_L}}$$
 ## 3. 動態規則引擎與視覺化幾何判定 (Action Engine & Geometric Rules)
 
 ### 3.1 插件式掃描與熱載入 (Python Backend)
-Python 伺服器端提供一個動態插件載入器，能夠在免重啟服務的前提下重載判定規則：
+Python 伺服器端提供一個動態插件載入器（[`action_engine.py`](../backend/core/action_engine.py)），能夠在免重啟服務的前提下重載判定規則：
 *   **掃描路徑**：`skills/` 目錄。
-*   **支援特徵字串**：`nose_chin_ratio`, `torso_sway`, `torso_lean`, `shoulder_slope`, `yaw_deviation`。
+*   **無程式碼路徑**：技能僅含 `config.json` 時，由 `GenericActionDetector` 以幾何點位語法（`f<n>,p<n>` + 運算子）判定。
+*   **進階程式碼路徑**：技能附帶 `logic.py` 時，可使用內建特徵字串 `nose_chin_ratio`, `torso_sway`, `torso_lean`, `shoulder_slope`, `yaw_deviation`（由 [`skill_template.py`](../backend/core/skill_template.py) 預計算）。
+*   完整規則語法見 [規則語法參考](rule-engine.md)。
 
 ### 3.2 視覺化拓樸選點與物理層級判定 (iOS Native)
 iOS 原生端拋棄了傳統的命名變數，採用全新的**「視覺化特徵對應 (Visual Topology Point Selection)」**與**「螢幕物理對齊」**：
@@ -91,10 +95,13 @@ iOS 原生端拋棄了傳統的命名變數，採用全新的**「視覺化特�
 *   **物理空間精準計算**：`RuleEngine.swift` 會將特徵的 Normalized 座標轉換為符合手機螢幕長寬比的物理像素幾何距離，避免因設備比例差異造成的橢圓誤差。
 
 ### 3.3 新世代幾何運算元 (Next-Gen Operators)
-無論是 iOS 或 Web 介面，新版引擎支援以下高級幾何運算，直接處理點與點之間的空間變化：
-*   **變長 / 變短 (`>`, `<`)**：計算任意兩點間距離是否大於或小於校準基準值的特定百分比或像素值。
-*   **產生改變 (`><`)**：動態位移檢測。只要兩點間的距離相較於校準時「變長或變短」超過閥值，即觸發。
-*   **超出範圍 (`~~`)**：**雙獨立球體越界檢測**。系統不再以線段長度判斷，而是記住兩點在校準時的「絕對空間座標」，並以該座標為中心畫出物理級別的正圓形防護網。只要任一端點飄出自己的防護圈，瞬間觸發。這完美解決了代償動作（例如頭沒歪，但整個身體平移）的防守死角。
+無論是 iOS 或 Web 介面，新版引擎支援以下高級幾何運算，直接處理點與點之間的空間變化（權威定義見 [規則語法參考](rule-engine.md)）：
+*   **縮短 (`><`)**：當前兩點距離較校準基準縮小達指定比例時觸發。
+*   **放大 (`<>`)**：當前兩點距離較校準基準放大達指定比例時觸發。
+*   **變化 (`>><<`)**：當前距離與基準的偏差絕對值達指定比例時觸發（不分變長或變短）。
+*   **越界 (`~~`)**：**雙獨立球體越界檢測**。系統不以線段長度判斷，而是記住兩點在校準時的「絕對空間座標」，並以該座標為中心畫出物理級別的正圓形防護網。只要任一端點飄出自己的防護圈即觸發，完美解決代償動作（例如頭沒歪、但整個身體平移）的防守死角。
+
+> 子條件之間可用 `AND` / `OR` / `NOT`（或 `!`）與括號組合，最終由 AST 白名單布林求值器安全計算，詳見 [隱私保護與資安](privacy-and-security.md)。
 
 ---
 
@@ -103,9 +110,11 @@ iOS 原生端拋棄了傳統的命名變數，採用全新的**「視覺化特�
 ### 4.1 Python Backend 核心組件
 | 原始碼檔案 | 責任範疇 | 使用之設計模式 |
 | :--- | :--- | :--- |
-| `backend/core/pipeline.py` | 核心流水線驅動、影像特徵提取 | **Pipeline Pattern** |
+| `backend/core/pipeline.py` | 核心流水線驅動、影像特徵提取、臉部隱私打碼 | **Pipeline Pattern** |
 | `backend/core/action_engine.py`| 動態發現與載入 `/skills/` 動作包 | **Plugin Pattern** |
-| `backend/core/state.py` | 線程安全的狀態同步、持久化讀寫 | **State Pattern** |
+| `backend/core/event_engine.py` | 將技能狀態以邏輯規則組合成複合事件 | **Interpreter Pattern** |
+| `backend/core/state.py` | 線程安全的狀態同步、網路來源驅逐、持久化讀寫 | **State Pattern** |
+| `backend/core/safe_eval.py` | AST 白名單布林求值，取代不安全的 `eval` | **Guard / Whitelist** |
 
 ### 4.2 iOS Native 核心組件 (Swift)
 | 原始碼檔案 | 責任範疇 | 使用之設計模式 |
@@ -117,11 +126,16 @@ iOS 原生端拋棄了傳統的命名變數，採用全新的**「視覺化特�
 
 ---
 
-## 5. 開發者偵錯與驗證 (Verification Guide)
+## 5. 設計模式總覽 (Design Patterns Recap)
 
-### 5.1 測試套件執行
-我們提供架構合規性測試：
-```bash
-make test
-```
-該指令會觸發 `backend/test_architecture.py`，驗證當前核心 Skill 組件是否正確實作 Typed I/O 與 Pydantic 結構定義。
+RenUniversal 的可維護性建立在清晰的關注點分離上：
+
+| 模式 | 體現位置 | 解決的問題 |
+| :--- | :--- | :--- |
+| **Pipeline** | `pipeline.py` | 將「擷取 → 特徵提取 → 判定 → 事件 → 可視化」串成單向資料流 |
+| **Plugin / Reflection** | `action_engine.py` | 免重編譯，運行時動態載入 `skills/` 判斷包 |
+| **State Isolation** | `state.py` | 以鎖保護的共享狀態，安全跨線程同步並持久化 |
+| **Strongly Typed I/O** | `schema.py` | 以 Pydantic 模型約束狀態與請求結構 |
+| **Safe Evaluation** | `safe_eval.py` | 以 AST 白名單取代 `eval`，杜絕規則注入 |
+
+> 啟動與運行指令請見 [安裝與快速啟動](getting-started.md)；對外部署的安全注意事項見 [隱私保護與資安](privacy-and-security.md)。
