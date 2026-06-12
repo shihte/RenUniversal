@@ -12,6 +12,8 @@ import re
 import math
 from typing import Tuple, Dict, Any, Optional
 
+from .safe_eval import safe_eval_bool
+
 
 class GenericActionDetector:
     """
@@ -253,8 +255,7 @@ class GenericActionDetector:
         py_syntax = re.sub(r'[a-zA-Z0-9_]+', replacer, py_syntax)
         
         try:
-            result = eval(py_syntax, {"__builtins__": {}}, {})
-            final_trigger = bool(result)
+            final_trigger = safe_eval_bool(py_syntax)
         except Exception as e:
             info["error"] = f"Eval failed for {py_syntax}: {e}"
             final_trigger = False
