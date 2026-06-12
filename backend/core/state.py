@@ -149,9 +149,31 @@ class SharedState:
         with self.frame_lock:
             return self.frame.copy() if self.frame is not None else None
 
+    # 網路來源條目存活秒數與數量上限，避免任意 source_id 造成記憶體無限成長 (DoS)
+    NETWORK_FRAME_TTL = 10.0
+    MAX_NETWORK_SOURCES = 16
+
     def update_network_frame(self, frame: np.ndarray, source_id: str = "phone") -> None:
         with self.network_frame_lock:
-            self.network_frames[source_id] = (frame.copy(), time.time())
+            now = time.time()
+            # 1. 驅逐超過 TTL 的過期來源
+            stale = [src for src, (_, ts) in self.network_frames.items()
+                     if (now - ts) >= self.NETWORK_FRAME_TTL]
+            for src in stale:
+                del self.network_frames[src]
+
+            # 2. 若來源數量超過上限（且為新來源），淘汰最舊的一筆
+            if (source_id not in self.network_frames
+                    and len(self.network_frames) >= self.MAX_NETWORK_SOURCES):
+                oldest_src = min(self.network_frames,
+                                 key=lambda s: self.network_frames[s][1])
+                del self.network_frames[oldest_src]
+                logger.warning(
+                    f"Network source limit ({self.MAX_NETWORK_SOURCES}) reached; "
+                    f"evicted oldest source '{oldest_src}'"
+                )
+
+            self.network_frames[source_id] = (frame.copy(), now)
 
     def get_network_frame(self, source_id: str = "phone") -> Tuple[Optional[np.ndarray], float]:
         with self.network_frame_lock:
