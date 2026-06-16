@@ -1,5 +1,5 @@
 # ============================================================
-# CTAR Project Makefile — Dynamic Self-Healing Build System
+# RenUniversal Project Makefile — Dynamic Self-Healing Build System
 # ============================================================
 .PHONY: help check-env setup run start stop restart status test clean doctor
 
@@ -25,7 +25,10 @@ PYTHON_CANDIDATES := \
 	/usr/local/opt/python@3.9/bin/python3     \
 	python3.12 python3.11 python3.10 python3.9 python3 python
 
-COMPATIBLE_PYTHON := $(shell \
+ifdef PYTHON
+  COMPATIBLE_PYTHON := $(PYTHON)
+else
+  COMPATIBLE_PYTHON := $(shell \
 	for py in $(PYTHON_CANDIDATES); do \
 		if command -v $$py >/dev/null 2>&1; then \
 			VER=$$($$py -c 'import sys; v=sys.version_info; print(f"{v.major}.{v.minor}")' 2>/dev/null); \
@@ -36,6 +39,7 @@ COMPATIBLE_PYTHON := $(shell \
 			fi; \
 		fi; \
 	done)
+endif
 
 # ============================================================
 # HELP
@@ -43,7 +47,7 @@ COMPATIBLE_PYTHON := $(shell \
 help:
 	@echo ""
 	@echo "  ╔══════════════════════════════════════╗"
-	@echo "  ║      CTAR Agent — 指令說明           ║"
+	@echo "  ║      RenUniversal Agent — 指令說明           ║"
 	@echo "  ╚══════════════════════════════════════╝"
 	@echo ""
 	@echo "  make doctor   — 診斷系統環境並嘗試自動修復"
@@ -55,13 +59,15 @@ help:
 	@echo "  make run      — 前景執行（可見日誌，Ctrl+C 停止）"
 	@echo "  make test     — 執行架構驗證測試"
 	@echo "  make clean    — 清除快取、日誌與 PID 檔案"
+	@echo "  make install PATH=<dir> — 安裝 .renuniversal 外掛套件"
+	@echo "  make build --name <N> --skills <S> --events <E> --apps <A> — 打包自訂外掛"
 	@echo ""
 
 # ============================================================
 # DOCTOR — 環境診斷與自動修補
 # ============================================================
 doctor:
-	@echo "=== CTAR 環境診斷 (Doctor) ==="
+	@echo "=== RenUniversal 環境診斷 (Doctor) ==="
 	@echo ""
 	@echo "▶ 1. 偵測作業系統..."
 	@OS=$$(uname -s); \
@@ -192,28 +198,38 @@ _create_venv:
 
 _install_deps:
 	@echo "→ 升級 pip..."
-	@$(VENV_PYTHON) -m pip install --upgrade pip --quiet || \
-		$(VENV_PYTHON) -m pip install --upgrade pip --no-cache-dir || \
-		{ echo "   ✗ pip 升級失敗，繼續嘗試安裝依賴"; true; }
-	@echo "→ 安裝套件依賴..."
-	@# 先嘗試標準安裝
-	@if ! $(VENV_PIP) install -r $(REQUIREMENTS) --quiet 2>&1; then \
-		echo "   ⚠ 標準安裝失敗，嘗試無快取重試..."; \
-		if ! $(VENV_PIP) install -r $(REQUIREMENTS) --no-cache-dir 2>&1; then \
-			echo "   ⚠ 仍失敗，嘗試逐一安裝..."; \
-			while IFS= read -r pkg || [ -n "$$pkg" ]; do \
-				[ -z "$$pkg" ] && continue; \
-				[[ "$$pkg" =~ ^# ]] && continue; \
-				$(VENV_PIP) install "$$pkg" --quiet || echo "   ⚠ 無法安裝: $$pkg"; \
-			done < "$(REQUIREMENTS)"; \
-		fi; \
-	fi
+	@$(VENV_PYTHON) -m pip install --upgrade pip --quiet || true
+	@echo "→ 開始安裝核心套件依賴..."
+	@while IFS= read -r pkg || [ -n "$$pkg" ]; do \
+		[ -z "$$pkg" ] && continue; \
+		[[ "$$pkg" =~ ^# ]] && continue; \
+		echo "   ⏳ 正在安裝: $$pkg ..."; \
+		$(VENV_PIP) install "$$pkg" --quiet || echo "   ⚠ 安裝失敗: $$pkg"; \
+	done < "$(REQUIREMENTS)"
+	@echo "   ✓ 所有套件檢查與安裝完畢！"
 
 # ============================================================
 # SETUP
 # ============================================================
+
+_download_models:
+	@echo "▶ 4. 下載 MediaPipe AI 模型..."
+	@mkdir -p backend/models
+	@if [ ! -f "backend/models/face_landmarker.task" ]; then \
+		echo "   → 正在下載 Face Landmarker 模型..."; \
+		curl -sSL "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task" -o backend/models/face_landmarker.task; \
+	else \
+		echo "   ✓ Face Landmarker 模型已存在"; \
+	fi
+	@if [ ! -f "backend/models/pose_landmarker_lite.task" ]; then \
+		echo "   → 正在下載 Pose Landmarker 模型..."; \
+		curl -sSL "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task" -o backend/models/pose_landmarker_lite.task; \
+	else \
+		echo "   ✓ Pose Landmarker 模型已存在"; \
+	fi
+
 setup:
-	@echo "=== 初始化 CTAR Agent 環境 ==="
+	@echo "=== 初始化 RenUniversal Agent 環境 ==="
 	@if [ -z "$(COMPATIBLE_PYTHON)" ]; then \
 		echo "✗ 找不到相容的 Python (3.9–3.12)，嘗試自動修復..."; \
 		$(MAKE) _install_python; \
@@ -221,6 +237,7 @@ setup:
 	@echo "✓ 使用 Python: $(COMPATIBLE_PYTHON) ($$($(COMPATIBLE_PYTHON) --version))"
 	@$(MAKE) _create_venv
 	@$(MAKE) _install_deps
+	@$(MAKE) _download_models
 	@mkdir -p skills events
 	@mkdir -p backend/services
 	@echo ""
@@ -233,7 +250,7 @@ run:
 	@if [ ! -f "$(VENV_PYTHON)" ]; then \
 		echo "✗ 找不到虛擬環境。執行 'make setup' 初始化。"; exit 1; \
 	fi
-	@echo "=== 前景啟動 CTAR（Ctrl+C 停止）==="
+	@echo "=== 前景啟動 RenUniversal（Ctrl+C 停止）==="
 	@PYTHONPATH="$(PROJECT_ROOT):$$PYTHONPATH" $(VENV_PYTHON) "$(SERVER_SCRIPT)"
 
 # ============================================================
@@ -263,7 +280,7 @@ start:
 		for p in $$STALE; do kill -9 $$p 2>/dev/null || true; done; \
 		sleep 3; \
 	fi
-	@echo "=== 啟動 CTAR Agent 伺服器 ==="
+	@echo "=== 啟動 RenUniversal Agent 伺服器 ==="
 	@PYTHONPATH="$(PROJECT_ROOT):$$PYTHONPATH" \
 		nohup $(VENV_PYTHON) "$(SERVER_SCRIPT)" >"$(LOG_FILE)" 2>&1 & \
 		echo $$! >"$(PID_FILE)"
@@ -285,7 +302,7 @@ start:
 # STOP — 三層式確保徹底停止
 # ============================================================
 stop:
-	@echo "=== 停止 CTAR Agent 伺服器 ==="
+	@echo "=== 停止 RenUniversal Agent 伺服器 ==="
 	@KILLED=0; \
 	\
 	# 層 1: PID 檔案
@@ -349,7 +366,7 @@ restart:
 # STATUS
 # ============================================================
 status:
-	@echo "=== CTAR Agent 狀態 ==="
+	@echo "=== RenUniversal Agent 狀態 ==="
 	@if [ -f "$(PID_FILE)" ]; then \
 		PID=$$(cat "$(PID_FILE)" 2>/dev/null || true); \
 		if [ -n "$$PID" ] && kill -0 "$$PID" 2>/dev/null; then \
@@ -391,3 +408,27 @@ clean:
 	@rm -f preferences.json
 	@rm -f backend/core/.status.tmp
 	@echo "✓ 清除完成"
+
+# ============================================================
+# INSTALL PLUGIN
+# ============================================================
+install:
+	@if [ -z "$(PATH)" ]; then \
+		echo "✗ 請提供外掛路徑，例如：make install PATH=./my_plugin"; exit 1; \
+	fi
+	@if [ ! -f "$(VENV_PYTHON)" ]; then \
+		echo "✗ 找不到虛擬環境。執行 'make setup'。"; exit 1; \
+	fi
+	@$(VENV_PYTHON) tools/installer.py "$(PATH)"
+
+# ============================================================
+# BUILD PLUGIN
+# ============================================================
+build:
+	@if [ -z "$(NAME)" ]; then \
+		echo "✗ 請提供外掛名稱，例如：make build NAME=MyPlugin SKILLS=skills/lean"; exit 1; \
+	fi
+	@if [ ! -f "$(VENV_PYTHON)" ]; then \
+		echo "✗ 找不到虛擬環境。執行 'make setup'。"; exit 1; \
+	fi
+	@$(VENV_PYTHON) tools/builder.py --name "$(NAME)" --skills $(SKILLS) --events $(EVENTS) --apps $(APPS)

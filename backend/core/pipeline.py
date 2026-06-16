@@ -5,6 +5,8 @@
 
 import cv2
 import mediapipe as mp
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
 import time
 import numpy as np
 import math
@@ -45,23 +47,48 @@ class AgentPipeline:
         self.wizard = CalibrationWizardSkill()
         
         # 2. MediaPipe 模型設定
-        self.mp_face_mesh = mp.solutions.face_mesh
-        self.face_mesh = self.mp_face_mesh.FaceMesh(
-            static_image_mode=False,
-            max_num_faces=1,
-            refine_landmarks=True,
-            min_detection_confidence=0.5,
+        # MediaPipe Tasks API Setup
+        import os
+        base_dir = os.path.dirname(os.path.dirname(__file__))
+        
+        # Face Landmarker
+        face_model_path = os.path.join(base_dir, 'models', 'face_landmarker.task')
+        face_base_options = python.BaseOptions(model_asset_path=face_model_path)
+        face_options = vision.FaceLandmarkerOptions(
+            base_options=face_base_options,
+            output_face_blendshapes=True,
+            output_facial_transformation_matrixes=True,
+            num_faces=1,
+            min_face_detection_confidence=0.5,
+            min_face_presence_confidence=0.5,
             min_tracking_confidence=0.5
         )
-        self.mp_pose = mp.solutions.pose
-        self.pose = self.mp_pose.Pose(
-            static_image_mode=False,
-            model_complexity=1,
-            min_detection_confidence=0.5,
+        self.face_landmarker = vision.FaceLandmarker.create_from_options(face_options)
+        
+        # Pose Landmarker
+        pose_model_path = os.path.join(base_dir, 'models', 'pose_landmarker_lite.task')
+        pose_base_options = python.BaseOptions(model_asset_path=pose_model_path)
+        pose_options = vision.PoseLandmarkerOptions(
+            base_options=pose_base_options,
+            output_segmentation_masks=False,
+            min_pose_detection_confidence=0.5,
+            min_pose_presence_confidence=0.5,
             min_tracking_confidence=0.5
         )
-        self.mp_drawing = mp.solutions.drawing_utils
-        self.mp_drawing_styles = mp.solutions.drawing_styles
+        self.pose_landmarker = vision.PoseLandmarker.create_from_options(pose_options)
+        
+        # Backward compatibility for drawing utils
+        try:
+            self.mp_drawing = mp.solutions.drawing_utils
+            self.mp_drawing_styles = mp.solutions.drawing_styles
+            self.mp_face_mesh = mp.solutions.face_mesh
+            self.mp_pose = mp.solutions.pose
+        except AttributeError:
+            self.mp_drawing = None
+            self.mp_drawing_styles = None
+            self.mp_face_mesh = None
+            self.mp_pose = None
+
         
         self.baseline_eye_distance = 0.0
         self.baseline_nose_chin_distance = 0.0
@@ -183,10 +210,10 @@ class AgentPipeline:
         NOSE_INDEX, CHIN_INDEX = 1, 152
         LEFT_EYE_INDEX, RIGHT_EYE_INDEX = 33, 263
         
-        nose = landmarks.landmark[NOSE_INDEX]
-        chin = landmarks.landmark[CHIN_INDEX]
-        left_eye = landmarks.landmark[LEFT_EYE_INDEX]
-        right_eye = landmarks.landmark[RIGHT_EYE_INDEX]
+        nose = landmarks[NOSE_INDEX]
+        chin = landmarks[CHIN_INDEX]
+        left_eye = landmarks[LEFT_EYE_INDEX]
+        right_eye = landmarks[RIGHT_EYE_INDEX]
         
         # 轉換為像素距離
         current_eye_distance = abs(right_eye.x * width - left_eye.x * width)
@@ -201,8 +228,8 @@ class AgentPipeline:
         """
         從 Pose 地標中提取肩膀寬度、中點 X 與 Y 座標（像素）。
         """
-        left_shoulder = pose_landmarks.landmark[11]
-        right_shoulder = pose_landmarks.landmark[12]
+        left_shoulder = pose_landmarks[11]
+        right_shoulder = pose_landmarks[12]
         
         ls_x, ls_y = left_shoulder.x * width, left_shoulder.y * height
         rs_x, rs_y = right_shoulder.x * width, right_shoulder.y * height
@@ -215,36 +242,36 @@ class AgentPipeline:
 
     def _annotate_frame(self, frame: np.ndarray, landmarks: Any, width: int, height: int, status: Any, pose_landmarks: Any = None, draw_text: bool = True) -> None:
         """
-        在畫面上繪製 CTAR 核心追蹤點（雙眼、鼻、下巴、雙肩），以及額外啟用的 Skills 追蹤點。
+        在畫面上繪製 RenUniversal 核心追蹤點（雙眼、鼻、下巴、雙肩），以及額外啟用的 Skills 追蹤點。
         """
         NOSE_INDEX, CHIN_INDEX = 1, 152
         LEFT_EYE_INDEX, RIGHT_EYE_INDEX = 33, 263
         
-        # 1. 繪製 CTAR 基礎面部追蹤點 (雙眼、鼻子、下巴)
+        # 1. 繪製 RenUniversal 基礎面部追蹤點 (雙眼、鼻子、下巴)
         if landmarks is not None:
             points = [
-                (landmarks.landmark[NOSE_INDEX], (255, 100, 0), "Nose"),      # 藍色 (BGR)
-                (landmarks.landmark[CHIN_INDEX], (0, 0, 255), "Chin"),        # 紅色
-                (landmarks.landmark[LEFT_EYE_INDEX], (0, 255, 0), "L-Eye"),    # 綠色
-                (landmarks.landmark[RIGHT_EYE_INDEX], (0, 255, 0), "R-Eye")    # 綠色
+                (landmarks[NOSE_INDEX], (255, 100, 0), "Nose"),      # 藍色 (BGR)
+                (landmarks[CHIN_INDEX], (0, 0, 255), "Chin"),        # 紅色
+                (landmarks[LEFT_EYE_INDEX], (0, 255, 0), "L-Eye"),    # 綠色
+                (landmarks[RIGHT_EYE_INDEX], (0, 255, 0), "R-Eye")    # 綠色
             ]
             for lm, color, label in points:
                 cx, cy = int(lm.x * width), int(lm.y * height)
                 cv2.circle(frame, (cx, cy), 5, color, -1)
                 cv2.circle(frame, (cx, cy), 7, (255, 255, 255), 1)
 
-            # 繪製鼻尖到下巴的連線 (CTAR 核心：下巴內收參考線)
-            nose = landmarks.landmark[NOSE_INDEX]
-            chin = landmarks.landmark[CHIN_INDEX]
+            # 繪製鼻尖到下巴的連線 (RenUniversal 核心：下巴內收參考線)
+            nose = landmarks[NOSE_INDEX]
+            chin = landmarks[CHIN_INDEX]
             cv2.line(frame, 
                      (int(nose.x * width), int(nose.y * height)), 
                      (int(chin.x * width), int(chin.y * height)), 
                      (255, 255, 255), 1, cv2.LINE_AA)
 
-        # 2. 繪製 CTAR 基礎身體追蹤點 (雙肩)
+        # 2. 繪製 RenUniversal 基礎身體追蹤點 (雙肩)
         if pose_landmarks:
-            left_shoulder = pose_landmarks.landmark[11]
-            right_shoulder = pose_landmarks.landmark[12]
+            left_shoulder = pose_landmarks[11]
+            right_shoulder = pose_landmarks[12]
             
             ls_x, ls_y = int(left_shoulder.x * width), int(left_shoulder.y * height)
             rs_x, rs_y = int(right_shoulder.x * width), int(right_shoulder.y * height)
@@ -284,11 +311,19 @@ class AgentPipeline:
                     idx_str = str(v)
                 
                 idx = int(idx_str)
-                if is_pose and pose_landmarks and hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
-                    lm = pose_landmarks.landmark[idx]
-                elif not is_pose and landmarks and hasattr(landmarks, 'landmark') and idx < len(landmarks.landmark):
-                    lm = landmarks.landmark[idx]
-                else:
+                lm = None
+                if is_pose and pose_landmarks:
+                    if isinstance(pose_landmarks, list) and idx < len(pose_landmarks):
+                        lm = pose_landmarks[idx]
+                    elif hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
+                        lm = pose_landmarks.landmark[idx]
+                elif not is_pose and landmarks:
+                    if isinstance(landmarks, list) and idx < len(landmarks):
+                        lm = landmarks[idx]
+                    elif hasattr(landmarks, 'landmark') and idx < len(landmarks.landmark):
+                        lm = landmarks.landmark[idx]
+                
+                if lm is None:
                     continue
                     
                 cx, cy = int(lm.x * width), int(lm.y * height)
@@ -312,16 +347,23 @@ class AgentPipeline:
                     pt_id = str(pt_id).strip().lower()
                     if pt_id.startswith('p'):
                         idx = int(pt_id[1:])
-                        if pose_landmarks and hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
+                        if pose_landmarks and isinstance(pose_landmarks, list) and idx < len(pose_landmarks):
+                            return pose_landmarks[idx]
+                        elif pose_landmarks and hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
                             return pose_landmarks.landmark[idx]
                     elif pt_id.startswith('f'):
                         idx = int(pt_id[1:])
-                        if landmarks and hasattr(landmarks, 'landmark') and idx < len(landmarks.landmark):
+                        if landmarks and isinstance(landmarks, list) and idx < len(landmarks):
+                            return landmarks[idx]
+                        elif landmarks and hasattr(landmarks, 'landmark') and idx < len(landmarks.landmark):
                             return landmarks.landmark[idx]
                     else:
                         idx = int(pt_id)
-                        if idx <= 32 and pose_landmarks and hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
-                            return pose_landmarks.landmark[idx]
+                        if idx <= 32 and pose_landmarks:
+                            if isinstance(pose_landmarks, list) and idx < len(pose_landmarks):
+                                return pose_landmarks[idx]
+                            elif hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
+                                return pose_landmarks.landmark[idx]
                     return None
 
                 lm1 = get_pt(p1_id)
@@ -419,28 +461,32 @@ class AgentPipeline:
             # 暫停模式：直接回傳拼接後的畫面，不跑 AI
             return self._stitch_frames(frames)
 
-        # 決定誰跑 AI
-        # 如果只有 1 支鏡頭，它跑 Face + Pose
-        # 如果有 2 支以上鏡頭，第 1 支跑 Face，第 2 支跑 Pose
-        face_frame_tuple = frames[0]
-        pose_frame_tuple = frames[1] if len(frames) >= 2 else frames[0]
-        
+        # 2. 推理與分析：強制搜尋所有鏡頭，尋找臉部與身體
         inference_start = time.perf_counter()
         
-        # 2. 推理與分析
-        face_rgb = cv2.cvtColor(face_frame_tuple[1], cv2.COLOR_BGR2RGB)
-        inference_results = self.face_mesh.process(face_rgb)
+        frames_rgb = [(src, frame, cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)) for src, frame in frames]
         
-        if face_frame_tuple[0] != pose_frame_tuple[0]:
-            pose_rgb = cv2.cvtColor(pose_frame_tuple[1], cv2.COLOR_BGR2RGB)
-            pose_results = self.pose.process(pose_rgb)
-        else:
-            pose_results = self.pose.process(face_rgb)
+        landmarks = None
+        face_frame_tuple = frames[0]
+        for src, frame, rgb in frames_rgb:
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+            res = self.face_landmarker.detect(mp_image)
+            if res and res.face_landmarks and len(res.face_landmarks) > 0:
+                landmarks = res.face_landmarks[0]
+                face_frame_tuple = (src, frame)
+                break
+                
+        pose_landmarks = None
+        pose_frame_tuple = frames[0]
+        for src, frame, rgb in frames_rgb:
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+            res = self.pose_landmarker.detect(mp_image)
+            if res and res.pose_landmarks and len(res.pose_landmarks) > 0:
+                pose_landmarks = res.pose_landmarks[0]
+                pose_frame_tuple = (src, frame)
+                break
             
         inference_time_ms = int((time.perf_counter() - inference_start) * 1000)
-        
-        landmarks = inference_results.multi_face_landmarks[0] if (inference_results and inference_results.multi_face_landmarks) else None
-        pose_landmarks = pose_results.pose_landmarks if (pose_results and pose_results.pose_landmarks) else None
         
         # 進行動作引擎分析 (綁定到 face_frame_tuple 畫面上，因為特徵大多在臉部)
         h_f, w_f, _ = face_frame_tuple[1].shape
@@ -449,16 +495,28 @@ class AgentPipeline:
         
         if landmarks:
             eye_dist, nc_dist = self._extract_physical_features(landmarks, w_f, h_f)
-            
+            sh_width = 0.0
+            sh_mid_x = 0.0
+            sh_mid_y = 0.0
+            if pose_landmarks:
+                sh_width, sh_mid_x, sh_mid_y = self._extract_shoulder_features(pose_landmarks, w_f, h_f)
+                
             if status.calibrating:
                 # 校準中
-                sh_width = 0.0
-                sh_mid_x = 0.0
-                sh_mid_y = 0.0
+                
+                # Check for old API vs Tasks API
+                if isinstance(landmarks, list):
+                    face_dict = [{"x": l.x, "y": l.y} for l in landmarks]
+                else:
+                    face_dict = [{"x": l.x, "y": l.y} for l in landmarks.landmark]
+                    
                 if pose_landmarks:
-                    sh_width, sh_mid_x, sh_mid_y = self._extract_shoulder_features(pose_landmarks, w_f, h_f)
-                face_dict = [{"x": l.x, "y": l.y} for l in landmarks.landmark]
-                pose_dict = [{"x": l.x, "y": l.y} for l in pose_landmarks.landmark] if pose_landmarks else None
+                    if isinstance(pose_landmarks, list):
+                        pose_dict = [{"x": l.x, "y": l.y} for l in pose_landmarks]
+                    else:
+                        pose_dict = [{"x": l.x, "y": l.y} for l in pose_landmarks.landmark]
+                else:
+                    pose_dict = None
                 wizard_status = self.wizard.process(
                     eye_dist, nc_dist,
                     current_shoulder_width=sh_width,
@@ -486,14 +544,14 @@ class AgentPipeline:
                         "username": "User"
                     })
                 
-                # 繪製人臉網格
-                self.mp_drawing.draw_landmarks(
-                    image=face_frame_tuple[1],
-                    landmark_list=landmarks,
-                    connections=self.mp_face_mesh.FACEMESH_TESSELATION,
-                    landmark_drawing_spec=None,
-                    connection_drawing_spec=self.mp_drawing_styles.get_default_face_mesh_tesselation_style()
-                )
+                if landmarks and self.mp_drawing and self.mp_drawing_styles and self.mp_face_mesh:
+                    self.mp_drawing.draw_landmarks(
+                        image=face_frame_tuple[1],
+                        landmark_list=landmarks,
+                        connections=self.mp_face_mesh.FACEMESH_TESSELATION,
+                        landmark_drawing_spec=None,
+                        connection_drawing_spec=self.mp_drawing_styles.get_default_face_mesh_tesselation_style()
+                    )
             else:
                 # 動作分析 — 使用正確的 evaluate_all() 介面
                 baselines_for_eval = {
@@ -504,6 +562,8 @@ class AgentPipeline:
                     "shoulder_midpoint_y": self.baseline_shoulder_midpoint_y,
                     "face_landmarks": self.baseline_face_landmarks,
                     "pose_landmarks": self.baseline_pose_landmarks,
+                    "_current_eye_distance": eye_dist,
+                    "_current_shoulder_width": sh_width,
                 }
                 state_history = {name: val for name, val in status.active_skills.items()}
 
@@ -538,16 +598,25 @@ class AgentPipeline:
                             pt_id = str(pt_id).strip().lower()
                             if pt_id.startswith('p'):
                                 idx = int(pt_id[1:])
-                                if pose_landmarks and hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
-                                    return pose_landmarks.landmark[idx]
+                                if pose_landmarks:
+                                    if isinstance(pose_landmarks, list) and idx < len(pose_landmarks):
+                                        return pose_landmarks[idx]
+                                    elif hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
+                                        return pose_landmarks.landmark[idx]
                             elif pt_id.startswith('f'):
                                 idx = int(pt_id[1:])
-                                if landmarks and hasattr(landmarks, 'landmark') and idx < len(landmarks.landmark):
-                                    return landmarks.landmark[idx]
+                                if landmarks:
+                                    if isinstance(landmarks, list) and idx < len(landmarks):
+                                        return landmarks[idx]
+                                    elif hasattr(landmarks, 'landmark') and idx < len(landmarks.landmark):
+                                        return landmarks.landmark[idx]
                             else:
                                 idx = int(pt_id)
-                                if idx <= 32 and pose_landmarks and hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
-                                    return pose_landmarks.landmark[idx]
+                                if idx <= 32 and pose_landmarks:
+                                    if isinstance(pose_landmarks, list) and idx < len(pose_landmarks):
+                                        return pose_landmarks[idx]
+                                    elif hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
+                                        return pose_landmarks.landmark[idx]
                             return None
 
                         lm1 = get_pt(p1_id)
@@ -578,6 +647,46 @@ class AgentPipeline:
                     except Exception as e:
                         pass
 
+        # 4.5 繪製虛擬膠囊 (Virtual Capsules for debugging)
+        for name, detector in self.action_engine.detectors.items():
+            if hasattr(detector, 'capsules_to_draw'):
+                for cap in detector.capsules_to_draw:
+                    b1 = cap["b1"]
+                    b2 = cap["b2"]
+                    if not b1 or not b2:
+                        continue
+                    r = int(cap["radius"])
+                    triggered = cap["triggered"]
+                    pt1_id = cap["pt1_id"]
+                    
+                    def is_pose_id(pid):
+                        pid = str(pid).strip().lower()
+                        return pid.startswith('p') or (pid.isdigit() and int(pid) <= 32)
+                        
+                    target_frame = pose_frame_tuple[1] if (is_pose_id(pt1_id) and face_frame_tuple[0] != pose_frame_tuple[0]) else face_frame_tuple[1]
+                    
+                    # 黃色表示膠囊區，紅色表示出界觸發
+                    color = (0, 0, 255) if triggered else (0, 255, 255)
+                    
+                    cx1, cy1 = int(b1[0]), int(b1[1])
+                    cx2, cy2 = int(b2[0]), int(b2[1])
+                    
+                    cv2.circle(target_frame, (cx1, cy1), r, color, 1, cv2.LINE_AA)
+                    cv2.circle(target_frame, (cx2, cy2), r, color, 1, cv2.LINE_AA)
+                    
+                    vx = cx2 - cx1
+                    vy = cy2 - cy1
+                    length = math.sqrt(vx*vx + vy*vy)
+                    if length > 0:
+                        nx = -vy / length
+                        ny = vx / length
+                        ox = int(nx * r)
+                        oy = int(ny * r)
+                        
+                        cv2.line(target_frame, (cx1 + ox, cy1 + oy), (cx2 + ox, cy2 + oy), color, 1, cv2.LINE_AA)
+                        cv2.line(target_frame, (cx1 - ox, cy1 - oy), (cx2 - ox, cy2 - oy), color, 1, cv2.LINE_AA)
+
+
 
         # 3. 事件引擎評估 (Event Engine)
         _baselines = {
@@ -599,12 +708,28 @@ class AgentPipeline:
         )
         
         # 4. 同步狀態與觸發統計 (Metrics & State Sync)
-        # (在此略過統計觸發次數的細節以簡化)
+        for name, triggered in active_skills_state.items():
+            if name not in self.trigger_counts:
+                self.trigger_counts[name] = 0
+            prev = self.previous_states.get(name, False)
+            if triggered and not prev:
+                self.trigger_counts[name] += 1
+            self.previous_states[name] = triggered
+            
+        for name, triggered in active_events_state.items():
+            if name not in self.trigger_counts:
+                self.trigger_counts[name] = 0
+            prev = self.previous_states.get(name, False)
+            if triggered and not prev:
+                self.trigger_counts[name] += 1
+            self.previous_states[name] = triggered
+
         self.state.update_status(
             latency_ms=inference_time_ms,
             active_skills=active_skills_state,
             active_events=active_events_state,
-            metrics=metrics_state
+            metrics=metrics_state,
+            trigger_counts=self.trigger_counts
         )
 
         # 5. 多畫面合併 (Stitching)
