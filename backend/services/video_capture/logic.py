@@ -28,7 +28,7 @@ class VideoCaptureSkill:
         """
         self.config = config
         import platform
-        self.backend = cv2.CAP_AVFOUNDATION if platform.system() == "Darwin" else cv2.CAP_ANY
+        self.backend = cv2.CAP_AVFOUNDATION if platform.system() == 'Darwin' else cv2.CAP_ANY
         self.stream = cv2.VideoCapture(config.src, self.backend)
         self._configure_stream()
         
@@ -67,8 +67,8 @@ class VideoCaptureSkill:
             VideoCaptureSkill: 自身實例以支援鏈式調用。
         """
         logger.info(f"Starting VideoCaptureSkill on source {self.config.src}")
-        t = threading.Thread(target=self._capture_worker, args=(), daemon=True)
-        t.start()
+        self.thread = threading.Thread(target=self._capture_worker, args=(), daemon=True)
+        self.thread.start()
         return self
 
     def _capture_worker(self) -> None:
@@ -116,8 +116,14 @@ class VideoCaptureSkill:
             )
 
     def stop(self) -> None:
-        """停止捕捉並釋放硬體資源。"""
+        """停止捕捉並同步釋放硬體資源。"""
         logger.info(f"Stopping VideoCaptureSkill on source {self.config.src}")
         self.stopped = True
-        if self.stream.isOpened():
-            self.stream.release()
+        
+        # 等待執行緒結束
+        if hasattr(self, 'thread') and self.thread.is_alive():
+            self.thread.join(timeout=2.0)
+            
+        with self.lock:
+            if hasattr(self, 'stream') and self.stream.isOpened():
+                self.stream.release()

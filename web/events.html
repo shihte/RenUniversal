@@ -158,7 +158,7 @@
 
         <!-- Tabs Navigation -->
         <div class="flex border-b border-[#b0aea5]/10 mb-8 font-heading">
-            <a href="/" class="px-6 py-3 text-sm font-semibold border-b-2 border-[#d97757] text-[#faf9f5] transition-all duration-200">
+            <a href="/" class="px-6 py-3 text-sm font-semibold border-b-2 border-transparent text-[#b0aea5] hover:text-[#faf9f5] transition-all duration-200">
                 即時監控 (Monitor)
             </a>
             <a href="/camera" class="px-6 py-3 text-sm font-semibold border-b-2 border-transparent text-[#b0aea5] hover:text-[#faf9f5] transition-all duration-200">
@@ -167,179 +167,105 @@
             <a href="/skills" class="px-6 py-3 text-sm font-semibold border-b-2 border-transparent text-[#b0aea5] hover:text-[#faf9f5] transition-all duration-200">
                 技能中心 (Skills Hub)
             </a>
-            <a href="/events" class="px-6 py-3 text-sm font-semibold border-b-2 border-transparent text-[#b0aea5] hover:text-[#faf9f5] transition-all duration-200">
+            <a href="/events" class="px-6 py-3 text-sm font-semibold border-b-2 border-[#d97757] text-[#faf9f5] transition-all duration-200">
                 事件處理 (Events)
             </a>
         </div>
-<!-- Tab 1: Dashboard View -->
-        <div id="view-dashboard" class="grid grid-cols-1 lg:grid-cols-12 gap-8 font-sans">
-            <!-- Main Video Stream -->
-            <div class="lg:col-span-8 space-y-6">
-                <div class="relative aspect-video bg-[#0a0a09] rounded-[24px] overflow-hidden border border-[#b0aea5]/10 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.6)]">
-                    <img src="/live" class="w-full h-full object-contain" alt="Live Stream">
-
-                    <!-- Overlay Status -->
-                    <div class="absolute top-6 left-6 glass-overlay px-4 py-2 rounded-full flex items-center gap-3">
-                        <div class="w-2 h-2 rounded-full bg-[#d97757] animate-pulse" id="live-indicator"></div>
-                        <span class="text-[10px] font-bold tracking-widest text-[#faf9f5]/90" data-i18n="live">LIVE</span>
+<!-- Tab 4: Events View -->
+        <div id="view-events" class="space-y-8 font-sans">
+            <!-- Full Width Onboarding Tutorial Box for Events -->
+            <div class="anthropic-card p-6 bg-[#1a1a18] border border-[#d97757]/20 rounded-xl space-y-4 col-span-12">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-[#d97757]/10 text-[#d97757]">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                        </svg>
                     </div>
-
-                    <div class="absolute bottom-6 left-6 right-6 flex justify-between items-end">
-                        <div class="flex flex-col gap-3" id="dynamic-alerts-container">
-                            <!-- Loaded dynamically -->
-                        </div>
-
-                        <div class="px-4 py-2 glass-overlay rounded-xl">
-                            <span class="text-[11px] font-mono tracking-tighter text-[#faf9f5]/70" id="fps-display">FPS: 0</span>
-                        </div>
+                    <div>
+                        <h2 class="text-sm font-bold text-[#faf9f5]">🎛️ 事件處理中心 (Event Handling Hub)</h2>
+                        <p class="text-[11px] text-[#b0aea5]">使用簡單的 boolean 邏輯（AND, OR, NOT）來組合不同的動作偵測狀態，觸發更複雜的複合事件</p>
                     </div>
                 </div>
                 
-                <!-- NEW EVENTS TABLE -->
-                <div class="bg-[#0a0a09] rounded-[24px] border border-[#b0aea5]/10 p-6 shadow-xl">
-                    <h2 class="text-[#faf9f5] text-lg font-bold tracking-tight mb-4 flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-[#6a9bcc]"></span>
-                        作用中事件監控表 (Active Events)
-                    </h2>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-[#b0aea5] border-collapse">
-                            <thead>
-                                <tr class="border-b border-[#b0aea5]/10 text-xs uppercase tracking-wider text-[#706e68]">
-                                    <th class="py-3 px-4 font-semibold">事件名稱 (Event Name)</th>
-                                    <th class="py-3 px-4 font-semibold text-right">狀態 (Status)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="active-events-tbody">
-                                <!-- Dynamically populated by JS -->
-                                <tr>
-                                    <td colspan="2" class="py-6 text-center text-[#706e68] text-xs">正在載入事件...</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 text-[11px] leading-relaxed">
+                    <div class="p-3 rounded-lg bg-[#151513] border border-[#b0aea5]/5 space-y-1">
+                        <span class="font-bold text-[#788c5d]">邏輯語法規則</span>
+                        <p class="text-[#b0aea5]">您可以使用 <code>AND</code>, <code>OR</code>, <code>NOT</code> 與括號來組合動作包。例如：<code>slouch AND sway</code> 代表同時發生低頭與左右偏斜時觸發該事件。</p>
                     </div>
-                </div>
-
-                <!-- NEW SKILLS TABLE -->
-                <div class="bg-[#0a0a09] rounded-[24px] border border-[#b0aea5]/10 p-6 shadow-xl mt-6">
-                    <h2 class="text-[#faf9f5] text-lg font-bold tracking-tight mb-4 flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-[#73a373]"></span>
-                        作用中技能監控表 (Active Skills)
-                    </h2>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-[#b0aea5] border-collapse">
-                            <thead>
-                                <tr class="border-b border-[#b0aea5]/10 text-xs uppercase tracking-wider text-[#706e68]">
-                                    <th class="py-3 px-4 font-semibold">技能名稱 (Skill Name)</th>
-                                    <th class="py-3 px-4 font-semibold text-right">狀態 (Status)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="active-skills-tbody">
-                                <!-- Dynamically populated by JS -->
-                                <tr>
-                                    <td colspan="2" class="py-6 text-center text-[#706e68] text-xs">正在載入技能...</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="p-3 rounded-lg bg-[#151513] border border-[#b0aea5]/5 space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-[#6a9bcc]">現有可用動作變數</span>
+                            <span class="text-[9px] text-[#706e68]">點擊變數可複製名稱</span>
+                        </div>
+                        <div id="event-vars-panel" class="space-y-2 text-[10px]"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Sidebar Controls & Stats -->
-            <div class="lg:col-span-4 space-y-8">
-                <!-- Status Cards -->
-                <div class="grid grid-cols-1 gap-4">
-                    <div class="anthropic-card p-6 flex items-center justify-between">
-                        <div>
-                            <div class="text-[#706e68] text-[10px] font-bold uppercase tracking-[0.15em] mb-1" data-i18n="ratio">Posture Ratio</div>
-                            <div class="text-4xl font-serif font-medium text-[#6a9bcc]" id="ratio-value">0%</div>
-                        </div>
-                        <div class="p-3 bg-[#6a9bcc]/10 rounded-xl">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="text-[#6a9bcc]">
-                                <path d="M12 2v20M2 12h20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                        </div>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- Left Column: Active Events List -->
+                <div class="lg:col-span-6 space-y-6">
+                    <div class="flex justify-between items-center pb-2 border-b border-[#b0aea5]/10">
+                        <h2 class="text-sm font-bold text-[#faf9f5] uppercase tracking-[0.15em]">自訂複合事件邏輯</h2>
+                        <button onclick="loadEvents()" class="text-[#6a9bcc] hover:underline text-xs">重新整理</button>
                     </div>
-
-                    <!-- Dynamic Metrics Container -->
-                    <div id="dynamic-metrics-container" class="grid grid-cols-2 gap-4">
-                        <!-- Loaded dynamically -->
-                    </div>
-
-                    <!-- Dynamic Counts Container -->
-                    <div id="dynamic-counts-container" class="grid grid-cols-2 gap-4">
-                        <!-- Loaded dynamically -->
-                    </div>
-
-                    <!-- Static System Metrics -->
-                    <div class="grid grid-cols-1 gap-4">
-                        <div class="anthropic-card p-5 flex justify-between items-center">
-                            <span class="text-[#706e68] text-[10px] font-bold uppercase tracking-[0.15em]" data-i18n="avg_latency">Latency</span>
-                            <span class="text-xl font-serif font-medium text-[#788c5d]" id="latency-value">0ms</span>
-                        </div>
+                    <div id="events-list-container" class="space-y-6">
+                        <!-- Dynamic event items list here -->
                     </div>
                 </div>
 
-                <!-- Quick Actions -->
-                <div class="anthropic-card p-8 space-y-6">
-                    <h2 class="text-xs font-bold text-[#faf9f5] uppercase tracking-[0.2em] border-b border-[#b0aea5]/10 pb-4" data-i18n="actions">
-                        System Control</h2>
-
-                    <!-- Backend Toggle -->
-                    <div class="flex items-center justify-between bg-[#232321] p-4 rounded-xl border border-[#b0aea5]/5">
-                        <span class="text-xs font-semibold text-[#faf9f5]/80" data-i18n="detection_active">Active Monitoring</span>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="detection-toggle" class="sr-only peer"
-                                onchange="toggleDetection(this.checked)">
-                            <div
-                                class="w-12 h-6 bg-[#3a3a38] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#788c5d]">
+                <!-- Right Column: Create Event Form -->
+                <div class="lg:col-span-6 space-y-6">
+                    <div class="pb-2 border-b border-[#b0aea5]/10">
+                        <h2 class="text-sm font-bold text-[#faf9f5] uppercase tracking-[0.15em]">事件邏輯建構器</h2>
+                    </div>
+                    <div class="anthropic-card p-6 space-y-6">
+                        <form id="create-event-form" onsubmit="submitCreateEvent(event)" class="space-y-5">
+                            <div class="space-y-2">
+                                <label class="text-xs text-[#b0aea5] font-semibold block">事件系統名稱 (ID)*</label>
+                                <input type="text" id="event-name" required placeholder="例如: heavy_fatigue" 
+                                    class="w-full bg-[#1a1a18] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#d97757] font-mono">
+                                <p class="text-[9px] text-[#706e68]">限小寫英文、數字與底線，不可與現有事件重名。</p>
                             </div>
-                        </label>
-                    </div>
 
-                    <button onclick="recalibrate()"
-                        class="btn-anthropic-secondary w-full py-4 text-[11px] font-bold uppercase tracking-[0.1em] rounded-xl flex justify-center items-center gap-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                            class="animate-spin hidden" id="calib-spinner" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
-                        </svg>
+                            <div class="space-y-2">
+                                <label class="text-xs text-[#b0aea5] font-semibold block">中文描述名稱</label>
+                                <input type="text" id="event-desc" placeholder="例如: 嚴重疲勞警示" 
+                                    class="w-full bg-[#1a1a18] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#d97757]">
+                            </div>
 
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                            id="calib-icon" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                            stroke-linejoin="round">
-                            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" />
-                        </svg>
-                        <span data-i18n="recalibrate">Recalibrate Workspace</span>
-                    </button>
-                    <p class="text-[10px] text-[#706e68] text-center italic" data-i18n="recalibrate_hint">
-                        Reset the baseline while maintaining a neutral posture.
-                    </p>
-                </div>
 
-                <!-- Active Actions & Events Status Card -->
-                <div class="anthropic-card p-6 space-y-4">
-                    <h2 class="text-xs font-bold text-[#faf9f5] uppercase tracking-[0.2em] border-b border-[#b0aea5]/10 pb-4">
-                        即時判定狀態 (Actions & Events)
-                    </h2>
-                    
-                    <div class="space-y-3">
-                        <div class="text-[10px] font-bold text-[#706e68] uppercase tracking-wider">動作判定 (Active Actions)</div>
-                        <div id="active-skills-badges" class="flex flex-wrap gap-1.5">
-                            <span class="text-[10px] text-[#706e68] italic">無動作判定中</span>
-                        </div>
-                    </div>
-                    
-                                                <div class="space-y-3 pt-3 border-t border-[#b0aea5]/10">
-                        <div class="text-[10px] font-bold text-[#706e68] uppercase tracking-wider">複合事件 (Active Events)</div>
-                        <div id="active-events-badges" class="flex flex-wrap gap-1.5">
-                            <span class="text-[10px] text-[#706e68] italic">無事件觸發</span>
-                        </div>
+
+                            <div class="space-y-3 pt-3 border-t border-[#b0aea5]/10">
+                                <label class="text-xs text-[#b0aea5] font-semibold block">觸發邏輯語法 (Rule Syntax)*</label>
+                                <input type="text" id="event-syntax" required
+                                    class="w-full bg-[#1a1a18] border border-[#b0aea5]/20 text-[#faf9f5] rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#d97757] font-mono"
+                                    placeholder="例如: slouch AND sway">
+                                <div id="event-syntax-vars" class="flex flex-wrap gap-1"></div>
+                            </div>
+
+                            <div class="bg-[#1a1a18] p-4 rounded-xl border border-[#b0aea5]/10 text-[10px] text-[#b0aea5] leading-relaxed space-y-1">
+                                <span class="font-bold text-[#faf9f5] block">邏輯運算子說明：</span>
+                                <ul class="list-disc list-inside space-y-0.5">
+                                    <li><strong>AND</strong>：左右兩邊的動作均成立才觸發。</li>
+                                    <li><strong>OR</strong>：左右兩邊任一動作成立即觸發。</li>
+                                    <li><strong>NOT</strong>：動作不成立時才觸發。</li>
+                                    <li>支援括號 <code>( )</code> 來明確優先順序，如 <code>(slouch OR lean) AND sway</code></li>
+                                </ul>
+                            </div>
+
+                            <button type="submit" 
+                                class="btn-anthropic-primary w-full py-3.5 text-xs font-bold uppercase tracking-[0.1em] rounded-xl flex justify-center items-center gap-2">
+                                建立並套用事件 (Deploy Event)
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        
+    
 <!-- ═══════════════════════════════════════════════════════════════
          GLOBAL EDIT MODAL  — 點擊作用中項目之後展開
     ═══════════════════════════════════════════════════════════════ -->
@@ -1398,6 +1324,7 @@
         // Initialize Language
         setLang('zh-TW');
         loadAvailableCameras();
+        loadEvents();
 
         // Poll
         setInterval(fetchStatus, 100);
