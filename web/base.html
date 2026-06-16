@@ -6,20 +6,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}RenUniversal Agent Platform{% endblock %}</title>
     <script src="/tailwind.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         theme: {
           extend: {
             colors: {
-              'surface-bg': '#f8fafc',
-              'surface-card': '#ffffff',
-              'primary': '#3b82f6',
-              'text-main': '#0f172a',
-              'text-muted': '#64748b',
-              'border-subtle': '#e2e8f0',
+              'surface-bg': '#000000',
+              'surface-card': '#0c0c0f',
+              'primary': '#1a73e8',
+              'text-main': '#ffffff',
+              'text-muted': '#8f8f9e',
+              'border-subtle': '#1f1f23',
             },
             fontFamily: {
-              sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+              sans: ['Outfit', 'system-ui', '-apple-system', 'sans-serif'],
             }
           }
         }
@@ -27,22 +30,154 @@
     </script>
     <style>
         body {
-            background-color: var(--surface-bg);
-            color: var(--text-main);
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Outfit', 'Inter', sans-serif;
             -webkit-font-smoothing: antialiased;
         }
 
-        /* 溫和的捲軸設計 */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        /* Override slate/white background classes globally to dark theme */
+        .bg-white, .bg-slate-50, .bg-slate-100, .bg-slate-50-elevated {
+            background-color: #0c0c0f !important;
+            color: #ffffff !important;
+        }
         
+        .bg-slate-50-elevated {
+            background-color: #121216 !important;
+            border-color: #222226 !important;
+        }
+        
+        .border, .border-slate-200, .border-slate-100, .border-border-subtle, .border-slate-700\/30, .border-b, .border-r, .border-l {
+            border-color: #1f1f23 !important;
+        }
+        
+        /* Sidebar layout background overrides */
+        aside, #left-sidebar, #right-sidebar {
+            background-color: #08080a !important;
+            border-color: #1a1a1e !important;
+        }
+        
+        aside *, #left-sidebar *, #right-sidebar * {
+            border-color: #1a1a1e !important;
+        }
+
+        /* Typography overrides */
+        .text-slate-900, .text-slate-800, .text-slate-700, .text-slate-600, .text-text-main {
+            color: #ffffff !important;
+        }
+        
+        .text-slate-500, .text-text-muted, .text-[#6e6e73], .text-slate-400 {
+            color: #8f8f9e !important;
+        }
+        
+        /* Navbar styling: Sleek glassmorphism */
+        nav.bg-white {
+            background-color: rgba(0, 0, 0, 0.7) !important;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid #1a1a1e !important;
+            color: #ffffff !important;
+        }
+        
+        nav a {
+            color: #9e9e9e !important;
+            position: relative;
+            transition: color 0.3s ease;
+        }
+        
+        nav a:hover, nav a.text-primary {
+            color: #ffffff !important;
+        }
+        
+        nav a.text-primary::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 12px;
+            right: 12px;
+            height: 2px;
+            background: linear-gradient(90deg, #4285F4, #34A853, #FBBC05, #EA4335);
+            border-radius: 9999px;
+        }
+        
+        /* Premium custom input fields */
+        input[type="text"], input[type="number"], select, textarea {
+            background-color: #121216 !important;
+            border: 1px solid #2a2a32 !important;
+            color: #ffffff !important;
+            border-radius: 8px !important;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
+            border-color: #4285F4 !important;
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.15) !important;
+        }
+
+        /* Premium scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #000000; }
+        ::-webkit-scrollbar-thumb { background: #222228; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #33333f; }
+        
+        /* Google I/O Gradient typography */
+        .gradient-text {
+            background: linear-gradient(135deg, #4285F4 0%, #34A853 30%, #FBBC05 60%, #EA4335 100%) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            color: transparent !important;
+        }
+
+        /* Cards styles with hover glow effects */
+        .bg-surface-card, .anthropic-card, .glass-panel, .bg-white.p-8, .bg-white.p-6, #create-skill-form, #create-event-form {
+            background-color: #0c0c0f !important;
+            border: 1px solid #1f1f23 !important;
+            border-radius: 20px !important;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4) !important;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+        
+        .bg-surface-card:hover, .anthropic-card:hover, .glass-panel:hover, .bg-white.p-8:hover, .bg-white.p-6:hover {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.08) !important;
+            transform: translateY(-2px);
+        }
+        
+        /* Premium Buttons */
+        button, .btn, a[href^="/app/"], a.card-link {
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+        
+        button.bg-primary, input[type="submit"], button[type="submit"] {
+            background: linear-gradient(90deg, #1a73e8, #1557b0) !important;
+            color: #ffffff !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(26, 115, 232, 0.3) !important;
+            border-radius: 9999px !important;
+        }
+        
+        button.bg-primary:hover, input[type="submit"]:hover, button[type="submit"]:hover {
+            box-shadow: 0 6px 20px rgba(26, 115, 232, 0.5) !important;
+            transform: scale(1.02);
+        }
+        
+        a[href^="/app/"], a.card-link {
+            border-radius: 12px !important;
+        }
+        
+        /* Trigger table row glow */
+        tr {
+            transition: background-color 0.2s ease;
+        }
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.02) !important;
+        }
+
         /* 溫和的範圍選擇器 */
         input[type=range] {
             width: 100%;
             height: 6px;
-            background-color: #e2e8f0;
+            background-color: #1a1a22;
             border-radius: 9999px;
             -webkit-appearance: none;
             appearance: none;
@@ -54,7 +189,7 @@
             width: 16px;
             border-radius: 50%;
             background-color: #ffffff;
-            border: 2px solid #3b82f6;
+            border: 2px solid #1a73e8;
             -webkit-appearance: none;
             cursor: pointer;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);

@@ -3,19 +3,20 @@ import SwiftUI
 struct TriggersView: View {
     enum ActiveSheet: Identifiable {
         case create(TriggerConfig?)
-        case importExport
+        case importExportSkill
+        case importExportEvent
         
         var id: String {
             switch self {
             case .create(let config): return "create_\(config?.id ?? "new")"
-            case .importExport: return "importExport"
+            case .importExportSkill: return "importExportSkill"
+            case .importExportEvent: return "importExportEvent"
             }
         }
     }
     
     @ObservedObject var state: SharedState
     @State private var activeSheet: ActiveSheet? = nil
-    @State private var importExportText: String = ""
     
     private func t(_ key: String) -> String { I18nManager.shared.t(key, lang: state.language) }
     
@@ -32,7 +33,13 @@ struct TriggersView: View {
                     }
                 } else {
                     List {
-                        Section(header: Text(t("geometric_skill")).font(.headline)) {
+                        Section(header: HStack {
+                            Text("Skills").font(.headline)
+                            Spacer()
+                            Button(action: { activeSheet = .importExportSkill }) {
+                                Image(systemName: "square.and.arrow.up.on.square").foregroundColor(.blue)
+                            }
+                        }) {
                             ForEach(state.triggers.filter { $0.type == .geometric }) { trigger in
                                 TriggerRowView(
                                     state: state,
@@ -62,7 +69,13 @@ struct TriggersView: View {
                             .onDelete { offsets in deleteTrigger(at: offsets, type: .geometric) }
                         }
                         
-                        Section(header: Text(t("logic_event")).font(.headline)) {
+                        Section(header: HStack {
+                            Text("Events").font(.headline)
+                            Spacer()
+                            Button(action: { activeSheet = .importExportEvent }) {
+                                Image(systemName: "square.and.arrow.up.on.square").foregroundColor(.blue)
+                            }
+                        }) {
                             ForEach(state.triggers.filter { $0.type == .logic }) { trigger in
                                 TriggerRowView(
                                     state: state,
@@ -95,17 +108,8 @@ struct TriggersView: View {
                     .listStyle(InsetGroupedListStyle())
                 }
             }
-            .navigationTitle(t("triggers"))
+            .navigationTitle("Triggers")
             .navigationBarItems(
-                leading: Button(action: {
-                    if let data = try? JSONEncoder().encode(state.triggers),
-                       let str = String(data: data, encoding: .utf8) {
-                        importExportText = str
-                    }
-                    activeSheet = .importExport
-                }) {
-                    Image(systemName: "square.and.arrow.down.on.square")
-                },
                 trailing: Button(action: {
                     activeSheet = .create(nil)
                 }) {
@@ -122,14 +126,22 @@ struct TriggersView: View {
                         },
                         set: { if !$0 { activeSheet = nil } }
                     ), editingTrigger: trigger)
-                case .importExport:
-                    ImportExportView(state: state, isPresented: Binding(
+                case .importExportSkill:
+                    SingleEntityImportExportView(state: state, isPresented: Binding(
                         get: { 
-                            if case .importExport = activeSheet { return true }
+                            if case .importExportSkill = activeSheet { return true }
                             return false
                         },
                         set: { if !$0 { activeSheet = nil } }
-                    ), text: $importExportText)
+                    ), type: .skill)
+                case .importExportEvent:
+                    SingleEntityImportExportView(state: state, isPresented: Binding(
+                        get: { 
+                            if case .importExportEvent = activeSheet { return true }
+                            return false
+                        },
+                        set: { if !$0 { activeSheet = nil } }
+                    ), type: .event)
                 }
             }
         }
@@ -165,7 +177,7 @@ struct TriggerRowView: View {
                     .foregroundColor(.gray)
                 
                 HStack {
-                    Text(trigger.type == .geometric ? t("geometric_skill") : t("logic_event"))
+                    Text(trigger.type == .geometric ? "Skill" : "Event")
                         .font(.caption)
                         .padding(4)
                         .background(trigger.type == .geometric ? Color.purple.opacity(0.3) : Color.orange.opacity(0.3))
@@ -247,9 +259,9 @@ struct CreateTriggerView: View {
         NavigationView {
             Form {
                 Section(header: Text(t("basic_info"))) {
-                    Picker(t("type"), selection: $triggerType) {
-                        Text(t("geometric_skill")).tag(TriggerType.geometric)
-                        Text(t("logic_event")).tag(TriggerType.logic)
+                    Picker("Type", selection: $triggerType) {
+                        Text("Skill").tag(TriggerType.geometric)
+                        Text("Event").tag(TriggerType.logic)
                     }
                     .pickerStyle(SegmentedPickerStyle())
                     
@@ -379,56 +391,3 @@ struct CreateTriggerView: View {
     }
 }
 
-struct ImportExportView: View {
-    @ObservedObject var state: SharedState
-    @Binding var isPresented: Bool
-    @Binding var text: String
-    
-    var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                TextEditor(text: $text)
-                    .font(.system(.caption, design: .monospaced))
-                    .padding()
-                    .background(Color(white: 0.15))
-                    .cornerRadius(8)
-                    .padding()
-                
-                HStack(spacing: 20) {
-                    Button(action: {
-                        UIPasteboard.general.string = text
-                    }) {
-                        Text("Copy to Clipboard")
-                            .bold()
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                    }
-                    
-                    Button(action: {
-                        if let data = text.data(using: .utf8),
-                           let saved = try? JSONDecoder().decode([TriggerConfig].self, from: data) {
-                            state.triggers = saved
-                            isPresented = false
-                        }
-                    }) {
-                        Text("Import & Overwrite")
-                            .bold()
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.red)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.bottom)
-            }
-            .navigationTitle("Import / Export")
-            .navigationBarItems(trailing: Button("Done") { isPresented = false })
-        }
-        .preferredColorScheme(.dark)
-    }
-}
