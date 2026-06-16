@@ -1,12 +1,12 @@
-# CTAR 次世代智慧姿態監控代理系統：精確技術規範與架構說明
+# RenUniversal 次世代智慧姿態監控代理系統：精確技術規範與架構說明
 
-本文件提供 CTAR 專案的系統拓撲、核心演算法以及動態規則引擎的完整技術導覽，適用於系統架駕者與研發人員。
+本文件提供 RenUniversal 專案的系統拓撲、核心演算法以及動態規則引擎的完整技術導覽，適用於系統架駕者與研發人員。
 
 ---
 
 ## 1. 系統拓撲與資料流 (System Topology)
 
-CTAR 採用單向數據流與邊緣運算設計，整體系統由以下三個核心層級構成：
+RenUniversal 採用單向數據流與邊緣運算設計，整體系統由以下三個核心層級構成：
 
 ```mermaid
 graph TD
@@ -122,11 +122,11 @@ $$\text{Slope} = \frac{y_{S_R} - y_{S_L}}{x_{S_R} - x_{S_L}}$$
 
 | 原始碼檔案 | 責任範疇 | 使用之設計模式 (Design Pattern) |
 | :--- | :--- | :--- |
-| [pipeline.py](file:///Users/shihte.hsiao/Downloads/CTAR/backend/core/pipeline.py) | 核心流水線驅動、MediaPipe 控制、影像特徵提取 | **Pipeline Pattern** (管線模式), **Facade** (外觀模式) |
-| [action_engine.py](file:///Users/shihte.hsiao/Downloads/CTAR/backend/core/action_engine.py) | 動態發現與載入 `/skills/` 底下所有動作判斷包 | **Plugin Pattern** (插件模式), **Registry** (註冊表) |
-| [state.py](file:///Users/shihte.hsiao/Downloads/CTAR/backend/core/state.py) | 線程安全的狀態同步、配置持久化讀寫 | **State Pattern** (狀態模式), **Singleton-like Context** |
-| [video_capture/logic.py](file:///Users/shihte.hsiao/Downloads/CTAR/backend/services/video_capture/logic.py) | 影像讀取硬體封裝、多執行緒緩衝、自動防禦重連 | **Wrapper Pattern** (包裝器), **Active Object** |
-| [calibration_wizard/logic.py](file:///Users/shihte.hsiao/Downloads/CTAR/backend/services/calibration_wizard/logic.py) | 提供基準值平均採樣邏輯，將常態值寫回狀態 | **Inversion of Control** (控制反轉) |
+| [pipeline.py](file:///Users/shihte.hsiao/Downloads/RenUniversal/backend/core/pipeline.py) | 核心流水線驅動、MediaPipe 控制、影像特徵提取 | **Pipeline Pattern** (管線模式), **Facade** (外觀模式) |
+| [action_engine.py](file:///Users/shihte.hsiao/Downloads/RenUniversal/backend/core/action_engine.py) | 動態發現與載入 `/skills/` 底下所有動作判斷包 | **Plugin Pattern** (插件模式), **Registry** (註冊表) |
+| [state.py](file:///Users/shihte.hsiao/Downloads/RenUniversal/backend/core/state.py) | 線程安全的狀態同步、配置持久化讀寫 | **State Pattern** (狀態模式), **Singleton-like Context** |
+| [video_capture/logic.py](file:///Users/shihte.hsiao/Downloads/RenUniversal/backend/services/video_capture/logic.py) | 影像讀取硬體封裝、多執行緒緩衝、自動防禦重連 | **Wrapper Pattern** (包裝器), **Active Object** |
+| [calibration_wizard/logic.py](file:///Users/shihte.hsiao/Downloads/RenUniversal/backend/services/calibration_wizard/logic.py) | 提供基準值平均採樣邏輯，將常態值寫回狀態 | **Inversion of Control** (控制反轉) |
 
 ---
 

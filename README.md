@@ -1,59 +1,75 @@
-# 🚀 CTAR：次世代分散式智慧姿態監控代理系統 (Next-Gen AI Posture Agent)
+# 🚀 RenUniversal：智慧生理姿態與復健監控開放平台
 
 [![Python](https://img.shields.io/badge/Python-3.8--3.11-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/)
 [![MediaPipe](https://img.shields.io/badge/MediaPipe-Latest-teal.svg?style=for-the-badge&logo=google)](https://mediapipe.dev/)
-[![Architecture](https://img.shields.io/badge/Architecture-Agentic--Modular-orange.svg?style=for-the-badge)](https://github.com/shihte/CTAR)
+[![Architecture](https://img.shields.io/badge/Architecture-Agentic--Modular-orange.svg?style=for-the-badge)](https://github.com/shihte/RenUniversal)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 
-**CTAR (Cybernetic Tracking & Analysis Repository)** 是一個基於電腦視覺邊緣運算（Edge Computing）與多代理人（Agent）架構的生理姿態回饋與即時監控系統。系統摒棄了傳統的硬編碼、線性判定邏輯，採用模組化插件架構（Agent Skills）、強型別幾何特徵交換協議以及雙執行緒非同步流水線，可在低耗能邊緣設備上實現高精度的三維頭部與軀幹姿態估算。
+**CTAR（Chin-tuck Against Resistance，下巴內縮抗阻力運動）** 是一種專業的吞嚥復健訓練。透過對抗阻力，能有效強化舌骨上肌群，改善喉部上提不足及上食道括約肌運動，幫助吞嚥障礙患者恢復由口進食。
+
+本專案是一個基於電腦視覺邊緣運算（Edge Computing）的 **AI 生理姿態回饋與即時監控系統**。起初專為輔助患者在進行 CTAR 訓練時提供正確的姿態即時評估，現已全面升級為 **「RenUniversal 高度開放式體感互動平台」**。
+
+系統摒棄了傳統的硬編碼與線性判定邏輯，導入了高度模組化與高通用性的 **多代理人技能架構（Agent Skills Architecture）** 與 **第三方外掛安裝機制**，使臨床人員或開發者能輕易抽換、擴充不同的姿態判定邏輯與體感應用遊戲。
 
 ---
 
-## 🔬 核心技術與演算法設計
+## 🔬 核心技術與模組化通用架構 (Modularity & Generalizability)
 
-### 1. 影像擷取線程與硬體抽象 (VideoCaptureService)
-*   **非同步雙緩衝 (Asymmetric Double Buffering)**：`VideoCaptureSkill` 透過獨立讀取線程運行，限制 OpenCV 內部緩衝區，配合 `threading.Lock` 確保 30Hz 串流讀取無 I/O 阻塞，降低延遲至微秒級。
-*   **自癒重連 (Self-Healing Recovery)**：內建指數退避（Exponential Backoff）與故障狀態檢測，當相機斷開或 USB 訊號中斷時，能自動釋放資源並於背景嘗試重新連接。
+### 1. 智慧動態多鏡頭掃描 (Dynamic Multi-Camera Inference)
+系統支援**多相機陣列並行運算**。無論你是用電腦鏡頭拍臉、手機拍身體，或是隨意擺放，底層 AI 流水線會**強制掃描所有連線中的鏡頭畫面**，自動標定含有完整臉部 (FaceMesh) 或身體骨架 (Pose) 的鏡頭源並進行特徵無縫融合，完全免除手動指定鏡頭順序的麻煩，實現零死角追蹤。
 
-### 2. 三維姿態幾何評估演算法 (Feature Vector Mathematics)
-系統利用 MediaPipe Landmark 模型提取的特徵座標進行三維空间向量投影，以量化人體生理姿態：
+### 2. 動態插件規則引擎 (Action & Event Engine)
+本系統的極致通用性建立在其**「技能模組化 (Skills Modularity)」**與**「事件分離 (Event Pipeline)」**設計上：
+*   **熱插拔技能 (Hot-Pluggable Agent Skills)**：`ActionEngine` 於運行時會動態反射式掃描 `skills/` 目錄下的判定包。開發者只需依照 JSON 配置規則新增目錄，無需重寫編譯核心框架，即可為系統擴充全新的身體動作特徵判定。
+*   **高階事件組合 (Event Engine)**：底層偵測到的單一動作特徵，會被傳遞給 Event Engine 進行高階邏輯判定。這種底層「特徵」與高層「事件」解耦的設計，讓系統不再侷限於單一復健動作。
 
-*   **低頭比例 (Nose-Chin Ratio - 俯仰角估算)**：
-    評估頭部前傾程度，藉由鼻尖（Nose, Landmark 4）與下巴（Chin, Landmark 152）在投影面上的垂直長度比率變化估算：
-    $$\text{Ratio} = \frac{(y_{\text{chin}} - y_{\text{nose}}) - d_{\text{baseline}}}{d_{\text{baseline}}}$$
-    當頭部俯仰角增加（低頭），該比率將呈現負值偏離。
+### 3. 三維姿態幾何評估演算法 (Feature Vector Mathematics)
+系統利用 MediaPipe Landmark 提取特徵座標進行三維向量投影，量化人體生理姿態（例如計算鼻尖與下巴的垂直比例變化來判定低頭角度，或是肩峰點連線斜率以偵測軀幹代償偏移）。同時內建**磁滯抗噪濾波器 (Hysteresis Filter)**，防止臨界狀態震盪，大幅降低高頻環境抖動引起的誤報。
 
-*   **頭部偏轉比 (Yaw Deviation - 偏航角估算)**：
-    計算左右眼角外側（Landmarks 33, 263）相對於鼻尖的水平間距比率，以此估算左右擺頭角度：
-    $$\text{Yaw} = \frac{x_{\text{nose}} - x_{\text{left\_eye}}}{x_{\text{right\_eye}} - x_{\text{left\_eye}}} - 0.5$$
+---
 
-*   **肩部傾斜度 (Shoulder Slope - 側傾角估算)**：
-    計算左右肩峰點（Pose Landmarks 11, 12）連線的斜率：
-    $$\text{Slope} = \frac{y_{\text{right\_shoulder}} - y_{\text{left\_shoulder}}}{x_{\text{right\_shoulder}} - x_{\text{left\_shoulder}}}$$
+## 📦 第三方外掛安裝框架 (Plugin Manager)
 
-*   **磁滯抗噪濾波器 (Hysteresis Filter)**：
-    為了防止臨界值狀態下的狀態震盪，系統對狀態變更實作了磁滯區間限制（邊界補償），降低高頻環境抖動引起的誤報率。
+RenUniversal 現在支援一鍵安裝第三方開發者製作的動作、事件與網頁遊戲。
+開發者只需要將功能打包成資料夾，並在內附帶一個 `.renuniversal` 宣告檔：
 
-### 3. 動態插件規則引擎 (Action Judgment Engine)
-*   **動態插件發現 (Dynamic Plugin Discovery)**：`ActionEngine` 會於運行時反射式掃描 `skills/` 底下的所有動作判斷包，加載其 `config.json` 設定，無需重寫編譯即可擴充新型態的姿態判定。
-*   **強型別 I/O 驗證**：利用 Pydantic 2.0 進行資料格式驗證，保證所有 Skills 在傳遞與接收姿態變數時的結構一致性。
+```json
+{
+  "name": "AppleCatchGame",
+  "version": "1.0",
+  "skills": ["skills/lean", "skills/squat"],
+  "events": ["events/jump_event"],
+  "apps": ["apps/apple_catch.html"]
+}
+```
+
+下載後，只需透過指令安裝：
+* **Mac/Linux:** `make install PATH=../下載的外掛資料夾`
+* **Windows:** `renuniversal.bat install ..\下載的外掛資料夾`
+
+系統會自動解析並將所有模組安裝至正確的核心引擎目錄中。
+
+### 🛠 如何打包自己的外掛 (Plugin Builder)
+我們提供了官方的打包工具，讓你一鍵將寫好的 Skills / Events / Apps 提取並自動生成 `.renuniversal`：
+
+**Mac / Linux:**
+```bash
+make build NAME=MyPlugin SKILLS="skills/lean skills/turn" EVENTS="events/bad_posture" APPS="web/apps/mygame.html"
+```
+
+**Windows:**
+```cmd
+renuniversal.bat build --name MyPlugin --skills skills/lean skills/turn --events events/bad_posture --apps web/apps/mygame.html
+```
+執行後，系統會在 `dist/MyPlugin/` 產出完美的安裝包，你可以直接上傳到 GitHub 分享！
 
 ---
 
 ## 🛠 開發先前條件 (Prerequisites)
 
-在部署與運行本系統前，請確保您的主機環境符合以下規範：
-
 *   **作業系統**：macOS (12.0+), Linux (Ubuntu 20.04+), Windows 10/11
 *   **Python 版本**：**Python 3.8 至 Python 3.11** (因 MediaPipe 原生編譯二進制檔限制，不支援更高或更低版本)
-*   **硬體要求**：
-    *   具備 UVC 協定的 USB 外接相機 或 整合式 Webcam。
-    *   **行動裝置協同 (Mobile Co-processor)**：無需額外下載 App，透過行動裝置瀏覽器掃描 QR Code 即可建立雙向 WebSocket/HTTP 視訊流通道，支援與主機鏡頭構成**雙鏡頭聯合偵測模式 (Dual-Camera Mode)**。
-*   **網路要求**：若使用行動裝置協同，需確保裝置與主機於同一區域網路，或透過系統內建的遠端公網穿透技術（支援跨網段/行動網路）。
-*   **系統套件** (Linux 用戶)：
-    ```bash
-    sudo apt-get update && sudo apt-get install -y python3-dev build-essential libgl1-mesa-glx
-    ```
+*   **硬體要求**：具備 UVC 協定的 USB 外接相機 或 行動裝置瀏覽器連線。
 
 ---
 
@@ -61,72 +77,40 @@
 
 ### 1. 複製專案庫
 ```bash
-git clone https://github.com/shihte/CTAR.git
-cd CTAR
+git clone https://github.com/shihte/RenUniversal.git
+cd RenUniversal
 ```
 
-### 2. 環境初始化與依賴安裝
-系統內建自動化語法檢查與環境配置。執行以下命令，Makefile 將自動偵測當前作業系統上的相容 Python 版本（3.8 - 3.11），建立虛擬環境，升級 pip，並安裝所有核心依賴：
-```bash
-make setup
-```
+### 2. 環境初始化與運行 (Windows)
+Windows 使用者請直接透過專屬的批次檔管理專案：
+1. **初始化與依賴安裝**：`renuniversal.bat setup` (具備動態進度顯示，無冗長日誌)
+2. **啟動系統伺服器**：`renuniversal.bat run`
+3. **執行架構驗證測試**：`renuniversal.bat test`
+4. **清除快取與日誌**：`renuniversal.bat clean`
+5. **安裝外掛套件**：`renuniversal.bat install <路徑>`
 
-### 3. 運行系統
+### 3. 環境初始化與運行 (Mac / Linux)
+使用 Makefile 工具包：
+1. **初始化與依賴安裝**：`make setup`
+2. **前景啟動系統**：`make run`
+3. **背景守護進程啟動**：`make start` (執行日誌會轉拋至 agent.log)
+4. **停止背景伺服器**：`make stop`
+5. **執行架構驗證測試**：`make test`
+6. **安裝外掛套件**：`make install PATH=<路徑>`
 
-*   **前台偵錯模式**：
-    ```bash
-    make run
-    ```
-*   **背景守護進程模式** (將 PID 保存至 `.agent.pid`，日誌輸出至 `agent.log`)：
-    ```bash
-    make start
-    ```
-*   **終止背景服務**：
-    ```bash
-    make stop
-    ```
-
-### 4. 架構合規性測試
-執行單元測試以確保 Pydantic 結構體與 SharedState 模型狀態讀寫符合系統預期：
-```bash
-make test
-```
+> **關於 `make test` / `renuniversal.bat test` 是做什麼的？**
+> 這會觸發 `backend/test_architecture.py` 測試腳本，目的是用來驗證系統核心層的 `SharedState` (執行緒安全共享狀態管理器) 以及 Pydantic 的資料型別 Schema (如 `DetectorStatus`) 能否在極端的併發模擬下正確初始化、安全鎖定並無損序列化。這是一項確保記憶體存取安全的微型單元測試。
 
 ---
 
-## 📂 模組目錄架構與映射
+## 📜 授權聲明 (License)
 
-```text
-.
-├── Makefile                # 統一入口編排（含 Python 版本相容性自適應檢查）
-├── backend/                # 偵測代理後端核心
-│   ├── core/               # 核心資料處理流水線與狀態管理
-│   │   ├── action_engine.py# 動態規則匹配與熱載入引擎
-│   │   ├── pipeline.py     # 影像特徵提取、座標幾何轉換與 MediaPipe 驅動
-│   │   ├── schema.py       # Pydantic 數據模型與強型別 I/O 驗證
-│   │   └── state.py        # 線程安全共用狀態隔離器
-│   ├── services/           # 基礎硬體控制與校準引導
-│   │   ├── video_capture/  # 支援 USB/行動端外接攝像頭自癒串流模組
-│   │   └── calibration_wizard/ # 控制反轉 (IoC) 平均採樣校準演算法
-│   └── stream_server.py    # Flask RESTful API & MJPEG 視訊串流伺服器
-├── skills/                 # 動態自定義動作判斷包目錄 (AJP)
-│   ├── slouch/             # 駝背判定包
-│   ├── sway/               # 左右搖晃判定包
-│   └── lean/               # 前傾判定包
-├── docs/                   # 系統設計決策與詳細規格文件
-└── web/                    # 靜態 HTML5 / CSS3 / VanillaJS 高效戰情儀表板
-```
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
+Copyright (c) 2026 RenUniversal Project Contributors.
 
-## 🛡 系統技術指標
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
-*   **三維面部網格**：468 點面部幾何拓撲點
-*   **身體姿態追蹤**：33 點全身骨架關節點
-*   **採樣頻率**：30Hz 恆定硬體捕獲與分析頻率
-*   **通訊協議**：MJPEG (影像) + RESTful / JSON (狀態與參數設定)
-*   **儲存持久化**：JSON 本地輕量化狀態紀錄器 (`preferences.json`)
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
-### 新增功能 (Latest Updates)
-*   **Dual-Camera Mobile WiFi Streaming**: 支援同時接收電腦預設鏡頭 (Local Camera) 與手機網路串流 (Mobile WiFi Stream)，並透過 `cv2.hconcat` 於邊緣端自動進行畫面縫合 (Stitching)，達到一鏡負責臉部特徵 (FaceMesh)、一鏡負責身體骨架 (Pose) 的進階雙相機評估架構。
-*   **UI 穩定性優化**: 修復前端相機選擇器 (Camera Sources) 的狀態覆寫問題，確保勾選操作流暢並自動連動校準程序。
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

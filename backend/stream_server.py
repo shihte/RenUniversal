@@ -6,7 +6,7 @@ import socket
 import subprocess
 import re
 import json
-from flask import Flask, Response, jsonify, request, send_from_directory
+from flask import Flask, Response, jsonify, request, send_from_directory, render_template
 from flask_cors import CORS
 import cv2
 from loguru import logger
@@ -49,16 +49,17 @@ def start_tunnel(port=8080):
 
     threading.Thread(target=run, daemon=True).start()
 
-app = Flask(__name__)
+# 路徑定義
+BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BACKEND_DIR)
+WEB_DIR = os.path.join(PROJECT_ROOT, 'web')
+
+app = Flask(__name__, template_folder=WEB_DIR)
 CORS(app)
 
 # 初始化共享狀態 (具備 Memory 功能)
 state = SharedState()
 
-# 路徑定義
-BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.dirname(BACKEND_DIR)
-WEB_DIR = os.path.join(PROJECT_ROOT, 'web')
 
 # 全局代理流水線
 service_context = {
@@ -130,23 +131,28 @@ def generate_mjpeg_stream():
 
 @app.route('/')
 def index():
-    return send_from_directory(WEB_DIR, 'monitor.html')
+    return render_template('monitor.html', active_page='monitor')
 
 @app.route('/camera')
 def serve_camera():
-    return send_from_directory(WEB_DIR, 'camera.html')
+    return render_template('camera.html', active_page='camera')
 
 @app.route('/skills')
 def serve_skills():
-    return send_from_directory(WEB_DIR, 'skills.html')
+    return render_template('skills.html', active_page='skills')
 
 @app.route('/events')
 def serve_events():
-    return send_from_directory(WEB_DIR, 'events.html')
+    return render_template('events.html', active_page='events')
 
-@app.route('/game')
-def serve_game():
-    return send_from_directory(WEB_DIR, 'Game.html')
+@app.route('/apps', strict_slashes=False)
+def serve_apps_launcher():
+    return render_template('apps_launcher.html', active_page='apps')
+
+@app.route('/app/<filename>')
+def serve_app(filename):
+    safe_filename = "".join(c for c in filename if c.isalnum() or c in ('_', '-'))
+    return render_template(f'apps/{safe_filename}.html', active_page='apps')
 
 @app.route('/tailwind.js')
 def serve_tailwind():
@@ -298,6 +304,8 @@ def create_skill():
         default_prefs = req_data.get("default_preferences", {"threshold": 0.10})
         is_update = req_data.get("is_update", False)
         
+        rule_syntax = req_data.get("rule_syntax", "")
+        
         if not name:
             return jsonify({"error": "Skill name is required"}), 400
             
@@ -320,14 +328,13 @@ def create_skill():
             "enabled": True,
             "requirements": requirements,
             "default_preferences": default_prefs,
+            "rule_syntax": rule_syntax,
             "rules": rules
         }
         with open(os.path.join(target_dir, 'config.json'), 'w', encoding='utf-8') as f:
             json.dump(cfg, f, indent=2, ensure_ascii=False)
             
-        # Copy template logic.py
-        template_src = os.path.join(BACKEND_DIR, 'core', 'skill_template.py')
-        shutil.copy(template_src, os.path.join(target_dir, 'logic.py'))
+        # The action engine will use GenericActionDetector automatically if logic.py is missing.
         
         # Trigger reload in action engine
         pipeline = service_context.get("pipeline")
@@ -526,6 +533,45 @@ def delete_event():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/apps', methods=['GET'])
+def list_apps():
+    try:
+        apps_dir = os.path.join(WEB_DIR, 'apps')
+        if not os.path.exists(apps_dir):
+            os.makedirs(apps_dir, exist_ok=True)
+            
+        results = []
+        for file in os.listdir(apps_dir):
+            if file.endswith('.html'):
+                file_path = os.path.join(apps_dir, file)
+                app_id = file[:-5]
+                title = app_id
+                description = "無說明 / No description"
+                
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                        
+                        t_match = re.search(r'<title>(.*?)</title>', content, re.IGNORECASE | re.DOTALL)
+                        if t_match:
+                            title = t_match.group(1).strip()
+                            
+                        d_match = re.search(r'<meta\s+name=["\']description["\']\s+content=["\']([^"\']+)["\']', content, re.IGNORECASE)
+                        if d_match:
+                            description = d_match.group(1).strip()
+                except Exception as ex:
+                    logger.error(f"Error reading app {file}: {ex}")
+                    
+                results.append({
+                    "id": app_id,
+                    "title": title,
+                    "description": description
+                })
+                
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/settings/update', methods=['POST'])
 def api_update_settings():
     try:
@@ -541,7 +587,7 @@ def api_update_settings():
         return jsonify({"error": str(e)}), 500
 
 def main():
-    parser = argparse.ArgumentParser(description='CTAR Agent-Powered Server')
+    parser = argparse.ArgumentParser(description='RenUniversal Agent-Powered Server')
     parser.add_argument('--port', type=int, default=8080)
     args = parser.parse_args()
     
@@ -562,7 +608,7 @@ def main():
     https_thread = threading.Thread(target=run_https, daemon=True)
     https_thread.start()
     
-    logger.info(f"CTAR Agent Server starting on http://localhost:{args.port}")
+    logger.info(f"RenUniversal Agent Server starting on http://localhost:{args.port}")
     logger.info(f"Mobile Access URL (HTTP): http://{local_ip}:{args.port}/mobile")
     logger.info(f"Mobile Access URL (HTTPS Local): https://{local_ip}:8443/mobile")
     start_tunnel(args.port)

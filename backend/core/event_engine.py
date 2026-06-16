@@ -73,7 +73,10 @@ class EventEngine:
             if isinstance(pose_landmarks, list):
                 if idx < len(pose_landmarks):
                     pt = pose_landmarks[idx]
-                    return pt.get("x", 0.0) * w, pt.get("y", 0.0) * h
+                    if hasattr(pt, 'x') and hasattr(pt, 'y'):
+                        return pt.x * w, pt.y * h
+                    elif isinstance(pt, dict):
+                        return pt.get("x", 0.0) * w, pt.get("y", 0.0) * h
             else:
                 if hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
                     pt = pose_landmarks.landmark[idx]
@@ -85,7 +88,10 @@ class EventEngine:
             if isinstance(landmarks, list):
                 if idx < len(landmarks):
                     pt = landmarks[idx]
-                    return pt.get("x", 0.0) * w, pt.get("y", 0.0) * h
+                    if hasattr(pt, 'x') and hasattr(pt, 'y'):
+                        return pt.x * w, pt.y * h
+                    elif isinstance(pt, dict):
+                        return pt.get("x", 0.0) * w, pt.get("y", 0.0) * h
             else:
                 lms = landmarks
                 if hasattr(landmarks, 'landmark'):
@@ -200,7 +206,7 @@ class EventEngine:
             # Now replace standard logical operators (case-insensitive)
             py_syntax = re.sub(r'\bAND\b', 'and', working_syntax, flags=re.IGNORECASE)
             py_syntax = re.sub(r'\bOR\b', 'or', py_syntax, flags=re.IGNORECASE)
-            py_syntax = re.sub(r'\bNOT\b', 'not', py_syntax, flags=re.IGNORECASE)
+            py_syntax = py_syntax.replace('!', ' not ')
             
             # Replace remaining variables (like slouch, sway, etc.)
             def replacer(match):
