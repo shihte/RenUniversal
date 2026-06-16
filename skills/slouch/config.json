@@ -1,0 +1,13 @@
+{
+  "name": "slouch",
+  "description": "鼻子、下巴檢測縮短（低頭）",
+  "enabled": true,
+  "requirements": {
+    "face_mesh": true,
+    "pose": false
+  },
+  "rule_syntax": "f1,f152 >< num=20%",
+  "default_preferences": {
+    "slouch_threshold": 0.2
+  }
+}

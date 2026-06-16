@@ -1,558 +1,556 @@
-"""
-CTAR Posture Monitor - Flask MJPEG Streaming Server
-
-This server captures webcam video, processes it with MediaPipe for posture detection,
-and streams the annotated video as MJPEG to the frontend.
-
-Features:
-- 3-second calibration phase to establish baseline eye distance
-- Yaw filtering to ignore head turns
-- Nose-chin distance based head-down detection
-
-Optimizations:
-- Threaded webcam capture
-- Resized inference (640x360) for speed
-- Disabled iris tracking (refine_landmarks=False)
-
-Architecture:
-- Single Server on Port 8080
-- /game: Serves the Game.html
-- /live: Serves the video stream
-- /status: Serves the posture status JSON
-
-Usage:
-    python stream_server.py [--threshold 0.15] [--camera 0] [--port 8080]
-
-Endpoints:
-    /           - Health check
-    /video_feed - MJPEG video stream
-    /status     - Current posture status as JSON
-"""
-
-import cv2
-import mediapipe as mp
-import numpy as np
+import os
 import time
-import math
 import argparse
 import threading
-import os
+import socket
+import subprocess
+import re
+import json
 from flask import Flask, Response, jsonify, request, send_from_directory
 from flask_cors import CORS
+import cv2
+from loguru import logger
+from pydantic import ValidationError
+
+from core import SharedState
+from core.pipeline import AgentPipeline
+from core.schema import SettingsUpdate, ControlCommand
+
+def get_local_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(('10.255.255.255', 1))
+        ip = s.getsockname()[0]
+    except Exception:
+        ip = '127.0.0.1'
+    finally:
+        s.close()
+    return ip
+
+def start_tunnel(port=8080):
+    """
+    啟動內網穿透服務 (localhost.run)，將本地服務曝露至公網，以便手機在不同網路環境下連線。
+    """
+    def run():
+        cmd = ["ssh", "-o", "StrictHostKeyChecking=no", "-o", "ServerAliveInterval=30", "-R", f"80:localhost:{port}", "nokey@localhost.run"]
+        logger.info("Initializing intranet tunnel via localhost.run...")
+        try:
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+            for line in proc.stdout:
+                match = re.search(r'https://[a-zA-Z0-9-.]+\.lhr\.life', line)
+                if match:
+                    public_url = match.group(0)
+                    logger.success(f"Intranet Tunnel established successfully!")
+                    logger.success(f"Public Link: {public_url}")
+                    logger.success(f"Mobile Public Link: {public_url}/mobile")
+                    state.update_status(public_url=public_url)
+        except Exception as e:
+            logger.error(f"Failed to start intranet tunnel: {e}")
+
+    threading.Thread(target=run, daemon=True).start()
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for Next.js frontend
+CORS(app)
 
-# Global variables for sharing data between threads
-current_frame = None
-current_status = {
-    "ratio": 0,
-    "nose_chin_ratio": 0,
-    "is_bad_posture": False,
-    "down_count": 0,
-    "fps": 0,
-    "connected": False,
-    "calibrating": True,
-    "calibration_progress": 0,
-    "is_turning": False,
-    "baseline_eye_dist": 0,
-    "threshold": 0.30,
-    "yaw_tolerance": 0.20
-}
-frame_lock = threading.Lock()
-status_lock = threading.Lock()
+# 初始化共享狀態 (具備 Memory 功能)
+state = SharedState()
 
-# Global monitor instance for runtime settings changes
-monitor_instance = None
-
-# Helper to locate resources relative to this script
+# 路徑定義
 BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BACKEND_DIR)
+WEB_DIR = os.path.join(PROJECT_ROOT, 'web')
 
-# ==================== Helper Class ====================
-class WebcamStream:
-    """Threaded webcam capture to improve FPS."""
-    def __init__(self, src=0, width=1280, height=720):
-        self.stream = cv2.VideoCapture(src)
-        self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-        self.stream.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-        self.stream.set(cv2.CAP_PROP_BUFFERSIZE, 1) # Reduce latency
-        (self.grabbed, self.frame) = self.stream.read()
-        self.stopped = False
+# 全局代理流水線
+service_context = {
+    "pipeline": None
+}
 
-    def start(self):
-        threading.Thread(target=self.update, args=(), daemon=True).start()
-        return self
-
-    def update(self):
+def capture_loop():
+    """
+    主捕捉與檢測循環，驅動 AgentPipeline。
+    """
+    logger.info("Starting Agent Pipeline capture loop")
+    
+    pipeline = AgentPipeline(state)
+    service_context["pipeline"] = pipeline
+    
+    state.update_status(connected=True)
+    
+    last_fps_time = time.time()
+    frame_count = 0
+    
+    try:
         while True:
-            if self.stopped:
-                return
-            (self.grabbed, self.frame) = self.stream.read()
-
-    def read(self):
-        return self.frame
-
-    def stop(self):
-        self.stopped = True
-        self.stream.release()
-
-class PostureMonitor:
-    """Posture Monitor with calibration and yaw filtering."""
-    
-    def __init__(self, threshold_ratio=0.15, camera_id=0, yaw_tolerance=0.25):
-        """
-        Args:
-            threshold_ratio: How much nose-chin distance needs to DECREASE to detect head-down
-                            (as a fraction of baseline, e.g., 0.15 = 15% decrease)
-            camera_id: Camera device ID
-            yaw_tolerance: How much eye distance can deviate from baseline before ignoring
-                          (as a fraction, e.g., 0.25 = 25% deviation allowed)
-        """
-        self.threshold_ratio = threshold_ratio
-        self.camera_id = camera_id
-        self.yaw_tolerance = yaw_tolerance
-        
-        # MediaPipe Setup
-        self.mp_face_mesh = mp.solutions.face_mesh
-        
-        # Calibration
-        self.calibration_duration = 3.0  # seconds
-        self.calibration_start_time = None
-        self.is_calibrated = False
-        self.baseline_eye_distance = 0
-        self.baseline_nose_chin_distance = 0
-        self.calibration_samples_eye = []
-        self.calibration_samples_nose_chin = []
-        
-        # Posture Counters
-        self.down_count = 0
-        
-        # State Flags
-        self.is_down = False
-        self.is_turning = False
-        
-        # Timing
-        self.prev_time = 0
-        
-        # Smoothing (Exponential Moving Average)
-        self.smooth_nose_chin = 0
-        self.alpha = 0.3
-        
-        # Landmark indices
-        self.NOSE = 1
-        self.CHIN = 152
-        self.LEFT_EYE = 33
-        self.RIGHT_EYE = 263
-        
-        # Running flag
-        self.running = False
-        self.active = True  # Controls detection ON/OFF while keeping stream alive
-
-    def calculate_distance(self, p1, p2):
-        """Calculate Euclidean distance between two points."""
-        return math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
-    
-    def get_metrics(self, face_landmarks, w, h):
-        """Get eye distance and nose-chin distance for detection."""
-        nose = face_landmarks.landmark[self.NOSE]
-        chin = face_landmarks.landmark[self.CHIN]
-        left_eye = face_landmarks.landmark[self.LEFT_EYE]
-        right_eye = face_landmarks.landmark[self.RIGHT_EYE]
-        
-        # Pixel positions
-        nose_pt = (nose.x * w, nose.y * h)
-        chin_pt = (chin.x * w, chin.y * h)
-        left_eye_pt = (left_eye.x * w, left_eye.y * h)
-        right_eye_pt = (right_eye.x * w, right_eye.y * h)
-        
-        # Use HORIZONTAL eye distance for yaw detection
-        # This won't change when looking up/down, only when turning left/right
-        eye_horizontal_distance = abs(right_eye_pt[0] - left_eye_pt[0])
-        
-        # Use full distance for nose-chin (affected by head tilt)
-        nose_chin_distance = self.calculate_distance(nose_pt, chin_pt)
-        
-        return {
-            "eye_distance": eye_horizontal_distance,
-            "nose_chin_distance": nose_chin_distance,
-            "points": (nose_pt, chin_pt, left_eye_pt, right_eye_pt)
-        }
-
-    def process_frame(self, frame, face_mesh):
-        """Process a single frame and return annotated frame.
-           OPTIMIZATION: Resizes frame for inference but draws on original.
-        """
-        global current_status
-        
-        # If detection is paused, just return the frame (dimmed) and update basic status
-        if not self.active:
-            # Dim the frame to indicate inactivity
-            dimmed = cv2.addWeighted(frame, 0.5, np.zeros(frame.shape, frame.dtype), 0, 0)
-            cv2.putText(dimmed, "DETECTION PAUSED", (50, 50), cv2.FONT_HERSHEY_PLAIN, 2, (100, 100, 100), 2)
+            start_time = time.time()
             
-            with status_lock:
-                current_status.update({
-                    "is_active": False,
-                    "fps": 30, # Fake FPS
-                    "connected": True
-                })
-            return dimmed
-
-        h, w, _ = frame.shape
-        
-        # Optimization: Resize for inference
-        inference_w, inference_h = 640, 360
-        frame_small = cv2.resize(frame, (inference_w, inference_h))
-        img_rgb_small = cv2.cvtColor(frame_small, cv2.COLOR_BGR2RGB)
-        
-        results = face_mesh.process(img_rgb_small)
-        
-        is_posture_bad = False
-        nose_chin_ratio = 0
-        calibration_progress = 0
-        
-        if results.multi_face_landmarks:
-            face_landmarks = results.multi_face_landmarks[0]
-            # Pass original w, h so points map back to the high-res frame
-            metrics = self.get_metrics(face_landmarks, w, h)
-            
-            eye_dist = metrics["eye_distance"]
-            nose_chin_dist = metrics["nose_chin_distance"]
-            nose_pt, chin_pt, left_eye_pt, right_eye_pt = metrics["points"]
-            
-            # === CALIBRATION PHASE ===
-            if not self.is_calibrated:
-                if self.calibration_start_time is None:
-                    self.calibration_start_time = time.time()
-                
-                elapsed = time.time() - self.calibration_start_time
-                calibration_progress = min(elapsed / self.calibration_duration, 1.0)
-                
-                # Collect samples
-                self.calibration_samples_eye.append(eye_dist)
-                self.calibration_samples_nose_chin.append(nose_chin_dist)
-                
-                # Draw calibration indicator
-                cv2.putText(frame, f"Calibrating... {int(calibration_progress * 100)}%", 
-                           (50, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 255), 2)
-                cv2.putText(frame, "Please look straight ahead", 
-                           (50, 90), cv2.FONT_HERSHEY_PLAIN, 1.5, (200, 200, 200), 2)
-                
-                # Progress bar
-                bar_width = int(w * 0.6)
-                bar_x = int((w - bar_width) / 2)
-                bar_y = h - 50
-                cv2.rectangle(frame, (bar_x, bar_y), (bar_x + bar_width, bar_y + 20), (100, 100, 100), -1)
-                cv2.rectangle(frame, (bar_x, bar_y), 
-                            (bar_x + int(bar_width * calibration_progress), bar_y + 20), (0, 255, 0), -1)
-                
-                if elapsed >= self.calibration_duration:
-                    # Calculate baselines
-                    self.baseline_eye_distance = np.mean(self.calibration_samples_eye)
-                    self.baseline_nose_chin_distance = np.mean(self.calibration_samples_nose_chin)
-                    
-                    # Prevent division by zero
-                    if self.baseline_eye_distance == 0: self.baseline_eye_distance = 1
-                    if self.baseline_nose_chin_distance == 0: self.baseline_nose_chin_distance = 1
-                    
-                    self.is_calibrated = True
-                    print(f"Calibration complete!")
-                    print(f"  Baseline eye distance: {self.baseline_eye_distance:.2f}")
-                    print(f"  Baseline nose-chin distance: {self.baseline_nose_chin_distance:.2f}")
-            
-            # === DETECTION PHASE ===
+            # 如果偵測已啟動則執行流水線循環
+            if state.get_status().is_active:
+                processed_frame = pipeline.run_cycle()
+                if processed_frame is not None:
+                    state.update_frame(processed_frame)
             else:
-                # Check for head turning (yaw filtering)
-                eye_deviation = abs(eye_dist - self.baseline_eye_distance) / self.baseline_eye_distance
-                self.is_turning = eye_deviation > self.yaw_tolerance
-                
-                # Smoothing nose-chin distance
-                if self.smooth_nose_chin == 0:
-                    self.smooth_nose_chin = nose_chin_dist
-                else:
-                    self.smooth_nose_chin = self.alpha * nose_chin_dist + (1 - self.alpha) * self.smooth_nose_chin
-                
-                # Calculate ratio: how much nose-chin has changed from baseline
-                # Negative = head down (nose-chin gets shorter due to perspective)
-                nose_chin_ratio = (self.smooth_nose_chin - self.baseline_nose_chin_distance) / self.baseline_nose_chin_distance
-                
-                # Draw landmarks
-                if self.is_turning:
-                    # Yellow when turning (ignored)
-                    color = (0, 255, 255)
-                else:
-                    color = (0, 255, 0)
-                
-                cv2.circle(frame, (int(nose_pt[0]), int(nose_pt[1])), 5, (0, 255, 255), -1)
-                cv2.circle(frame, (int(chin_pt[0]), int(chin_pt[1])), 5, color, -1)
-                cv2.circle(frame, (int(left_eye_pt[0]), int(left_eye_pt[1])), 5, (255, 0, 0), -1)
-                cv2.circle(frame, (int(right_eye_pt[0]), int(right_eye_pt[1])), 5, (255, 0, 0), -1)
-                
-                # Draw lines
-                cv2.line(frame, (int(nose_pt[0]), int(nose_pt[1])), 
-                        (int(chin_pt[0]), int(chin_pt[1])), color, 2)
-                cv2.line(frame, (int(left_eye_pt[0]), int(left_eye_pt[1])), 
-                        (int(right_eye_pt[0]), int(right_eye_pt[1])), (255, 0, 0), 2)
-                
-                # Only detect posture if not turning
-                if not self.is_turning:
-                    # Head down: nose-chin distance DECREASES (ratio becomes negative)
-                    # We trigger when ratio < -threshold (e.g., -0.15 = 15% decrease)
-                    if self.is_down:
-                        if nose_chin_ratio > -self.threshold_ratio + 0.05:  # Hysteresis
-                            self.is_down = False
-                        else:
-                            is_posture_bad = True
-                    else:
-                        if nose_chin_ratio < -self.threshold_ratio:
-                            is_posture_bad = True
-                            self.down_count += 1
-                            self.is_down = True
+                # 暫停模式：僅讀取影格但不處理分析
+                frame_data = pipeline.capture.read()
+                if frame_data.frame is not None:
+                    dimmed = cv2.addWeighted(frame_data.frame, 0.5, frame_data.frame, 0, 0)
+                    state.update_frame(dimmed)
 
-        # Calculate FPS
-        curr_time = time.time()
-        fps = 1 / (curr_time - self.prev_time) if self.prev_time else 0
-        self.prev_time = curr_time
-        
-        # Update global status
-        with status_lock:
-            current_status = {
-                "ratio": float(round(nose_chin_ratio * 100, 1)),  # As percentage
-                "nose_chin_ratio": float(round(nose_chin_ratio, 3)),
-                "is_bad_posture": bool(is_posture_bad),
-                "down_count": int(self.down_count),
-                "fps": int(fps),
-                "connected": True,
-                "calibrating": bool(not self.is_calibrated),
-                "calibration_progress": int(round(calibration_progress * 100)),
-                "is_turning": bool(self.is_turning),
-                "baseline_eye_dist": float(round(self.baseline_eye_distance, 1)),
-                "threshold": float(round(self.threshold_ratio * 100)),
-                "yaw_tolerance": float(round(self.yaw_tolerance * 100)),
-                "is_active": bool(self.active)
-            }
-        
-        # Mirror the frame
-        return cv2.flip(frame, 1)
+            # 計算並更新 FPS
+            frame_count += 1
+            now = time.time()
+            if now - last_fps_time >= 1.0:
+                state.update_status(fps=frame_count)
+                frame_count = 0
+                last_fps_time = now
 
-    def capture_loop(self):
-        """Main capture loop running in separate thread."""
-        global current_frame
-        
-        # Optimization: Use threaded WebcamStream
-        cap = WebcamStream(src=self.camera_id).start()
-        time.sleep(1.0) # Warmup
-        
-        if cap.stream.isOpened():
-             pass # Stream started
-        else:
-            print("Error: Could not open webcam.")
-            with status_lock:
-                current_status["connected"] = False
-            return
-
-        print(f"Camera opened: ID {self.camera_id}")
-        print(f"Threshold: {self.threshold_ratio * 100:.0f}% decrease in nose-chin distance")
-        print(f"Yaw tolerance: {self.yaw_tolerance * 100:.0f}% deviation allowed")
-        print("Starting 3-second calibration...")
-        
-        self.running = True
-        
-        # Optimization: refine_landmarks=False for speed
-        with self.mp_face_mesh.FaceMesh(
-            max_num_faces=1,
-            refine_landmarks=False,
-            min_detection_confidence=0.5,
-            min_tracking_confidence=0.5) as face_mesh:
-            
-            while self.running:
-                start_time = time.time()
+            # FPS 鎖定 (30 FPS)
+            elapsed = time.time() - start_time
+            if elapsed < 1.0/30.0:
+                time.sleep(1.0/30.0 - elapsed)
                 
-                # Capture frame
-                frame = cap.read()
-                if frame is None:
-                    continue
+    except Exception as e:
+        logger.exception(f"Unexpected error in capture loop: {e}")
+    finally:
+        logger.info("Stopping pipeline and releasing resources")
+        pipeline.stop()
+        state.update_status(connected=False)
 
-                processed_frame = self.process_frame(frame, face_mesh)
-                
-                with frame_lock:
-                    current_frame = processed_frame.copy()
-
-                # FPS Lock: Ensure we don't exceed 30 FPS (approx 33ms per frame)
-                processing_time = time.time() - start_time
-                target_frame_time = 1.0 / 30.0
-                if processing_time < target_frame_time:
-                    time.sleep(target_frame_time - processing_time)
-        
-        cap.stop()
-        print("Camera released.")
-
-    def stop(self):
-        """Stop the capture loop."""
-        self.running = False
-
-
-def generate_frames():
-    """Generator function for MJPEG streaming."""
-    global current_frame
-    
+def generate_mjpeg_stream():
     while True:
-        with frame_lock:
-            if current_frame is None:
-                # Generate placeholder frame
-                placeholder = np.zeros((480, 640, 3), dtype=np.uint8)
-                cv2.putText(placeholder, "Waiting for camera...", (150, 240),
-                           cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 255), 2)
-                frame = placeholder
-            else:
-                frame = current_frame.copy()
-        
-        # Encode frame as JPEG
-        ret, buffer = cv2.imencode('.jpg', frame)
+        frame = state.get_frame()
+        if frame is None:
+            # Generate a black placeholder image with text
+            import numpy as np
+            frame = np.zeros((480, 640, 3), dtype=np.uint8)
+            cv2.putText(frame, "CAMERA OFFLINE OR LOADING...", (50, 240), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            time.sleep(1.0) # Slow down placeholder streaming
+            
+        ret, buf = cv2.imencode('.jpg', frame)
         if not ret:
             continue
-        
-        frame_bytes = buffer.tobytes()
-        
+            
         yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-        
-        time.sleep(0.033)  # ~30 FPS
+               b'Content-Type: image/jpeg\r\n\r\n' + buf.tobytes() + b'\r\n')
+        time.sleep(0.033)
 
+# --- Routes ---
 
 @app.route('/')
 def index():
-    """Serve the Monitor Dashboard (Monitor.html)."""
-    return send_from_directory(PROJECT_ROOT, 'Monitor.html')
+    return send_from_directory(WEB_DIR, 'Monitor.html')
 
 @app.route('/game')
 def serve_game():
-    """Serve the Game.html file from the project root."""
-    return send_from_directory(PROJECT_ROOT, 'Game.html')
+    return send_from_directory(WEB_DIR, 'Game.html')
+
+@app.route('/tailwind.js')
+def serve_tailwind():
+    return send_from_directory(WEB_DIR, 'tailwind.js')
 
 @app.route('/live')
 @app.route('/video_feed')
 def video_feed():
-    """MJPEG video stream endpoint."""
-    return Response(
-        generate_frames(),
-        mimetype='multipart/x-mixed-replace; boundary=frame'
-    )
-
+    return Response(generate_mjpeg_stream(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/status')
 def status():
-    """Return current posture status as JSON."""
-    with status_lock:
-        return jsonify(current_status)
-
+    status_data = state.get_status().model_dump()
+    status_data['local_ip'] = get_local_ip()
+    status_data['prefs'] = state.prefs
+    return jsonify(status_data)
 
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
-    """Get or update detection settings."""
-    global monitor_instance
-    
     if request.method == 'GET':
-        if monitor_instance:
-            return jsonify({
-                "threshold": float(round(monitor_instance.threshold_ratio * 100)),
-                "yaw_tolerance": float(round(monitor_instance.yaw_tolerance * 100))
-            })
-        return jsonify({"error": "Monitor not initialized"}), 500
-    
-    # POST - update settings
-    data = request.get_json()
-    
-    if monitor_instance:
-        if 'threshold' in data:
-            # Convert from percentage to fraction
-            monitor_instance.threshold_ratio = float(data['threshold']) / 100.0
-            print(f"Threshold updated to: {monitor_instance.threshold_ratio * 100}%")
-        
-        if 'yaw_tolerance' in data:
-            monitor_instance.yaw_tolerance = float(data['yaw_tolerance']) / 100.0
-            print(f"Yaw tolerance updated to: {monitor_instance.yaw_tolerance * 100}%")
-        
+        s = state.get_status()
         return jsonify({
-            "success": True,
-            "threshold": float(round(monitor_instance.threshold_ratio * 100)),
-            "yaw_tolerance": float(round(monitor_instance.yaw_tolerance * 100))
+            "threshold": s.threshold,
+            "yaw_tolerance": s.yaw_tolerance,
+            "sway_threshold": s.sway_threshold,
+            "lean_threshold": s.lean_threshold,
+            "camera_source": s.camera_source,
+            "flip_enabled": s.flip_enabled
         })
     
-    return jsonify({"error": "Monitor not initialized"}), 500
+    try:
+        data = SettingsUpdate(**request.get_json())
+        update_dict = {}
+        if data.threshold is not None:
+            update_dict["threshold"] = data.threshold
+        if data.yaw_tolerance is not None:
+            update_dict["yaw_tolerance"] = data.yaw_tolerance
+        if data.sway_threshold is not None:
+            update_dict["sway_threshold"] = data.sway_threshold
+        if data.lean_threshold is not None:
+            update_dict["lean_threshold"] = data.lean_threshold
+        if data.camera_source is not None:
+            update_dict["camera_source"] = data.camera_source
+        if data.flip_enabled is not None:
+            update_dict["flip_enabled"] = data.flip_enabled
+            
+        if update_dict:
+            state.save_prefs(update_dict)
+            
+        return jsonify({"success": True})
+    except ValidationError as e:
+        return jsonify({"error": e.errors()}), 400
 
+@app.route('/mobile')
+def serve_mobile():
+    return send_from_directory(WEB_DIR, 'MobileCamera.html')
+
+@app.route('/api/cameras')
+def list_cameras():
+    available_cameras = []
+    # 快速偵測索引 0 至 4 內可用的鏡頭
+    for i in range(5):
+        cap = cv2.VideoCapture(i)
+        if cap.isOpened():
+            ret, frame = cap.read()
+            if ret:
+                available_cameras.append(i)
+            cap.release()
+    if not available_cameras:
+        available_cameras = [0]
+    return jsonify(available_cameras)
+
+@app.route('/upload_frame', methods=['POST'])
+def upload_frame():
+    try:
+        data = request.data
+        if not data:
+            return jsonify({"error": "No image data"}), 400
+        import numpy as np
+        nparr = np.frombuffer(data, np.uint8)
+        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if frame is None:
+            return jsonify({"error": "Invalid image format"}), 400
+        state.update_network_frame(frame)
+        return jsonify({"success": True})
+    except Exception as e:
+        logger.error(f"Error processing uploaded frame: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/recalibrate', methods=['POST'])
 def recalibrate():
-    """Trigger recalibration."""
-    global monitor_instance
-    
-    if monitor_instance:
-        monitor_instance.is_calibrated = False
-        monitor_instance.calibration_start_time = None
-        monitor_instance.calibration_samples_eye = []
-        monitor_instance.calibration_samples_nose_chin = []
-        print("Recalibration triggered")
-        return jsonify({"success": True, "message": "Recalibration started"})
-    
-    return jsonify({"error": "Monitor not initialized"}), 500
-
+    pipeline = service_context.get("pipeline")
+    if pipeline:
+        pipeline.wizard.reset()
+        pipeline.is_calibrated = False
+        return jsonify({"success": True})
+    return jsonify({"error": "Pipeline not initialized"}), 500
 
 @app.route('/control', methods=['POST'])
 def control():
-    """Control the detection loop (Pause/Resume)."""
-    global monitor_instance
-    data = request.get_json()
-    
-    if monitor_instance:
-        if 'active' in data:
-            monitor_instance.active = bool(data['active'])
-            state = "Active" if monitor_instance.active else "Paused"
-            print(f"Detection state changed to: {state}")
-            return jsonify({"success": True, "active": monitor_instance.active})
-    
-    return jsonify({"error": "Monitor not initialized"}), 500
+    try:
+        cmd = ControlCommand(**request.get_json())
+        state.update_status(is_active=cmd.active)
+        return jsonify({"success": True})
+    except ValidationError as e:
+        return jsonify({"error": e.errors()}), 400
 
+import shutil
+
+@app.route('/api/skills', methods=['GET'])
+def list_skills():
+    try:
+        skills_dir = os.path.join(PROJECT_ROOT, 'skills')
+        if not os.path.exists(skills_dir):
+            os.makedirs(skills_dir, exist_ok=True)
+        results = []
+        for d in os.listdir(skills_dir):
+            cfg_path = os.path.join(skills_dir, d, 'config.json')
+            if os.path.exists(cfg_path):
+                try:
+                    with open(cfg_path, 'r', encoding='utf-8') as f:
+                        cfg = json.load(f)
+                        results.append(cfg)
+                except Exception as ex:
+                    logger.error(f"Error reading skill {d} config: {ex}")
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/skills/create', methods=['POST'])
+def create_skill():
+    try:
+        req_data = request.get_json()
+        name = req_data.get("name")
+        description = req_data.get("description", "")
+        requirements = req_data.get("requirements", {"face_mesh": True, "pose": False})
+        rules = req_data.get("rules", [])
+        default_prefs = req_data.get("default_preferences", {"threshold": 0.10})
+        is_update = req_data.get("is_update", False)
+        
+        if not name:
+            return jsonify({"error": "Skill name is required"}), 400
+            
+        # Clean name to safe folder name
+        safe_name = "".join([c for c in name if c.isalnum() or c in ('_', '-')]).lower()
+        if not safe_name:
+            return jsonify({"error": "Invalid skill name"}), 400
+            
+        skills_dir = os.path.join(PROJECT_ROOT, 'skills')
+        target_dir = os.path.join(skills_dir, safe_name)
+        if os.path.exists(target_dir) and not is_update:
+            return jsonify({"error": f"Skill '{safe_name}' already exists"}), 400
+            
+        os.makedirs(target_dir, exist_ok=True)
+        
+        # Write config.json
+        cfg = {
+            "name": safe_name,
+            "description": description,
+            "enabled": True,
+            "requirements": requirements,
+            "default_preferences": default_prefs,
+            "rules": rules
+        }
+        with open(os.path.join(target_dir, 'config.json'), 'w', encoding='utf-8') as f:
+            json.dump(cfg, f, indent=2, ensure_ascii=False)
+            
+        # Copy template logic.py
+        template_src = os.path.join(BACKEND_DIR, 'core', 'skill_template.py')
+        shutil.copy(template_src, os.path.join(target_dir, 'logic.py'))
+        
+        # Trigger reload in action engine
+        pipeline = service_context.get("pipeline")
+        if pipeline and hasattr(pipeline, 'action_engine'):
+            pipeline.action_engine.load_action_skills()
+            
+        return jsonify({"success": True, "skill": cfg})
+    except Exception as e:
+        logger.error(f"Error creating skill: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/skills/toggle', methods=['POST'])
+def toggle_skill():
+    try:
+        req_data = request.get_json()
+        name = req_data.get("name")
+        enabled = req_data.get("enabled", True)
+        
+        if not name:
+            return jsonify({"error": "Skill name is required"}), 400
+            
+        skills_dir = os.path.join(PROJECT_ROOT, 'skills')
+        cfg_path = os.path.join(skills_dir, name, 'config.json')
+        if not os.path.exists(cfg_path):
+            return jsonify({"error": f"Skill '{name}' not found"}), 404
+            
+        with open(cfg_path, 'r', encoding='utf-8') as f:
+            cfg = json.load(f)
+            
+        cfg["enabled"] = enabled
+        
+        with open(cfg_path, 'w', encoding='utf-8') as f:
+            json.dump(cfg, f, indent=2, ensure_ascii=False)
+            
+        # Trigger reload in action engine
+        pipeline = service_context.get("pipeline")
+        if pipeline and hasattr(pipeline, 'action_engine'):
+            pipeline.action_engine.load_action_skills()
+            
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/skills/delete', methods=['POST'])
+def delete_skill():
+    try:
+        req_data = request.get_json()
+        name = req_data.get("name")
+        
+        if not name:
+            return jsonify({"error": "Skill name is required"}), 400
+            
+        # Removing built-in specific skill protection to support generic architecture
+            
+        skills_dir = os.path.join(PROJECT_ROOT, 'skills')
+        target_dir = os.path.join(skills_dir, name)
+        if not os.path.exists(target_dir):
+            return jsonify({"error": f"Skill '{name}' not found"}), 404
+            
+        shutil.rmtree(target_dir)
+        
+        # Trigger reload in action engine
+        pipeline = service_context.get("pipeline")
+        if pipeline and hasattr(pipeline, 'action_engine'):
+            pipeline.action_engine.load_action_skills()
+            
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/events', methods=['GET'])
+def list_events():
+    try:
+        events_dir = os.path.join(PROJECT_ROOT, 'events')
+        if not os.path.exists(events_dir):
+            os.makedirs(events_dir, exist_ok=True)
+        results = []
+        for d in os.listdir(events_dir):
+            cfg_path = os.path.join(events_dir, d, 'config.json')
+            if os.path.exists(cfg_path):
+                try:
+                    with open(cfg_path, 'r', encoding='utf-8') as f:
+                        cfg = json.load(f)
+                        results.append(cfg)
+                except Exception as ex:
+                    logger.error(f"Error reading event {d} config: {ex}")
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/events/create', methods=['POST'])
+def create_event():
+    try:
+        req_data = request.get_json()
+        name = req_data.get("name")
+        description = req_data.get("description", "")
+        rule_syntax = req_data.get("rule_syntax", "")
+        rules = req_data.get("rules", [])
+        is_update = req_data.get("is_update", False)
+        
+        # Backwards compatibility fallback: extract rule_syntax from rules list if empty
+        if not rule_syntax:
+            if isinstance(rules, list) and len(rules) > 0:
+                rule_syntax = rules[0]
+            elif isinstance(rules, str):
+                rule_syntax = rules
+                
+        if not name:
+            return jsonify({"error": "Event name is required"}), 400
+        if not rule_syntax:
+            return jsonify({"error": "Rule syntax is required"}), 400
+            
+        safe_name = "".join([c for c in name if c.isalnum() or c in ('_', '-')]).lower()
+        if not safe_name:
+            return jsonify({"error": "Invalid event name"}), 400
+            
+        events_dir = os.path.join(PROJECT_ROOT, 'events')
+        target_dir = os.path.join(events_dir, safe_name)
+        if os.path.exists(target_dir) and not is_update:
+            return jsonify({"error": f"Event rule '{safe_name}' already exists"}), 400
+            
+        os.makedirs(target_dir, exist_ok=True)
+        
+        cfg = {
+            "name": safe_name,
+            "description": description,
+            "enabled": True,
+            "rule_syntax": rule_syntax,
+            "rules": [rule_syntax]  # Keep rules list for frontend display
+        }
+        with open(os.path.join(target_dir, 'config.json'), 'w', encoding='utf-8') as f:
+            json.dump(cfg, f, indent=2, ensure_ascii=False)
+            
+        # Trigger reload in event engine
+        pipeline = service_context.get("pipeline")
+        if pipeline and hasattr(pipeline, 'event_engine'):
+            pipeline.event_engine.reload()
+            
+        return jsonify({"success": True, "event": cfg})
+    except Exception as e:
+        logger.error(f"Error creating event: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/events/toggle', methods=['POST'])
+def toggle_event():
+    try:
+        req_data = request.get_json()
+        name = req_data.get("name")
+        enabled = req_data.get("enabled", True)
+        
+        if not name:
+            return jsonify({"error": "Event name is required"}), 400
+            
+        events_dir = os.path.join(PROJECT_ROOT, 'events')
+        cfg_path = os.path.join(events_dir, name, 'config.json')
+        if not os.path.exists(cfg_path):
+            return jsonify({"error": f"Event '{name}' not found"}), 404
+            
+        with open(cfg_path, 'r', encoding='utf-8') as f:
+            cfg = json.load(f)
+            
+        cfg["enabled"] = enabled
+        
+        with open(cfg_path, 'w', encoding='utf-8') as f:
+            json.dump(cfg, f, indent=2, ensure_ascii=False)
+            
+        pipeline = service_context.get("pipeline")
+        if pipeline and hasattr(pipeline, 'event_engine'):
+            pipeline.event_engine.reload()
+            
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/events/delete', methods=['POST'])
+def delete_event():
+    try:
+        req_data = request.get_json()
+        name = req_data.get("name")
+        
+        if not name:
+            return jsonify({"error": "Event name is required"}), 400
+            
+        events_dir = os.path.join(PROJECT_ROOT, 'events')
+        target_dir = os.path.join(events_dir, name)
+        if not os.path.exists(target_dir):
+            return jsonify({"error": f"Event '{name}' not found"}), 404
+            
+        shutil.rmtree(target_dir)
+        
+        pipeline = service_context.get("pipeline")
+        if pipeline and hasattr(pipeline, 'event_engine'):
+            pipeline.event_engine.reload()
+            
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/settings/update', methods=['POST'])
+def api_update_settings():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No settings data provided"}), 400
+            
+        # Update state preferences directly
+        state.save_prefs(data)
+                
+        return jsonify({"success": True, "prefs": state.prefs})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 def main():
-    parser = argparse.ArgumentParser(description='CTAR Posture Monitor Stream Server')
-    parser.add_argument('--threshold', type=float, default=0.20, 
-                        help='Head-down threshold as fraction (default 0.20 = 20%% decrease)')
-    parser.add_argument('--camera', type=int, default=0, 
-                        help='Camera ID (default 0)')
-    parser.add_argument('--port', type=int, default=8080, 
-                        help='Server port (default 8080)')
-    parser.add_argument('--yaw-tolerance', type=float, default=0.10,
-                        help='Yaw tolerance as fraction (default 0.10 = 10%% deviation)')
-    
+    parser = argparse.ArgumentParser(description='CTAR Agent-Powered Server')
+    parser.add_argument('--port', type=int, default=8080)
     args = parser.parse_args()
     
-    # Create and start posture monitor in separate thread
-    global monitor_instance
-    monitor = PostureMonitor(
-        threshold_ratio=args.threshold, 
-        camera_id=args.camera,
-        yaw_tolerance=args.yaw_tolerance
-    )
-    monitor_instance = monitor  # Set global reference for runtime settings
-    capture_thread = threading.Thread(target=monitor.capture_loop, daemon=True)
-    capture_thread.start()
+    # 啟動背景線程驅動流水線
+    thread = threading.Thread(target=capture_loop, daemon=True)
+    thread.start()
     
-    print(f"\n{'='*50}")
-    print("CTAR Posture Monitor & Game Server")
-    print(f"{'='*50}")
-    print(f"Game URL:     http://localhost:{args.port}/game")
-    print(f"Live Stream:  http://localhost:{args.port}/live")
-    print(f"Status API:   http://localhost:{args.port}/status")
-    print(f"{'='*50}\n")
+    local_ip = get_local_ip()
     
-    try:
-        app.run(host='0.0.0.0', port=args.port, threaded=True)
-    except KeyboardInterrupt:
-        monitor.stop()
-        print("\nServer stopped.")
-
+    # 啟動 HTTPS 背景伺服器 (以支援手機端瀏覽器的 Secure Context)
+    def run_https():
+        try:
+            logger.info("Starting HTTPS Server on port 8443 for Secure Context (Local Wi-Fi)...")
+            app.run(host='0.0.0.0', port=8443, ssl_context='adhoc', threaded=True)
+        except Exception as e:
+            logger.error(f"Failed to start HTTPS server: {e}")
+            
+    https_thread = threading.Thread(target=run_https, daemon=True)
+    https_thread.start()
+    
+    logger.info(f"CTAR Agent Server starting on http://localhost:{args.port}")
+    logger.info(f"Mobile Access URL (HTTP): http://{local_ip}:{args.port}/mobile")
+    logger.info(f"Mobile Access URL (HTTPS Local): https://{local_ip}:8443/mobile")
+    start_tunnel(args.port)
+    app.run(host='0.0.0.0', port=args.port, threaded=True)
 
 if __name__ == "__main__":
     main()
