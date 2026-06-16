@@ -35,7 +35,8 @@ class SharedState:
             sway_threshold=float(self.prefs.get("sway_threshold", 0.15) * 100),
             lean_threshold=float(self.prefs.get("lean_threshold", 0.10) * 100),
             camera_source=["local_0"], # ALWAYS default to local_0 regardless of preferences
-            flip_enabled=self.prefs.get("flip_enabled", True)
+            flip_enabled=self.prefs.get("flip_enabled", True),
+            privacy_mode=self.prefs.get("privacy_mode", True)
         )
         self.status_lock = threading.Lock()
         
@@ -51,7 +52,8 @@ class SharedState:
             "username": "User",
             "last_baseline_eye": 0.0,
             "camera_source": "local_0",
-            "flip_enabled": True
+            "flip_enabled": True,
+            "privacy_mode": True
         }
         if self.prefs_path.exists():
             try:
@@ -112,12 +114,19 @@ class SharedState:
             if "flip_enabled" in new_prefs:
                 current_dict["flip_enabled"] = bool(new_prefs["flip_enabled"])
                 
+            if "privacy_mode" in new_prefs:
+                current_dict["privacy_mode"] = bool(new_prefs["privacy_mode"])
+                
             self.status = DetectorStatus(**current_dict)
             
         try:
             with open(self.prefs_path, "w") as f:
-                json.dump(self.prefs, f, indent=4)
-            logger.info("Preferences saved and status synchronized successfully (Personalization)")
+                persistent_prefs = {
+                    k: v for k, v in self.prefs.items()
+                    if not ("threshold" in k or "tolerance" in k)
+                }
+                json.dump(persistent_prefs, f, indent=4)
+            logger.info("Preferences saved (sliders excluded for memory-only tuning)")
         except Exception as e:
             logger.error(f"Failed to save preferences: {e}")
 
