@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTAR Posture Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        input[type=range] {
+            width: 100%;
+            height: 0.5rem;
+            background-color: rgb(55 65 81);
+            border-radius: 0.5rem;
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 1rem;
+            width: 1rem;
+            border-radius: 9999px;
+            background-color: rgb(59 130 246);
+            -webkit-appearance: none;
+            cursor: pointer;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: 2px solid white;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8">
+            <div class="flex items-center gap-3">
+                <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse" id="connection-status"></div>
+                <h1 class="text-xl font-bold tracking-tight">CTAR <span class="text-gray-500 font-normal"
+                        data-i18n="monitor_dashboard">Monitor Dashboard</span></h1>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <!-- Language Switcher -->
+                <div class="flex gap-2">
+                    <button onclick="setLang('zh-TW')"
+                        class="text-xs px-2 py-1 rounded border border-gray-600 hover:bg-gray-700 transition"
+                        id="btn-zh">繁體中文</button>
+                    <button onclick="setLang('en')"
+                        class="text-xs px-2 py-1 rounded border border-gray-600 hover:bg-gray-700 transition"
+                        id="btn-en">English</button>
+                </div>
+
+                <a href="/game"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
+                    <span data-i18n="play_game">Play Game</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                </a>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Main Video Stream -->
+            <div class="lg:col-span-2 space-y-4">
+                <div
+                    class="relative aspect-video bg-black rounded-2xl overflow-hidden border border-gray-800 shadow-2xl">
+                    <img src="/live" class="w-full h-full object-contain" alt="Live Stream">
+
+                    <!-- Overlay Status -->
+                    <div
+                        class="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-red-500" id="live-indicator"></div>
+                        <span class="text-xs font-medium text-white/90" data-i18n="live">LIVE</span>
+                    </div>
+
+                    <div class="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+                        <div class="flex flex-col gap-2">
+                            <!-- HEAD DOWN Alert -->
+                            <div id="posture-alert"
+                                class="hidden px-4 py-2 bg-red-500/90 backdrop-blur-md rounded-lg border border-red-400 text-white font-bold animate-bounce flex items-center gap-2">
+                                ⚠️ <span data-i18n="alert_head_down">HEAD DOWN</span>
+                            </div>
+                            <!-- TURNING Alert -->
+                            <div id="turning-alert"
+                                class="hidden px-4 py-2 bg-yellow-500/90 backdrop-blur-md rounded-lg border border-yellow-400 text-white font-bold flex items-center gap-2">
+                                ⚠️ <span data-i18n="alert_turning">TURNING</span>
+                            </div>
+                        </div>
+
+                        <div class="px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-lg border border-white/10">
+                            <span class="text-xs font-mono text-white/80" id="fps-display">FPS: 0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar Controls & Stats -->
+            <div class="space-y-6">
+                <!-- Status Cards -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                        <div class="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1" data-i18n="ratio">
+                            Ratio</div>
+                        <div class="text-2xl font-bold text-white text-blue-400" id="ratio-value">0%</div>
+                    </div>
+                    <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                        <div class="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1"
+                            data-i18n="down_count">Down Count</div>
+                        <div class="text-2xl font-bold text-white text-purple-400" id="down-count">0</div>
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 space-y-6">
+                    <h2 class="text-sm font-semibold text-white/90 border-b border-gray-700 pb-2"
+                        data-i18n="sensitivity_settings">Sensitivity Settings</h2>
+
+                    <!-- Threshold Slider -->
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <label class="text-xs text-gray-400 font-medium" data-i18n="threshold_label">Head Down
+                                Threshold</label>
+                            <span class="text-xs text-blue-400 font-mono" id="thresh-val">20%</span>
+                        </div>
+                        <input type="range" id="threshold-slider" min="5" max="50" value="20"
+                            oninput="updateSetting('threshold', this.value)">
+                        <p class="text-[10px] text-gray-500 mt-1" data-i18n="threshold_desc">Lower value = harder to
+                            detect head down</p>
+                    </div>
+
+                    <!-- Yaw Tolerance Slider -->
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <label class="text-xs text-gray-400 font-medium" data-i18n="yaw_label">Head Turn
+                                Tolerance</label>
+                            <span class="text-xs text-blue-400 font-mono" id="yaw-val">10%</span>
+                        </div>
+                        <input type="range" id="yaw-slider" min="5" max="50" value="10"
+                            oninput="updateSetting('yaw_tolerance', this.value)">
+                        <p class="text-[10px] text-gray-500 mt-1" data-i18n="yaw_desc">Higher value = allows more head
+                            turning</p>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 space-y-4">
+                    <h2 class="text-sm font-semibold text-white/90 border-b border-gray-700 pb-2 mb-4"
+                        data-i18n="actions">Actions</h2>
+
+                    <!-- Backend Toggle -->
+                    <div class="flex items-center justify-between bg-gray-700/50 p-3 rounded-lg border border-gray-600">
+                        <span class="text-sm font-medium text-white" data-i18n="detection_active">Detection
+                            Active</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="detection-toggle" class="sr-only peer"
+                                onchange="toggleDetection(this.checked)">
+                            <div
+                                class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600">
+                            </div>
+                        </label>
+                    </div>
+
+                    <button onclick="recalibrate()"
+                        class="w-full py-3 bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-white text-sm font-medium rounded-lg transition-colors border border-gray-600 flex justify-center items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            class="animate-spin hidden" id="calib-spinner" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                        </svg>
+
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            id="calib-icon" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <path
+                                d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" />
+                        </svg>
+                        <span data-i18n="recalibrate">Recalibrate Position</span>
+                    </button>
+                    <p class="text-[10px] text-gray-500 mt-3 text-center" data-i18n="recalibrate_hint">
+                        Look straight ahead and click to reset baseline.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Internationalization ---
+        const translations = {
+            'en': {
+                'monitor_dashboard': 'Monitor Dashboard',
+                'play_game': 'Play Game',
+                'live': 'LIVE',
+                'alert_head_down': 'HEAD DOWN',
+                'alert_turning': 'TURNING',
+                'ratio': 'Ratio',
+                'down_count': 'Down Count',
+                'sensitivity_settings': 'Sensitivity Settings',
+                'threshold_label': 'Head Down Threshold',
+                'threshold_desc': 'Lower value = harder to detect head down',
+                'yaw_label': 'Head Turn Tolerance',
+                'yaw_desc': 'Higher value = allows more head turning',
+                'actions': 'Actions',
+                'detection_active': 'Detection Active',
+                'recalibrate': 'Recalibrate Position',
+                'recalibrate_hint': 'Look straight ahead and click to reset baseline.'
+            },
+            'zh-TW': {
+                'monitor_dashboard': '監控儀表板',
+                'play_game': '開始遊戲',
+                'live': '即時影像',
+                'alert_head_down': '低頭警示',
+                'alert_turning': '轉頭中',
+                'ratio': '比率',
+                'down_count': '低頭次數',
+                'sensitivity_settings': '靈敏度設定',
+                'threshold_label': '低頭閥值 (Threshold)',
+                'threshold_desc': '數值越低，越難觸發低頭判定',
+                'yaw_label': '轉頭容忍度 (Tolerance)',
+                'yaw_desc': '數值越高，允許頭部轉動幅度越大',
+                'actions': '操作面板',
+                'detection_active': '啟用姿態偵測',
+                'recalibrate': '重新校準基準',
+                'recalibrate_hint': '請注視前方並點擊，以重設基準位置。'
+            }
+        };
+
+        let currentLang = 'zh-TW';
+
+        function setLang(lang) {
+            currentLang = lang;
+            const t = translations[lang];
+
+            // Update all elements with data-i18n attribute
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) el.textContent = t[key];
+            });
+
+            // Highlight active button
+            const zhBtn = document.getElementById('btn-zh');
+            const enBtn = document.getElementById('btn-en');
+
+            if (lang === 'zh-TW') {
+                zhBtn.classList.add('bg-gray-700', 'text-white');
+                enBtn.classList.remove('bg-gray-700', 'text-white');
+            } else {
+                enBtn.classList.add('bg-gray-700', 'text-white');
+                zhBtn.classList.remove('bg-gray-700', 'text-white');
+            }
+        }
+
+        // --- Logic ---
+
+        const statusEl = document.getElementById('connection-status');
+        const liveIndicator = document.getElementById('live-indicator');
+        const toggleEl = document.getElementById('detection-toggle');
+
+        async function fetchStatus() {
+            try {
+                const res = await fetch('/status');
+                const data = await res.json();
+
+                // Update Badge Colors
+                const colorClass = data.connected ? 'bg-green-500' : 'bg-red-500';
+                statusEl.className = `w-3 h-3 rounded-full animate-pulse ${colorClass}`;
+                liveIndicator.className = `w-2 h-2 rounded-full ${colorClass}`;
+
+                // Update Stats
+                document.getElementById('fps-display').textContent = `FPS: ${data.fps}`;
+                document.getElementById('ratio-value').textContent = `${data.ratio}%`;
+                document.getElementById('down-count').textContent = data.down_count;
+
+                // Sync Settings
+                if (!document.getElementById('threshold-slider').matches(':active')) {
+                    document.getElementById('thresh-val').textContent = `${data.threshold}%`;
+                    document.getElementById('threshold-slider').value = data.threshold;
+                }
+                if (!document.getElementById('yaw-slider').matches(':active')) {
+                    document.getElementById('yaw-val').textContent = `${data.yaw_tolerance}%`;
+                    document.getElementById('yaw-slider').value = data.yaw_tolerance;
+                }
+
+                // Sync Toggle
+                if (!toggleEl.matches(':active')) {
+                    toggleEl.checked = data.is_active !== false; // Default true if undefined
+                }
+
+                // Alerts
+                const headAlert = document.getElementById('posture-alert');
+                const turnAlert = document.getElementById('turning-alert');
+
+                if (data.is_bad_posture) headAlert.classList.remove('hidden');
+                else headAlert.classList.add('hidden');
+
+                if (data.is_turning) turnAlert.classList.remove('hidden');
+                else turnAlert.classList.add('hidden');
+
+            } catch (e) {
+                console.error(e);
+                statusEl.className = 'w-3 h-3 rounded-full bg-gray-500';
+            }
+        }
+
+        async function updateSetting(key, value) {
+            if (key === 'threshold') document.getElementById('thresh-val').textContent = `${value}%`;
+            if (key === 'yaw_tolerance') document.getElementById('yaw-val').textContent = `${value}%`;
+
+            try {
+                await fetch('/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ [key]: parseFloat(value) })
+                });
+            } catch (e) { console.error("Failed to update settings", e); }
+        }
+
+        async function toggleDetection(active) {
+            try {
+                await fetch('/control', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ active: active })
+                });
+            } catch (e) { console.error("Failed to toggle detection", e); }
+        }
+
+        async function recalibrate() {
+            const icon = document.getElementById('calib-icon');
+            const spinner = document.getElementById('calib-spinner');
+
+            icon.classList.add('hidden');
+            spinner.classList.remove('hidden');
+
+            try {
+                await fetch('/recalibrate', { method: 'POST' });
+                // Reset icon after 1s
+                setTimeout(() => {
+                    icon.classList.remove('hidden');
+                    spinner.classList.add('hidden');
+                }, 1000);
+            } catch (e) {
+                console.error("Failed to recalibrate", e);
+                icon.classList.remove('hidden');
+                spinner.classList.add('hidden');
+            }
+        }
+
+        // Initialize Language
+        setLang('zh-TW');
+
+        // Poll
+        setInterval(fetchStatus, 100);
+    </script>
+</body>
+
+</html>

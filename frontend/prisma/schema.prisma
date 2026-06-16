@@ -1,0 +1,241 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ============================================
+// 用戶系統 (User System)
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  bio           String?
+  github        String?
+  twitter       String?
+  website       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts    Account[]
+  sessions    Session[]
+  submissions Submission[]
+  articles    KnowledgeArticle[]
+  blogPosts   BlogPost[]
+  comments    Comment[]
+  likes       Like[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================
+// 學習內容 (Content)
+// ============================================
+
+model Submission {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  content     String   // 檔案內容
+  demoUrl     String?  // 展示連結
+  repoUrl     String?  // Repository 連結
+  status      String   @default("pending") // pending, approved, rejected
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId   String
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments Comment[]
+  likes    Like[]
+  tags     TagsOnSubmissions[]
+}
+
+model KnowledgeArticle {
+  id              String   @id @default(cuid())
+  title           String
+  slug            String   @unique
+  content         String   // MDX 內容
+  excerpt         String?
+  difficulty      String   @default("beginner") // beginner, intermediate, advanced
+  prerequisites   String?  // 前置知識 (JSON string of article IDs)
+  published       Boolean  @default(false)
+  readingTime     Int?     // 預估閱讀時間 (分鐘)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+  comments   Comment[]
+  likes      Like[]
+  tags       TagsOnArticles[]
+}
+
+model BlogPost {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  content     String   // MDX 內容
+  excerpt     String?
+  coverImage  String?
+  published   Boolean  @default(false)
+  readingTime Int?     // 預估閱讀時間 (分鐘)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+  comments   Comment[]
+  likes      Like[]
+  tags       TagsOnBlogPosts[]
+}
+
+// ============================================
+// 分類系統 (Taxonomy)
+// ============================================
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  parentId    String?
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  articles  KnowledgeArticle[]
+  blogPosts BlogPost[]
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  submissions TagsOnSubmissions[]
+  articles    TagsOnArticles[]
+  blogPosts   TagsOnBlogPosts[]
+}
+
+// Many-to-Many relations
+model TagsOnSubmissions {
+  submissionId String
+  tagId        String
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  tag          Tag        @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([submissionId, tagId])
+}
+
+model TagsOnArticles {
+  articleId String
+  tagId     String
+  article   KnowledgeArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tag       Tag              @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, tagId])
+}
+
+model TagsOnBlogPosts {
+  blogPostId String
+  tagId      String
+  blogPost   BlogPost @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([blogPostId, tagId])
+}
+
+// ============================================
+// 互動系統 (Engagement)
+// ============================================
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Polymorphic relations
+  submissionId String?
+  submission   Submission? @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  articleId    String?
+  article      KnowledgeArticle? @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  blogPostId   String?
+  blogPost     BlogPost? @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+
+  // Nested comments
+  parentId String?
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies  Comment[] @relation("CommentReplies")
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  userId       String
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Polymorphic relations
+  submissionId String?
+  submission   Submission? @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  articleId    String?
+  article      KnowledgeArticle? @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  blogPostId   String?
+  blogPost     BlogPost? @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, submissionId])
+  @@unique([userId, articleId])
+  @@unique([userId, blogPostId])
+}
