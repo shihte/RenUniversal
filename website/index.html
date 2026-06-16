@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>認識 RenUniversal — Open Clinical Edge AI</title>
+    <meta name="description" content="開放式 AI 生理姿態與復健監控平台。從 CTAR 吞嚥復健出發，進化為人人可擴充的體感互動引擎。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Extra styles for the category grid and code block */
+        .module-cats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            max-width: 900px;
+            margin: 40px auto 0 auto;
+        }
+        .module-cat-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(#cccccc1a 0%, #cccccc05 130.2%);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 24px 32px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .module-cat-card:hover {
+            border-color: #ffffff;
+            background-color: rgba(255, 255, 255, 0.05);
+            transform: translateY(-2px);
+        }
+        .module-cat-card .arrow {
+            color: var(--text-secondary);
+            font-size: 18px;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
+        }
+        .module-cat-card:hover .arrow {
+            transform: translateX(4px);
+            color: var(--text-primary);
+        }
+        @media (max-width: 768px) {
+            .module-cats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+
+    <nav class="nav" id="nav">
+        <div class="nav-inner">
+            <a href="index.html" class="brand">
+                <svg class="brand-icon" width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="13" cy="13" r="11" stroke="url(#g-nav)" stroke-width="1.5"/>
+                    <circle cx="13" cy="13" r="4.5" fill="url(#g-nav)"/>
+                    <line x1="13" y1="2" x2="13" y2="7" stroke="url(#g-nav)" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="13" y1="19" x2="13" y2="24" stroke="url(#g-nav)" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="2" y1="13" x2="7" y2="13" stroke="url(#g-nav)" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="19" y1="13" x2="24" y2="13" stroke="url(#g-nav)" stroke-width="1.5" stroke-linecap="round"/>
+                    <defs>
+                        <linearGradient id="g-nav" x1="2" y1="2" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#00D4FF"/>
+                            <stop offset="100%" stop-color="#7C3AFF"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <span class="brand-name">RenUniversal</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">首頁</a>
+                <a href="DETAILED_ARCHITECTURE.html" class="nav-link">Architecture</a>
+                <a href="iOS_Native_App.html" class="nav-link">iOS App</a>
+            </div>
+            <a href="https://github.com/shihte/RenUniversal" class="nav-cta" target="_blank">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                GitHub
+            </a>
+        </div>
+    </nav>
+
+    <main>
+        <section class="hero">
+            <div class="hero-badge">
+                <span class="badge-pulse" style="background-color: var(--google-yellow);"></span>
+                Developer Showcase
+            </div>
+            <h1 class="hero-brand-title" style="background-image: url('Gemini_Generated_Image_b6q6pkb6q6pkb6q6.png');">RenUniversal</h1>
+            <h1 class="hero-title">
+                認識<br>Clinical Edge AI
+            </h1>
+            <p class="hero-sub">
+                開放式 AI 生理姿態與復健監控平台。<br>從 CTAR 吞嚥復健出發，進化為人人可擴充的體感互動引擎。
+            </p>
+            <div class="hero-actions">
+                <a href="https://github.com/shihte/RenUniversal" class="btn-primary" target="_blank">
+                    前往 GitHub 專案
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true" style="margin-left: 8px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+                <a href="#quickstart" class="btn-ghost">
+                    快速開始
+                </a>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-eyebrow">核心亮點</div>
+            <h2 class="section-title">Built for Precision.<br>Designed for Extensibility.</h2>
+            
+            <div class="bento" style="max-width: 900px; margin: 40px auto 0 auto;">
+                <div class="bento-card card-lg">
+                    <div class="card-body">
+                        <div class="card-tag">iOS App</div>
+                        <h3>原生 iOS 邊緣運算 App</h3>
+                        <p>100% 終端邊緣運算，免伺服器直接發揮 Apple Neural Engine 效能。500+ 特徵節點自由拓樸選取，搭配硬體級臉部打碼的高強度隱私保護。</p>
+                        <div style="margin-top: 20px;">
+                            <a href="iOS_Native_App.html" class="btn-ghost" style="padding: 10px 24px; font-size: 14px;">了解更多</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bento-card card-sm">
+                    <div class="card-body">
+                        <div class="card-tag">Hot Pluggable</div>
+                        <h3>熱插拔技能架構</h3>
+                        <p>ActionEngine 運行時動態掃描 skills/ 目錄，無需重新編譯即可擴充全新動作判定。一鍵安裝 .renuniversal 第三方外掛包。</p>
+                        <div style="margin-top: 20px;">
+                            <a href="DETAILED_ARCHITECTURE.html" class="btn-ghost" style="padding: 10px 24px; font-size: 14px;">了解更多</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-eyebrow">探索平台模組</div>
+            <h2 class="section-title">Explore Modules</h2>
+            <p class="section-sub">技能、事件、外掛與體感遊戲</p>
+
+            <div class="module-cats">
+                <a class="module-cat-card" href="module_pose_estimation.html">
+                    <span>多鏡頭 AI 姿態判定</span>
+                    <span class="arrow">→</span>
+                </a>
+                <a class="module-cat-card" href="module_event_engine.html">
+                    <span>事件引擎 Event Engine</span>
+                    <span class="arrow">→</span>
+                </a>
+                <a class="module-cat-card" href="module_ctar.html">
+                    <span>CTAR 吞嚥復健訓練</span>
+                    <span class="arrow">→</span>
+                </a>
+                <a class="module-cat-card" href="module_games.html">
+                    <span>體感互動遊戲</span>
+                    <span class="arrow">→</span>
+                </a>
+            </div>
+        </section>
+
+        <section class="section deploy-section" id="quickstart">
+            <div class="deploy-grid">
+                <div class="deploy-content fade-in">
+                    <div class="section-eyebrow">快速開始</div>
+                    <h2 class="section-title">快速開始教學</h2>
+                    <p class="section-sub">Deploy in Seconds. Extend Without Limits.</p>
+                    <ul class="feature-list" style="margin-top: 2rem; list-style: none; padding: 0; color: var(--text-secondary); text-align: left; max-width: 400px; margin-left: auto; margin-right: auto;">
+                        <li style="margin-bottom: 1rem;"><span style="color: var(--google-green); margin-right: 8px;">✓</span> 跨平台一鍵部署 (iOS/Android/Web)</li>
+                        <li style="margin-bottom: 1rem;"><span style="color: var(--google-blue); margin-right: 8px;">✓</span> 支援超過 50 種醫療復健模組</li>
+                        <li><span style="color: var(--google-yellow); margin-right: 8px;">✓</span> 即時熱更新與外掛擴充</li>
+                    </ul>
+                </div>
+                <div class="terminal-wrap fade-in">
+                    <div class="terminal">
+                        <div class="terminal-bar">
+                            <div class="t-dot" style="background:#FF5F56"></div>
+                            <div class="t-dot" style="background:#FFBD2E"></div>
+                            <div class="t-dot" style="background:#27C93F"></div>
+                            <span class="terminal-title">zsh — Quick Start</span>
+                        </div>
+                        <div class="terminal-body" style="text-align: left;">
+                            <div class="t-line"><span class="t-comment"># 1. 複製專案庫</span></div>
+                            <div class="t-line"><span class="t-prompt">❯</span><span class="t-cmd"> git clone https://github.com/shihte/RenUniversal.git</span></div>
+                            <div class="t-line t-gap"><span class="t-prompt">❯</span><span class="t-cmd"> cd RenUniversal</span></div>
+                            <div class="t-line t-gap" style="margin-top: 1rem;"><span class="t-comment"># 2. 環境初始化與運行 (Mac / Linux)</span></div>
+                            <div class="t-line"><span class="t-prompt">❯</span><span class="t-cmd"> make setup</span></div>
+                            <div class="t-line"><span class="t-prompt">❯</span><span class="t-cmd"> make run</span></div>
+                            <div class="t-line t-gap" style="margin-top: 1rem;"><span class="t-comment"># 2. 環境初始化與運行 (Windows)</span></div>
+                            <div class="t-line"><span class="t-prompt">❯</span><span class="t-cmd"> renuniversal.bat setup</span></div>
+                            <div class="t-line"><span class="t-prompt">❯</span><span class="t-cmd"> renuniversal.bat run</span></div>
+                            <div class="t-line"><span class="t-success" style="color: var(--google-green);">  ✓ Core Engine Started on Port 8080</span></div>
+                            <div class="t-cursor-line" style="margin-top: 1rem;"><span class="t-prompt">❯</span><span class="t-cursor"></span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <a href="index.html" class="brand">
+                    <svg class="brand-icon" width="22" height="22" viewBox="0 0 26 26" fill="none">
+                        <circle cx="13" cy="13" r="11" stroke="url(#g-foot)" stroke-width="1.5"/>
+                        <circle cx="13" cy="13" r="4.5" fill="url(#g-foot)"/>
+                        <line x1="13" y1="2" x2="13" y2="7" stroke="url(#g-foot)" stroke-width="1.5" stroke-linecap="round"/>
+                        <line x1="13" y1="19" x2="13" y2="24" stroke="url(#g-foot)" stroke-width="1.5" stroke-linecap="round"/>
+                        <line x1="2" y1="13" x2="7" y2="13" stroke="url(#g-foot)" stroke-width="1.5" stroke-linecap="round"/>
+                        <line x1="19" y1="13" x2="24" y2="13" stroke="url(#g-foot)" stroke-width="1.5" stroke-linecap="round"/>
+                        <defs>
+                            <linearGradient id="g-foot" x1="2" y1="2" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stop-color="#00D4FF"/>
+                                <stop offset="100%" stop-color="#7C3AFF"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span class="brand-name">RenUniversal</span>
+                </a>
+                <p class="footer-tagline">Open Platform for Clinical Edge AI</p>
+            </div>
+            <div class="footer-right">
+                <span class="footer-copy">MIT License · Copyright © 2026</span>
+                <div class="footer-links">
+                    <a href="index.html" class="footer-link">首頁</a>
+                    <a href="https://github.com/shihte/RenUniversal" class="footer-link" target="_blank">GitHub</a>
+                    <a href="DETAILED_ARCHITECTURE.html" class="footer-link">Architecture</a>
+                    <a href="iOS_Native_App.html" class="footer-link">iOS App</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script src="script.js"></script>
+</body>
+</html>
