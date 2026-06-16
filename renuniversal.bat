@@ -17,7 +17,6 @@ if /i "%1"=="help" goto help
 if /i "%1"=="setup" goto setup
 if /i "%1"=="run" goto run
 if /i "%1"=="start" goto run
-if /i "%1"=="test" goto test
 if /i "%1"=="clean" goto clean
 if /i "%1"=="install" goto install
 if /i "%1"=="build" goto build
@@ -34,7 +33,6 @@ echo.
 echo   renuniversal.bat setup    - Initialize Python virtual env and dependencies
 echo   renuniversal.bat run      - Run the Agent server in foreground
 echo   renuniversal.bat start    - Same as run
-echo   renuniversal.bat test     - Run architecture validation tests
 echo   renuniversal.bat clean    - Clear cache and logs
 echo   renuniversal.bat install ^<path^> - Install a .renuniversal plugin
 echo   renuniversal.bat build --name ^<N^> --skills ^<S^> --events ^<E^> --apps ^<A^> - Package a plugin
@@ -89,16 +87,6 @@ if not exist "%SERVER_SCRIPT%" (
 echo === Starting RenUniversal Agent Server (Press Ctrl+C to stop) ===
 set "PYTHONPATH=%PROJECT_ROOT%;%PYTHONPATH%"
 "%VENV_PYTHON%" "%SERVER_SCRIPT%"
-exit /b 0
-
-:test
-if not exist "%VENV_PYTHON%" (
-    echo [Error] Virtual environment not found. Please run 'renuniversal.bat setup' first.
-    exit /b 1
-)
-echo === Running Architecture Validation Tests ===
-set "PYTHONPATH=%PROJECT_ROOT%;%PYTHONPATH%"
-"%VENV_PYTHON%" "%PROJECT_ROOT%backend\test_architecture.py"
 exit /b 0
 
 :clean
