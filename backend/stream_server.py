@@ -143,6 +143,16 @@ def generate_mjpeg_stream():
 
 # --- Routes ---
 
+def get_json_or_400():
+    """
+    安全解析 JSON 請求體；若 body 缺失或非合法 JSON 則回傳 (None, error_response)。
+    避免 request.get_json() 在空 body / 非 JSON 時拋出未處理例外造成 500。
+    """
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return None, (jsonify({"error": "Request body must be a valid JSON object"}), 400)
+    return data, None
+
 def check_auth(username, password):
     expected_user = app.config.get('BASIC_AUTH_USERNAME')
     expected_pass = app.config.get('BASIC_AUTH_PASSWORD')
@@ -223,8 +233,11 @@ def settings():
             "flip_enabled": s.flip_enabled
         })
     
+    body, err = get_json_or_400()
+    if err:
+        return err
     try:
-        data = SettingsUpdate(**request.get_json())
+        data = SettingsUpdate(**body)
         update_dict = {}
         if data.threshold is not None:
             update_dict["threshold"] = data.threshold
@@ -305,8 +318,11 @@ def recalibrate():
 
 @app.route('/control', methods=['POST'])
 def control():
+    body, err = get_json_or_400()
+    if err:
+        return err
     try:
-        cmd = ControlCommand(**request.get_json())
+        cmd = ControlCommand(**body)
         state.update_status(is_active=cmd.active)
         return jsonify({"success": True})
     except ValidationError as e:
@@ -337,7 +353,9 @@ def list_skills():
 @app.route('/api/skills/create', methods=['POST'])
 def create_skill():
     try:
-        req_data = request.get_json()
+        req_data, err = get_json_or_400()
+        if err:
+            return err
         name = req_data.get("name")
         description = req_data.get("description", "")
         requirements = req_data.get("requirements", {"face_mesh": True, "pose": False})
@@ -390,7 +408,9 @@ def create_skill():
 @app.route('/api/skills/toggle', methods=['POST'])
 def toggle_skill():
     try:
-        req_data = request.get_json()
+        req_data, err = get_json_or_400()
+        if err:
+            return err
         name = req_data.get("name")
         enabled = req_data.get("enabled", True)
         
@@ -422,7 +442,9 @@ def toggle_skill():
 @app.route('/api/skills/delete', methods=['POST'])
 def delete_skill():
     try:
-        req_data = request.get_json()
+        req_data, err = get_json_or_400()
+        if err:
+            return err
         name = req_data.get("name")
         
         if not name:
@@ -469,7 +491,9 @@ def list_events():
 @app.route('/api/events/create', methods=['POST'])
 def create_event():
     try:
-        req_data = request.get_json()
+        req_data, err = get_json_or_400()
+        if err:
+            return err
         name = req_data.get("name")
         description = req_data.get("description", "")
         rule_syntax = req_data.get("rule_syntax", "")
@@ -522,7 +546,9 @@ def create_event():
 @app.route('/api/events/toggle', methods=['POST'])
 def toggle_event():
     try:
-        req_data = request.get_json()
+        req_data, err = get_json_or_400()
+        if err:
+            return err
         name = req_data.get("name")
         enabled = req_data.get("enabled", True)
         
@@ -553,7 +579,9 @@ def toggle_event():
 @app.route('/api/events/delete', methods=['POST'])
 def delete_event():
     try:
-        req_data = request.get_json()
+        req_data, err = get_json_or_400()
+        if err:
+            return err
         name = req_data.get("name")
         
         if not name:
@@ -616,10 +644,10 @@ def list_apps():
 @app.route('/api/settings/update', methods=['POST'])
 def api_update_settings():
     try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "No settings data provided"}), 400
-            
+        data, err = get_json_or_400()
+        if err:
+            return err
+
         # Update state preferences directly
         state.save_prefs(data)
                 

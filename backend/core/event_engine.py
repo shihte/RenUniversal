@@ -4,6 +4,8 @@ import logging
 import re
 import math
 
+from .safe_eval import safe_eval_bool
+
 class EventEngine:
     def __init__(self, events_dir):
         self.events_dir = events_dir
@@ -221,9 +223,8 @@ class EventEngine:
             py_syntax = re.sub(r'[a-zA-Z0-9_]+', replacer, py_syntax)
             
             try:
-                # Evaluate the final logic expression safely
-                result = eval(py_syntax, {"__builtins__": {}}, {})
-                triggered_events[evt_name] = bool(result)
+                # Evaluate the final logic expression safely (AST 白名單，禁止任意程式碼)
+                triggered_events[evt_name] = safe_eval_bool(py_syntax)
             except Exception as e:
                 self.logger.warning(f"Failed to evaluate event '{evt_name}' syntax '{syntax}' (compiled: '{py_syntax}'): {e}")
                 triggered_events[evt_name] = False
