@@ -1,135 +1,152 @@
 import cv2
 import mediapipe as mp
-import math
+import numpy as np
 import time
-import sys
+import math
 
 class PostureMonitor:
-    def __init__(self, threshold_angle=3.0, camera_id=0):
-        self.threshold_angle = abs(threshold_angle) # Use absolute value
+    def __init__(self, threshold_ratio=2.0, camera_id=0):
+        # Hysteresis thresholds to prevent fluctuation
+        # Enter "bad posture" at ratio > threshold_high
+        # Exit "bad posture" at ratio < threshold_low
+        self.threshold_high = threshold_ratio + 0.3  # e.g., 2.3
+        self.threshold_low = threshold_ratio - 0.3   # e.g., 1.7
+        self.threshold_ratio = threshold_ratio  # For display
         self.camera_id = camera_id
         
-        # We will now use absolute deviation Logic
-        # logic: if abs(current_angle) > self.threshold_angle -> Bad Posture
-        
         # MediaPipe Setup
-        self.mp_drawing = mp.solutions.drawing_utils
-        self.mp_drawing_styles = mp.solutions.drawing_styles
         self.mp_face_mesh = mp.solutions.face_mesh
         
-        # State
+        # Posture Counters
         self.down_count = 0
+        
+        # State Flags
         self.is_down = False
+        
+        # Timing
         self.prev_time = 0
         
-        # Smoothing
-        self.smooth_angle = None
-        self.alpha = args.alpha if 'args' in globals() else 0.1  # Smoothing factor
+        # Smoothing (Exponential Moving Average)
+        self.smooth_ratio = 0
+        self.alpha = 0.3  # Smoothing factor
         
-        # Auto-Reset (Dynamic Stability)
-        self.stable_ref_angle = 0.0 # The angle we are currently holding stable at
-        self.stable_start_time = time.time()
-        self.reset_duration = 3.0 # seconds
-        self.zero_offset = 0.0 # Calibration offset
+        # Landmark indices for 2D ratio calculation
+        self.NOSE = 1
+        self.CHIN = 152
+        self.LEFT_EYE = 33
+        self.RIGHT_EYE = 263
 
-    def calculate_angle(self, p1, p2):
-        """Calculates the angle of the vector p1->p2 relative to vertical (0, -1)."""
-        x1, y1 = p1
-        x2, y2 = p2
-        vx = x2 - x1
-        vy = y2 - y1
-        return math.degrees(math.atan2(vx, -vy))
+    def calculate_distance(self, p1, p2):
+        """Calculate Euclidean distance between two points."""
+        return math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
+    
+    def get_ratio(self, face_landmarks, w, h):
+        """
+        Calculate vertical ratio to detect looking down.
+        Ratio = (Chin Y - Nose Y) / (Nose Y - Eye Y)
+        
+        When looking down:
+        - Nose moves UP in frame (closer to eyes)
+        - Chin moves DOWN in frame (further from nose)
+        - So (Chin-Nose) increases and (Nose-Eye) decreases
+        - Net result: Ratio INCREASES
+        
+        When turning head:
+        - All Y coordinates shift similarly
+        - Ratio stays relatively stable
+        """
+        # Get landmark positions
+        nose = face_landmarks.landmark[self.NOSE]
+        chin = face_landmarks.landmark[self.CHIN]
+        left_eye = face_landmarks.landmark[self.LEFT_EYE]
+        right_eye = face_landmarks.landmark[self.RIGHT_EYE]
+        
+        # Use Y coordinates (vertical position)
+        # Note: In image coordinates, Y increases downward
+        nose_y = nose.y * h
+        chin_y = chin.y * h
+        eye_y = (left_eye.y + right_eye.y) / 2 * h  # Average of both eyes
+        
+        # Get pixel positions for drawing
+        nose_pt = (nose.x * w, nose.y * h)
+        chin_pt = (chin.x * w, chin.y * h)
+        left_eye_pt = (left_eye.x * w, left_eye.y * h)
+        right_eye_pt = (right_eye.x * w, right_eye.y * h)
+        
+        # Calculate vertical distances
+        chin_to_nose = chin_y - nose_y  # Distance from nose to chin
+        nose_to_eye = nose_y - eye_y    # Distance from eye to nose
+        
+        # Avoid division by zero
+        if nose_to_eye <= 0:
+            return None
+        
+        ratio = chin_to_nose / nose_to_eye
+        return ratio, (nose_pt, chin_pt, left_eye_pt, right_eye_pt)
 
     def process_frame(self, frame, face_mesh):
         h, w, _ = frame.shape
         img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = face_mesh.process(img_rgb)
         
-        current_angle = None
+        current_ratio = None
         
         if results.multi_face_landmarks:
             face_landmarks = results.multi_face_landmarks[0]
             
-            pt_chin = face_landmarks.landmark[152]
-            pt_fore = face_landmarks.landmark[10]
+            # Get ratio
+            result = self.get_ratio(face_landmarks, w, h)
             
-            x_chin, y_chin = int(pt_chin.x * w), int(pt_chin.y * h)
-            x_fore, y_fore = int(pt_fore.x * w), int(pt_fore.y * h)
-
-            # Calculate Angle (Raw)
-            raw_angle = self.calculate_angle((x_chin, y_chin), (x_fore, y_fore))
-            
-            # Smoothing
-            if self.smooth_angle is None:
-                self.smooth_angle = raw_angle
-                self.stable_ref_angle = raw_angle
-            else:
-                self.smooth_angle = self.alpha * raw_angle + (1 - self.alpha) * self.smooth_angle
-            
-            # Apply offset (Tare)
-            current_angle = round(self.smooth_angle - self.zero_offset, 1)
-
-            # Draw Visuals
-            cv2.circle(frame, (x_chin, y_chin), 5, (0, 0, 255), -1)
-            cv2.circle(frame, (x_fore, y_fore), 5, (0, 255, 0), -1)
-            cv2.line(frame, (x_chin, y_chin), (x_fore, y_fore), (255, 0, 0), 2)
-            
-            self.mp_drawing.draw_landmarks(
-                image=frame,
-                landmark_list=face_landmarks,
-                connections=self.mp_face_mesh.FACEMESH_CONTOURS,
-                landmark_drawing_spec=None,
-                connection_drawing_spec=self.mp_drawing_styles.get_default_face_mesh_contours_style()
-            )
-
-            # Logic: Check Down
-            # Absolute Deviation Logic
-            # Assuming 0 is neutral. Any deviation > threshold is "Bad" (or at least "Down" if we ignore Looking Up)
-            is_posture_bad = False
-            if abs(current_angle) > self.threshold_angle:
-                is_posture_bad = True
-
-            if is_posture_bad:
-                if not self.is_down:
-                    self.down_count += 1
-                    self.is_down = True
+            if result is not None:
+                ratio, (nose_pt, chin_pt, left_eye_pt, right_eye_pt) = result
                 
-                cv2.putText(frame, "Bad Posture (Look Up)", (50, 200),
-                            cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2)
-            else:
-                self.is_down = False
-
-            # Dynamic Stability Reset Logic
-            # Check if *actual smoothed angle* (not the offsetted one) is stable
-            # This allows us to track stability of head movement regardless of current zero
-            if abs(self.smooth_angle - self.stable_ref_angle) <= 1.0:
-                elapsed = time.time() - self.stable_start_time
-                if elapsed >= self.reset_duration:
-                    # self.down_count = 0  <-- REMOVED: Count should persist
-                    self.zero_offset = self.smooth_angle # Recalibrate/Tare!
-                    
-                    # Visual feedback
-                    cv2.putText(frame, "RECALIBRATED!", (50, 300),
-                            cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 255), 2)
+                # Smoothing
+                if self.smooth_ratio == 0:
+                    self.smooth_ratio = ratio
                 else:
-                    # Show progress
-                     if elapsed > 0.5:
-                        cv2.putText(frame, f"Calibrating... {max(0, self.reset_duration - elapsed):.1f}s", (50, 300),
-                                cv2.FONT_HERSHEY_PLAIN, 1.5, (255, 255, 0), 2)
-            else:
-                # Movement detected, reset stability reference
-                self.stable_ref_angle = self.smooth_angle
-                self.stable_start_time = time.time()
+                    self.smooth_ratio = self.alpha * ratio + (1 - self.alpha) * self.smooth_ratio
+                
+                current_ratio = self.smooth_ratio
+                
+                # Draw landmarks for visualization
+                cv2.circle(frame, (int(nose_pt[0]), int(nose_pt[1])), 5, (0, 255, 255), -1)  # Nose - Yellow
+                cv2.circle(frame, (int(chin_pt[0]), int(chin_pt[1])), 5, (0, 255, 0), -1)    # Chin - Green
+                cv2.circle(frame, (int(left_eye_pt[0]), int(left_eye_pt[1])), 5, (255, 0, 0), -1)  # Left Eye - Blue
+                cv2.circle(frame, (int(right_eye_pt[0]), int(right_eye_pt[1])), 5, (255, 0, 0), -1)  # Right Eye - Blue
+                
+                # Draw lines
+                cv2.line(frame, (int(nose_pt[0]), int(nose_pt[1])), (int(chin_pt[0]), int(chin_pt[1])), (0, 255, 0), 2)
+                cv2.line(frame, (int(left_eye_pt[0]), int(left_eye_pt[1])), (int(right_eye_pt[0]), int(right_eye_pt[1])), (255, 0, 0), 2)
+                
+                # Logic: Hysteresis to prevent fluctuation
+                # Enter "bad posture" at ratio > threshold_high
+                # Exit "bad posture" at ratio < threshold_low
+                is_posture_bad = False
+                
+                if self.is_down:
+                    # Currently in "bad" state, need to drop below low threshold to exit
+                    if current_ratio < self.threshold_low:
+                        self.is_down = False
+                    else:
+                        is_posture_bad = True
+                else:
+                    # Currently in "good" state, need to exceed high threshold to enter
+                    if current_ratio > self.threshold_high:
+                        is_posture_bad = True
+                        self.down_count += 1
+                        self.is_down = True
 
-            # Display Angle
-            # Determine color based on bad/good status
-            color = (0, 0, 255) if is_posture_bad else (0, 255, 255)
-            cv2.putText(frame, f"Angle: {current_angle} deg", (50, 150),
-                        cv2.FONT_HERSHEY_PLAIN, 2, color, 2)
-            
-            # Display Threshold
-            cv2.putText(frame, f"Limit: {self.threshold_angle}", (w - 200, 80),
-                        cv2.FONT_HERSHEY_PLAIN, 1.5, (200, 200, 200), 2)
+                # Display warning message if posture bad
+                if is_posture_bad:
+                    cv2.putText(frame, "Bad Posture (Looking Down)", (50, 200),
+                                cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2)
+
+                # Display Info
+                color = (0, 0, 255) if is_posture_bad else (0, 255, 255)
+                cv2.putText(frame, f"Ratio: {current_ratio:.2f}", (50, 150),
+                            cv2.FONT_HERSHEY_PLAIN, 2, color, 2)
+                cv2.putText(frame, f"Range: {self.threshold_low:.1f} - {self.threshold_high:.1f}", (w - 280, 80),
+                            cv2.FONT_HERSHEY_PLAIN, 1.5, (200, 200, 200), 2)
 
         return frame
 
@@ -139,15 +156,15 @@ class PostureMonitor:
             print("Error: Could not open webcam.")
             return
 
-        print("Starting Posture Monitor... Press 'ESC' to exit.")
-        print(f"Threshold: {self.threshold_angle} (Absolute Deviation)")
+        print("Starting 2D Vertical Ratio Posture Monitor...")
+        print(f"Threshold Range: {self.threshold_low:.1f} (exit) - {self.threshold_high:.1f} (enter)")
+        print("(Chin-Nose Y) / (Nose-Eye Y) ratio with Hysteresis")
         
         with self.mp_face_mesh.FaceMesh(
             max_num_faces=1,
-            refine_landmarks=False,
-            min_detection_confidence=0.7,
-            min_tracking_confidence=0.7
-        ) as face_mesh:
+            refine_landmarks=True,
+            min_detection_confidence=0.5,
+            min_tracking_confidence=0.5) as face_mesh:
             
             while cap.isOpened():
                 success, frame = cap.read()
@@ -155,39 +172,37 @@ class PostureMonitor:
                     print("Ignoring empty camera frame.")
                     continue
 
-                frame = cv2.flip(frame, 1) # Mirror view
                 frame = self.process_frame(frame, face_mesh)
-
+                
+                # Mirror
+                frame = cv2.flip(frame, 1)
+                
+                # FPS
                 curr_time = time.time()
-                fps = 1 / (curr_time - self.prev_time) if (curr_time - self.prev_time) > 0 else 0
+                fps = 1 / (curr_time - self.prev_time) if self.prev_time else 0
                 self.prev_time = curr_time
                 
-                # Display FPS and Count
-                if 'w' not in locals(): # Get width safely if not defined
-                    h, w, _ = frame.shape
-                
+                h, w, _ = frame.shape
                 cv2.putText(frame, f"FPS: {int(fps)}", (w - 150, 50), 
                             cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
                 cv2.putText(frame, f"Count: {self.down_count}", (50, 100),
                             cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
 
-                cv2.imshow('Posture Monitor (FaceMesh)', frame)
-
+                cv2.imshow('Posture Monitor (2D Ratio)', frame)
+                
                 if cv2.waitKey(5) & 0xFF == 27:
                     break
-
+        
         cap.release()
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description='Posture Monitor')
-    parser.add_argument('--threshold', type=float, default=3.0, help='Angle deviation threshold (degrees). Triggers if abs(angle) > threshold.')
-    parser.add_argument('--alpha', type=float, default=0.1, help='Smoothing factor (0.01-1.0). smaller = smoother.')
-    parser.add_argument('--camera', type=int, default=0, help='Camera ID')
+    parser = argparse.ArgumentParser(description='2D Ratio-Based Posture Monitor')
+    parser.add_argument('--threshold', type=float, default=2.0, help='Ratio threshold (Default 2.0).')
+    parser.add_argument('--camera', type=int, default=0, help='Camera ID (default 0).')
+    
     args = parser.parse_args()
-
-    monitor = PostureMonitor(threshold_angle=args.threshold, camera_id=args.camera)
-    # Update state from args
-    monitor.alpha = args.alpha
+    
+    monitor = PostureMonitor(threshold_ratio=args.threshold, camera_id=args.camera)
     monitor.run()
