@@ -20,9 +20,8 @@ class SharedState:
         self.frame: Optional[np.ndarray] = None
         self.frame_lock = threading.Lock()
         
-        # 網路手機攝影機資料
-        self.network_frame: Optional[np.ndarray] = None
-        self.last_network_frame_time: float = 0.0
+        # 網路與前端攝影機資料 (支援多鏡頭: source_id -> (frame, timestamp))
+        self.network_frames: Dict[str, Tuple[np.ndarray, float]] = {}
         self.network_frame_lock = threading.Lock()
         
         # 個人化偏好 (Memory)
@@ -35,7 +34,7 @@ class SharedState:
             sway_threshold=float(self.prefs.get("sway_threshold", 0.15) * 100),
             lean_threshold=float(self.prefs.get("lean_threshold", 0.10) * 100),
             camera_source=["local_0"], # ALWAYS default to local_0 regardless of preferences
-            flip_enabled=self.prefs.get("flip_enabled", True),
+            flip_enabled=self.prefs.get("flip_enabled", False),
             privacy_mode=self.prefs.get("privacy_mode", True)
         )
         self.status_lock = threading.Lock()
@@ -52,7 +51,7 @@ class SharedState:
             "username": "User",
             "last_baseline_eye": 0.0,
             "camera_source": "local_0",
-            "flip_enabled": True,
+            "flip_enabled": False,
             "privacy_mode": True
         }
         if self.prefs_path.exists():
@@ -113,9 +112,11 @@ class SharedState:
                 
             if "flip_enabled" in new_prefs:
                 current_dict["flip_enabled"] = bool(new_prefs["flip_enabled"])
+                self.prefs["flip_enabled"] = current_dict["flip_enabled"]
                 
             if "privacy_mode" in new_prefs:
                 current_dict["privacy_mode"] = bool(new_prefs["privacy_mode"])
+                self.prefs["privacy_mode"] = current_dict["privacy_mode"]
                 
             self.status = DetectorStatus(**current_dict)
             
@@ -148,13 +149,18 @@ class SharedState:
         with self.frame_lock:
             return self.frame.copy() if self.frame is not None else None
 
-    def update_network_frame(self, frame: np.ndarray) -> None:
+    def update_network_frame(self, frame: np.ndarray, source_id: str = "phone") -> None:
         with self.network_frame_lock:
-            self.network_frame = frame.copy()
-            self.last_network_frame_time = time.time()
+            self.network_frames[source_id] = (frame.copy(), time.time())
 
-    def get_network_frame(self) -> Tuple[Optional[np.ndarray], float]:
+    def get_network_frame(self, source_id: str = "phone") -> Tuple[Optional[np.ndarray], float]:
         with self.network_frame_lock:
-            if self.network_frame is not None:
-                return self.network_frame.copy(), self.last_network_frame_time
+            if source_id in self.network_frames:
+                frame, timestamp = self.network_frames[source_id]
+                return frame.copy(), timestamp
             return None, 0.0
+            
+    def get_all_network_sources(self) -> list:
+        with self.network_frame_lock:
+            now = time.time()
+            return [src for src, (_, ts) in self.network_frames.items() if (now - ts) < 3.0]
