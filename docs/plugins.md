@@ -37,7 +37,7 @@ RenUniversal 支援一鍵打包與安裝第三方開發者製作的**動作技�
 | 平台 | 指令 |
 | :--- | :--- |
 | **macOS / Linux** | `make install PATH=../下載的外掛資料夾` |
-| **Windows** | `renuniversal.bat install ..\下載的外掛資料夾` |
+| **Windows** | `.\renuniversal.bat install ..\下載的外掛資料夾` |
 
 安裝完成後，技能與事件會被 `ActionEngine` / `EventEngine` 熱載入，網頁應用會出現在 `http://<host>:8080/apps`。
 
@@ -57,10 +57,10 @@ make build NAME=MyPlugin \
 
 ### Windows
 ```cmd
-renuniversal.bat build --name MyPlugin ^
-                       --skills skills/lean skills/turn ^
-                       --events events/bad_posture ^
-                       --apps web/apps/mygame.html
+.\renuniversal.bat build --name MyPlugin ^
+                         --skills skills/lean skills/turn ^
+                         --events events/bad_posture ^
+                         --apps web/apps/mygame.html
 ```
 
 完成後 `dist/MyPlugin/` 即為完整安裝包，可直接上傳至 GitHub 分享。
