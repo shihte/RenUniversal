@@ -345,12 +345,22 @@
     </style>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script>
-        // Ensure DOMContentLoaded fires for inline scripts after HTMX page swaps
-        document.addEventListener('htmx:afterSettle', function(evt) {
+        // After HTMX page swap: re-dispatch DOMContentLoaded and trigger page-specific init.
+        // base.html lives in <head> and is never swapped out, so this handler persists.
+        document.addEventListener('htmx:afterSettle', function() {
             window.document.dispatchEvent(new Event("DOMContentLoaded", {
                 bubbles: true,
                 cancelable: true
             }));
+
+            // Call page-specific data loaders — scripts in {% block scripts %} may not
+            // be re-executed by HTMX 1.9.x when content is identical or already parsed.
+            const path = window.location.pathname;
+            if (path === '/skills' && typeof loadSkills === 'function') {
+                loadSkills();
+            } else if (path === '/events' && typeof loadEvents === 'function') {
+                loadEvents();
+            }
         });
     </script>
 </head>
