@@ -49,13 +49,21 @@ cd RenUniversal
 
 ### Windows（批次檔）
 
+> **注意**：在 PowerShell 中需加 `.\` 前綴；CMD 中可省略。
+
 | 指令 | 用途 |
 | :--- | :--- |
-| `renuniversal.bat setup` | 初始化與依賴安裝（具動態進度顯示） |
-| `renuniversal.bat run` | 啟動系統伺服器 |
-| `renuniversal.bat clean` | 清除快取與日誌 |
-| `renuniversal.bat install <路徑>` | 安裝外掛套件 |
-| `renuniversal.bat build --name ... --skills ... --events ... --apps ...` | 打包外掛 |
+| `.\renuniversal.bat doctor` | 環境診斷 |
+| `.\renuniversal.bat setup` | 初始化虛擬環境、依賴安裝與 AI 模型下載 |
+| `.\renuniversal.bat run` | 前景啟動系統伺服器（Ctrl+C 停止） |
+| `.\renuniversal.bat start` | 背景啟動系統伺服器 |
+| `.\renuniversal.bat stop` | 停止背景伺服器 |
+| `.\renuniversal.bat restart` | 重啟背景伺服器 |
+| `.\renuniversal.bat status` | 顯示伺服器狀態 |
+| `.\renuniversal.bat cli` | 純命令列（headless）模式，事件以 JSON 輸出至 stdout |
+| `.\renuniversal.bat clean` | 清除快取與日誌 |
+| `.\renuniversal.bat install <路徑>` | 安裝外掛套件 |
+| `.\renuniversal.bat build --name ... --skills ... --events ... --apps ...` | 打包外掛 |
 
 ---
 
@@ -67,8 +75,8 @@ cd RenUniversal
 # macOS / Linux 範例
 make start ARGS="--host 0.0.0.0 --enable-tunnel --auth admin:1234"
 
-# Windows 範例
-renuniversal.bat run --host 0.0.0.0 --enable-tunnel --auth admin:1234
+# Windows 範例（PowerShell）
+.\renuniversal.bat run --host 0.0.0.0 --enable-tunnel --auth admin:1234
 ```
 
 | 參數 | 說明 |

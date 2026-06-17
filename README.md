@@ -13,7 +13,7 @@
 
 ```bash
 git clone https://github.com/shihte/RenUniversal.git && cd RenUniversal
-make setup && make run      # Windows: renuniversal.bat setup && renuniversal.bat run
+make setup && make run      # Windows (PowerShell): .\renuniversal.bat setup && .\renuniversal.bat run
 ```
 
 啟動後開啟 **http://127.0.0.1:8080**。完整需求、啟動參數與部署方式請見 **[安裝與快速啟動指南 →](docs/getting-started.md)**

@@ -36,9 +36,6 @@ class AgentPipeline:
             state (SharedState): 全局共享狀態，用於跨線程與前端通訊。
         """
         self.state = state
-        self.is_calibrated = False
-        self.baseline_eye_distance = 0.0
-        self.baseline_shoulder_width = 0.0
 
         # 1. 初始化各項技能 (Skill Initialization)
         self.captures = {}
