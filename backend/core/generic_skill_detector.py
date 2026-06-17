@@ -13,6 +13,7 @@ import math
 from typing import Tuple, Dict, Any, Optional
 
 from .safe_eval import safe_eval_bool
+from .landmarks import get_landmark_coord
 
 
 class GenericActionDetector:
@@ -51,59 +52,7 @@ class GenericActionDetector:
         return pairs
 
     def _get_coord(self, pt_id: str, face_lm, pose_lm, face_dim, body_dim, baseline=False):
-        """把點位 ID 轉成像素座標。"""
-        pt_id = str(pt_id).strip().lower()
-        is_pose = False
-        idx_str = pt_id
-
-        if pt_id.startswith('p'):
-            is_pose = True
-            idx_str = pt_id[1:]
-        elif pt_id.startswith('f'):
-            is_pose = False
-            idx_str = pt_id[1:]
-        else:
-            try:
-                v = int(pt_id)
-                is_pose = (v <= 32)
-            except ValueError:
-                return None
-
-        try:
-            idx = int(idx_str)
-        except ValueError:
-            return None
-
-        if is_pose:
-            lm = pose_lm
-            w, h = body_dim
-        else:
-            lm = face_lm
-            w, h = face_dim
-
-        if lm is None:
-            return None
-
-        try:
-            if baseline:
-                # baseline 是 list of dicts
-                if isinstance(lm, list) and idx < len(lm):
-                    pt = lm[idx]
-                    return pt.get("x", 0.0) * w, pt.get("y", 0.0) * h
-            else:
-                # live mediapipe landmarks
-                if hasattr(lm, 'landmark') and idx < len(lm.landmark):
-                    pt = lm.landmark[idx]
-                    return pt.x * w, pt.y * h
-                elif isinstance(lm, list) and idx < len(lm):
-                    pt = lm[idx]
-                    if isinstance(pt, dict):
-                        return pt.get("x", 0.0) * w, pt.get("y", 0.0) * h
-                    else:
-                        return pt.x * w, pt.y * h
-        except Exception:
-            pass
-        return None
+        return get_landmark_coord(pt_id, face_lm, pose_lm, face_dim, body_dim, baseline)
 
     def _dist(self, a, b):
         if a is None or b is None:

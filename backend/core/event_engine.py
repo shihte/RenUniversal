@@ -5,6 +5,7 @@ import re
 import math
 
 from .safe_eval import safe_eval_bool
+from .landmarks import get_landmark_coord
 
 class EventEngine:
     def __init__(self, events_dir):
@@ -44,66 +45,7 @@ class EventEngine:
         self.load_all_events()
 
     def get_landmark_coords(self, pt_id, landmarks, pose_landmarks, face_dim, body_dim):
-        pt_id = str(pt_id).strip()
-        is_pose = False
-        idx_str = pt_id
-        if pt_id.startswith('p'):
-            is_pose = True
-            idx_str = pt_id[1:]
-        elif pt_id.startswith('f'):
-            is_pose = False
-            idx_str = pt_id[1:]
-        else:
-            try:
-                val = int(pt_id)
-                if val <= 32:
-                    is_pose = (pose_landmarks is not None)
-                else:
-                    is_pose = False
-            except ValueError:
-                return None
-        
-        try:
-            idx = int(idx_str)
-        except ValueError:
-            return None
-            
-        if is_pose:
-            if not pose_landmarks:
-                return None
-            w, h = body_dim
-            if isinstance(pose_landmarks, list):
-                if idx < len(pose_landmarks):
-                    pt = pose_landmarks[idx]
-                    if hasattr(pt, 'x') and hasattr(pt, 'y'):
-                        return pt.x * w, pt.y * h
-                    elif isinstance(pt, dict):
-                        return pt.get("x", 0.0) * w, pt.get("y", 0.0) * h
-            else:
-                if hasattr(pose_landmarks, 'landmark') and idx < len(pose_landmarks.landmark):
-                    pt = pose_landmarks.landmark[idx]
-                    return pt.x * w, pt.y * h
-        else:
-            if not landmarks:
-                return None
-            w, h = face_dim
-            if isinstance(landmarks, list):
-                if idx < len(landmarks):
-                    pt = landmarks[idx]
-                    if hasattr(pt, 'x') and hasattr(pt, 'y'):
-                        return pt.x * w, pt.y * h
-                    elif isinstance(pt, dict):
-                        return pt.get("x", 0.0) * w, pt.get("y", 0.0) * h
-            else:
-                lms = landmarks
-                if hasattr(landmarks, 'landmark'):
-                    lms = landmarks.landmark
-                elif hasattr(landmarks, 'multi_face_landmarks') and landmarks.multi_face_landmarks:
-                    lms = landmarks.multi_face_landmarks[0].landmark
-                if idx < len(lms):
-                    pt = lms[idx]
-                    return pt.x * w, pt.y * h
-        return None
+        return get_landmark_coord(pt_id, landmarks, pose_landmarks, face_dim, body_dim)
 
     def calculate_distance(self, pt1_id, pt2_id, landmarks, pose_landmarks, face_dim, body_dim):
         c1 = self.get_landmark_coords(pt1_id, landmarks, pose_landmarks, face_dim, body_dim)
