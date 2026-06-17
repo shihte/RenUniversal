@@ -6,7 +6,7 @@ import socket
 import subprocess
 import re
 import json
-from flask import Flask, Response, jsonify, request, send_from_directory, render_template
+from flask import Flask, Response, jsonify, request, send_from_directory, render_template, stream_with_context
 from flask_cors import CORS
 import cv2
 from loguru import logger
@@ -203,6 +203,10 @@ def serve_app(filename):
 def serve_tailwind():
     return send_from_directory(WEB_DIR, 'tailwind.js')
 
+@app.route('/js/<path:filename>')
+def serve_js(filename):
+    return send_from_directory(os.path.join(WEB_DIR, 'js'), filename)
+
 @app.route('/live')
 @app.route('/video_feed')
 def video_feed():
@@ -219,6 +223,20 @@ def status():
     status_data['host_bind'] = app.config.get('HOST_BIND', '127.0.0.1')
     status_data['has_network_stream'] = 'phone' in state.get_all_network_sources()
     return jsonify(status_data)
+
+@app.route('/api/status/stream')
+def status_stream():
+    def generate():
+        while True:
+            status_data = state.get_status().model_dump()
+            status_data['local_ip'] = get_local_ip()
+            status_data['prefs'] = state.prefs
+            status_data['host_bind'] = app.config.get('HOST_BIND', '127.0.0.1')
+            status_data['has_network_stream'] = 'phone' in state.get_all_network_sources()
+            yield f"data: {json.dumps(status_data)}\n\n"
+            time.sleep(0.1)
+    return Response(stream_with_context(generate()), mimetype='text/event-stream',
+                    headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})
 
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
