@@ -507,7 +507,18 @@ class AgentPipeline:
                 poses_by_src[src] = res.pose_landmarks[0]
             
         inference_time_ms = int((time.perf_counter() - inference_start) * 1000)
-        
+
+        # Save current landmarks for mpMap real-time preview
+        def _lms_to_coords(lms):
+            if lms is None:
+                return []
+            if isinstance(lms, list):
+                return [{"x": float(l.x), "y": float(l.y)} for l in lms]
+            if hasattr(lms, 'landmark'):
+                return [{"x": float(l.x), "y": float(l.y)} for l in lms.landmark]
+            return []
+        self.state.update_landmarks(_lms_to_coords(landmarks), _lms_to_coords(pose_landmarks))
+
         # 進行動作引擎分析
         active_skills_state = {}
         metrics_state = {}

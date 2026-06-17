@@ -1,0 +1,566 @@
+{% extends "base.html" %}
+{% block title %}mpMap | RenUniversal{% endblock %}
+
+{% block extra_head %}
+.lm-toggle {
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #2a2a32;
+    background: #111115;
+    color: #8f8f9e;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.3px;
+}
+.lm-toggle:hover { color: #fff; border-color: #4a4a52; background: #16161c; }
+.lm-toggle.active {
+    background: rgba(66,133,244,0.12);
+    border-color: rgba(66,133,244,0.4);
+    color: #4285F4;
+}
+.lm-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 7px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    margin-bottom: 2px;
+}
+.lm-item:hover {
+    background: rgba(255,255,255,0.04);
+    border-color: #2a2a32;
+}
+.lm-item.pinned {
+    background: rgba(255,215,0,0.08);
+    border-color: rgba(255,215,0,0.25);
+}
+.lm-id {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: #4285F4;
+    min-width: 40px;
+}
+.lm-id.pose-id { color: #EA4335; }
+.lm-name { font-size: 11px; color: #8f8f9e; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.copy-btn {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 5px;
+    border: 1px solid #2a2a32;
+    background: transparent;
+    color: #44444c;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+.copy-btn:hover {
+    background: rgba(66,133,244,0.12);
+    border-color: rgba(66,133,244,0.4);
+    color: #4285F4;
+}
+.tab-btn {
+    flex: 1;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: #44444c;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.tab-btn.active {
+    background: rgba(255,255,255,0.08);
+    color: #ffffff;
+}
+{% endblock %}
+
+{% block content %}
+<main class="flex-1 min-h-screen" style="padding-top:64px;">
+
+    <!-- Header -->
+    <section style="padding:28px 24px 20px;border-bottom:1px solid #1f1f23;">
+        <div style="max-width:1280px;margin:0 auto;">
+            <h2 class="gradient-text" style="font-size:28px;font-weight:800;margin:0 0 6px;">mpMap</h2>
+            <p style="color:#8f8f9e;font-size:13px;margin:0;">
+                MediaPipe 節點即時預覽與查詢工具 — 滑鼠移至節點查看 ID，點擊固定高亮，搜尋框快速定位所需節點。
+            </p>
+        </div>
+    </section>
+
+    <!-- Two-column layout -->
+    <div style="max-width:1280px;margin:0 auto;padding:20px 24px;display:flex;gap:20px;align-items:flex-start;">
+
+        <!-- ── Left: Video Preview ───────────────────────────────── -->
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:12px;">
+
+            <!-- Controls bar -->
+            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+                <button id="toggle-face" class="lm-toggle active" onclick="toggleLayer('face')">Face 臉部</button>
+                <button id="toggle-pose" class="lm-toggle active" onclick="toggleLayer('pose')">Pose 骨架</button>
+                <button id="toggle-connections" class="lm-toggle active" onclick="toggleLayer('connections')">連線</button>
+                <button id="toggle-ids" class="lm-toggle" onclick="toggleLayer('ids')">顯示 ID</button>
+                <div style="margin-left:auto;display:flex;gap:14px;align-items:center;">
+                    <span id="face-count" style="font-size:11px;font-family:var(--font-mono);color:#44444c;">Face: —</span>
+                    <span id="pose-count" style="font-size:11px;font-family:var(--font-mono);color:#44444c;">Pose: —</span>
+                    <span id="pinned-badge" style="display:none;font-size:11px;font-family:var(--font-mono);color:#FFD700;"></span>
+                </div>
+            </div>
+
+            <!-- Video + Canvas Overlay -->
+            <div id="video-wrapper"
+                 style="position:relative;background:#000;border-radius:12px;overflow:hidden;border:1px solid #1f1f23;line-height:0;">
+                <img id="video-feed" src="/video_feed"
+                     style="width:100%;display:block;"
+                     alt="Live Feed">
+                <canvas id="landmark-canvas"
+                        style="position:absolute;top:0;left:0;width:100%;height:100%;cursor:crosshair;"></canvas>
+                <div id="lm-tooltip"
+                     style="position:absolute;display:none;background:rgba(0,0,0,0.92);color:#fff;
+                            font-size:11px;padding:4px 9px;border-radius:6px;pointer-events:none;
+                            border:1px solid rgba(255,255,255,0.1);font-family:var(--font-mono);
+                            white-space:nowrap;z-index:10;line-height:1.5;">
+                </div>
+            </div>
+
+            <!-- Pinned Landmark Detail -->
+            <div id="pinned-detail"
+                 style="display:none;background:#0c0c0f;border:1px solid #2a2a32;border-radius:10px;padding:14px 18px;">
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <span id="pinned-id-display"
+                          style="font-size:20px;font-weight:700;font-family:var(--font-mono);color:#FFD700;"></span>
+                    <span id="pinned-name-display" style="color:#ccc;font-size:13px;flex:1;"></span>
+                    <button onclick="copyPinnedId()"
+                            style="font-size:11px;padding:4px 10px;border-radius:6px;
+                                   border:1px solid rgba(66,133,244,0.4);background:rgba(66,133,244,0.1);
+                                   color:#4285F4;cursor:pointer;font-family:var(--font-mono);">
+                        複製 ID
+                    </button>
+                    <button onclick="unpinLandmark()"
+                            style="font-size:11px;padding:4px 10px;border-radius:6px;
+                                   border:1px solid #2a2a32;background:transparent;
+                                   color:#8f8f9e;cursor:pointer;">
+                        取消固定
+                    </button>
+                </div>
+                <div id="pinned-coords"
+                     style="margin-top:6px;font-size:11px;font-family:var(--font-mono);color:#44444c;"></div>
+            </div>
+        </div>
+
+        <!-- ── Right: Reference Panel ───────────────────────────── -->
+        <div style="width:296px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;">
+
+            <!-- Search -->
+            <input type="text" id="lm-search"
+                   placeholder="搜尋 ID 或名稱 (p11, shoulder...)"
+                   style="width:100%;padding:8px 12px;font-size:12px;"
+                   oninput="onSearch(this.value)">
+
+            <!-- Tabs -->
+            <div style="display:flex;gap:4px;background:#0c0c0f;border:1px solid #1f1f23;
+                        border-radius:8px;padding:4px;">
+                <button id="tab-pose-btn" class="tab-btn active" onclick="switchTab('pose')">Pose (33)</button>
+                <button id="tab-face-btn" class="tab-btn" onclick="switchTab('face')">Face (468)</button>
+            </div>
+
+            <!-- Lists -->
+            <div style="max-height:500px;overflow-y:auto;padding-right:2px;">
+                <div id="pose-list"></div>
+                <div id="face-list" style="display:none;"></div>
+            </div>
+
+            <!-- Legend -->
+            <div style="background:#0c0c0f;border:1px solid #1f1f23;border-radius:8px;
+                        padding:12px;font-size:11px;color:#55555f;display:flex;flex-direction:column;gap:6px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="width:8px;height:8px;border-radius:50%;background:#4285F4;
+                                 display:inline-block;flex-shrink:0;"></span>
+                    Face 臉部節點 (f0 – f467)
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="width:8px;height:8px;border-radius:50%;background:#EA4335;
+                                 display:inline-block;flex-shrink:0;"></span>
+                    Pose 骨架節點 (p0 – p32)
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="width:8px;height:8px;border-radius:50%;background:#FFD700;
+                                 display:inline-block;flex-shrink:0;"></span>
+                    固定節點（點擊選取）
+                </div>
+                <div style="border-top:1px solid #1f1f23;margin-top:4px;padding-top:6px;">
+                    點擊節點或列表項目固定高亮。<br>
+                    「複製 ID」可用於規則語法，如 <code>f152</code>、<code>p11</code>。
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Reference data ───────────────────────────────────────────
+const POSE_NAMES = [
+    "nose","left eye inner","left eye","left eye outer",
+    "right eye inner","right eye","right eye outer",
+    "left ear","right ear","left mouth","right mouth",
+    "left shoulder","right shoulder","left elbow","right elbow",
+    "left wrist","right wrist","left pinky","right pinky",
+    "left index","right index","left thumb","right thumb",
+    "left hip","right hip","left knee","right knee",
+    "left ankle","right ankle","left heel","right heel",
+    "left foot index","right foot index"
+];
+const POSE_NAMES_ZH = [
+    "鼻子","左眼內","左眼","左眼外",
+    "右眼內","右眼","右眼外",
+    "左耳","右耳","左嘴角","右嘴角",
+    "左肩","右肩","左肘","右肘",
+    "左手腕","右手腕","左小指","右小指",
+    "左食指","右食指","左拇指","右拇指",
+    "左臀","右臀","左膝","右膝",
+    "左踝","右踝","左腳跟","右腳跟",
+    "左腳趾","右腳趾"
+];
+const POSE_CONNECTIONS = [
+    [0,1],[1,2],[2,3],[3,7],[0,4],[4,5],[5,6],[6,8],
+    [9,10],[11,12],[11,13],[13,15],[15,17],[15,19],[15,21],[17,19],
+    [12,14],[14,16],[16,18],[16,20],[16,22],[18,20],
+    [11,23],[12,24],[23,24],[23,25],[24,26],[25,27],[26,28],
+    [27,29],[28,30],[29,31],[30,32],[27,31],[28,32]
+];
+const FACE_KEY = {
+    1:["鼻尖","Nose Tip"],4:["鼻橋","Nose Bridge"],10:["額頭中","Forehead Center"],
+    13:["上唇外","Upper Lip Top"],14:["下唇底","Lower Lip Bottom"],17:["下唇下","Chin Inner"],
+    33:["左眼外角","Left Eye Outer"],46:["左眼內角","Left Eye Inner"],52:["左臉頰","Left Cheek"],
+    61:["左嘴角","Left Mouth Corner"],70:["左額頭","Left Forehead"],
+    78:["左上唇內","Left Inner Upper Lip"],91:["下唇中","Lower Lip Mid"],
+    93:["左下巴","Left Chin"],103:["左眉外","Left Brow Outer"],
+    105:["左眉中","Left Brow Mid"],107:["左眉內","Left Brow Inner"],
+    127:["左臉頰外","Left Outer Cheek"],133:["左眼下緣","Left Eye Lower"],
+    136:["左下顎","Left Lower Jaw"],148:["左頦骨","Left Mandible"],
+    152:["下巴","Chin"],159:["左上眼瞼","Left Upper Eyelid"],
+    160:["左上眼瞼2","Left Upper Eyelid 2"],161:["左上眼瞼3","Left Upper Eyelid 3"],
+    172:["左頦底","Left Mandible Bottom"],176:["下唇外","Lower Outer Lip"],
+    234:["右臉頰外","Right Outer Cheek"],246:["左眼內","Left Inner Eye"],
+    263:["右眼外角","Right Eye Outer"],284:["右臉頰","Right Cheek"],
+    288:["右下顎","Right Lower Jaw"],291:["右嘴角","Right Mouth Corner"],
+    297:["右眉內","Right Brow Inner"],299:["右眉中","Right Brow Mid"],
+    301:["右眉外","Right Brow Outer"],308:["右嘴角2","Right Mouth Corner 2"],
+    323:["右臉頰2","Right Cheek 2"],332:["右臉頰3","Right Cheek 3"],
+    338:["右額頭","Right Forehead"],356:["右臉側","Right Face Side"],
+    362:["右眼外角2","Right Eye Outer 2"],365:["右頦骨","Right Mandible"],
+    377:["下唇右","Lower Lip Right"],380:["右眼下緣","Right Eye Lower"],
+    386:["右上眼瞼","Right Upper Eyelid"],389:["右額頭側","Right Forehead Side"],
+    400:["右下顎底","Right Lower Jaw Bottom"],454:["右耳附近","Near Right Ear"],
+    466:["右眼內角","Right Inner Eye"]
+};
+
+// ── State ────────────────────────────────────────────────────
+let currentLandmarks = { face: [], pose: [] };
+let pinnedLm  = null;  // { type, idx }
+let hoveredLm = null;  // { type, idx }
+let showFace = true, showPose = true, showConnections = true, showIds = false;
+let activeTab = 'pose';
+let searchQuery = '';
+
+// ── DOM refs ─────────────────────────────────────────────────
+const canvas = document.getElementById('landmark-canvas');
+const ctx    = canvas.getContext('2d');
+const videoFeed = document.getElementById('video-feed');
+const tooltip   = document.getElementById('lm-tooltip');
+
+function syncCanvas() {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (w > 0 && h > 0 && (canvas.width !== w || canvas.height !== h)) {
+        canvas.width = w; canvas.height = h;
+    }
+}
+
+// ── Fetch loop ────────────────────────────────────────────────
+async function fetchLandmarks() {
+    try {
+        const r = await fetch('/api/landmarks');
+        if (!r.ok) return;
+        const d = await r.json();
+        currentLandmarks = d;
+        document.getElementById('face-count').textContent = 'Face: ' + (d.face ? d.face.length : 0);
+        document.getElementById('pose-count').textContent = 'Pose: ' + (d.pose ? d.pose.length : 0);
+        if (pinnedLm) updatePinnedDetail();
+    } catch(_) {}
+}
+
+// ── Draw loop ─────────────────────────────────────────────────
+function drawLoop() {
+    if (!document.getElementById('landmark-canvas')) return; // page navigated away
+    syncCanvas();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const face = currentLandmarks.face || [];
+    const pose = currentLandmarks.pose || [];
+    const W = canvas.width, H = canvas.height;
+
+    if (showPose && showConnections && pose.length > 0) {
+        ctx.lineWidth = 2;
+        POSE_CONNECTIONS.forEach(([a, b]) => {
+            if (a >= pose.length || b >= pose.length) return;
+            ctx.strokeStyle = 'rgba(234,67,53,0.5)';
+            ctx.beginPath();
+            ctx.moveTo(pose[a].x * W, pose[a].y * H);
+            ctx.lineTo(pose[b].x * W, pose[b].y * H);
+            ctx.stroke();
+        });
+    }
+
+    if (showFace && face.length > 0) {
+        face.forEach((lm, idx) => {
+            const x = lm.x * W, y = lm.y * H;
+            const isPinned  = pinnedLm  && pinnedLm.type  === 'face' && pinnedLm.idx  === idx;
+            const isHovered = hoveredLm && hoveredLm.type === 'face' && hoveredLm.idx === idx;
+            ctx.beginPath();
+            ctx.arc(x, y, isPinned ? 6 : isHovered ? 5 : 2, 0, Math.PI * 2);
+            ctx.fillStyle = isPinned ? '#FFD700' : isHovered ? '#00FF88' : 'rgba(66,133,244,0.7)';
+            ctx.fill();
+            if (showIds || isPinned) {
+                ctx.fillStyle = '#fff';
+                ctx.font = '9px JetBrains Mono,monospace';
+                ctx.fillText('f' + idx, x + 4, y - 3);
+            }
+        });
+    }
+
+    if (showPose && pose.length > 0) {
+        pose.forEach((lm, idx) => {
+            const x = lm.x * W, y = lm.y * H;
+            const isPinned  = pinnedLm  && pinnedLm.type  === 'pose' && pinnedLm.idx  === idx;
+            const isHovered = hoveredLm && hoveredLm.type === 'pose' && hoveredLm.idx === idx;
+            ctx.beginPath();
+            ctx.arc(x, y, isPinned ? 9 : isHovered ? 7 : 5, 0, Math.PI * 2);
+            ctx.fillStyle = isPinned ? '#FFD700' : isHovered ? '#00FF88' : 'rgba(234,67,53,0.85)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            if (showIds || isPinned) {
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 10px JetBrains Mono,monospace';
+                ctx.fillText('p' + idx, x + 8, y - 3);
+            }
+        });
+    }
+
+    requestAnimationFrame(drawLoop);
+}
+
+// ── Hover / Click on canvas ───────────────────────────────────
+canvas.addEventListener('mousemove', function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top)  * scaleY;
+
+    let nearest = null, nearestDist = 18;
+
+    if (showPose) {
+        (currentLandmarks.pose || []).forEach((lm, idx) => {
+            const d = Math.hypot(lm.x * canvas.width - mx, lm.y * canvas.height - my);
+            if (d < nearestDist) { nearestDist = d; nearest = { type: 'pose', idx }; }
+        });
+    }
+    if (showFace) {
+        const thr = Math.min(nearestDist, 10);
+        (currentLandmarks.face || []).forEach((lm, idx) => {
+            const d = Math.hypot(lm.x * canvas.width - mx, lm.y * canvas.height - my);
+            if (d < thr) { nearestDist = d; nearest = { type: 'face', idx }; }
+        });
+    }
+
+    hoveredLm = nearest;
+
+    if (nearest) {
+        const id = nearest.type === 'face' ? 'f' + nearest.idx : 'p' + nearest.idx;
+        let name = '';
+        if (nearest.type === 'pose') {
+            name = POSE_NAMES_ZH[nearest.idx] + ' · ' + POSE_NAMES[nearest.idx];
+        } else {
+            const kn = FACE_KEY[nearest.idx];
+            name = kn ? kn[0] + ' · ' + kn[1] : '';
+        }
+        tooltip.innerHTML = '<strong>' + id + '</strong>' + (name ? ' · ' + name : '');
+        tooltip.style.display = 'block';
+        let tx = e.clientX - rect.left + 14;
+        let ty = e.clientY - rect.top  - 36;
+        if (tx + 200 > rect.width)  tx = e.clientX - rect.left - 210;
+        if (ty < 0)                  ty = e.clientY - rect.top  + 14;
+        tooltip.style.left = tx + 'px';
+        tooltip.style.top  = ty + 'px';
+    } else {
+        tooltip.style.display = 'none';
+    }
+});
+
+canvas.addEventListener('click', function() {
+    if (!hoveredLm) return;
+    if (pinnedLm && pinnedLm.type === hoveredLm.type && pinnedLm.idx === hoveredLm.idx) {
+        pinnedLm = null;
+    } else {
+        pinnedLm = { type: hoveredLm.type, idx: hoveredLm.idx };
+    }
+    updatePinnedDetail();
+    buildLists();
+});
+
+canvas.addEventListener('mouseleave', function() {
+    hoveredLm = null;
+    tooltip.style.display = 'none';
+});
+
+// ── Pinned detail ─────────────────────────────────────────────
+function updatePinnedDetail() {
+    const det   = document.getElementById('pinned-detail');
+    const badge = document.getElementById('pinned-badge');
+    if (!pinnedLm) {
+        det.style.display   = 'none';
+        badge.style.display = 'none';
+        return;
+    }
+    const id = pinnedLm.type === 'face' ? 'f' + pinnedLm.idx : 'p' + pinnedLm.idx;
+    let name = '';
+    if (pinnedLm.type === 'pose') {
+        name = POSE_NAMES_ZH[pinnedLm.idx] + ' (' + POSE_NAMES[pinnedLm.idx] + ')';
+    } else {
+        const kn = FACE_KEY[pinnedLm.idx];
+        name = kn ? kn[0] + ' · ' + kn[1] : 'Face landmark #' + pinnedLm.idx;
+    }
+    document.getElementById('pinned-id-display').textContent   = id;
+    document.getElementById('pinned-name-display').textContent = name;
+    const lms = (pinnedLm.type === 'face' ? currentLandmarks.face : currentLandmarks.pose) || [];
+    const lm  = lms[pinnedLm.idx];
+    document.getElementById('pinned-coords').textContent =
+        lm ? 'x: ' + lm.x.toFixed(4) + '   y: ' + lm.y.toFixed(4) : '';
+    det.style.display   = 'block';
+    badge.style.display = 'inline';
+    badge.textContent   = '● ' + id;
+}
+
+function copyPinnedId() {
+    if (!pinnedLm) return;
+    const id = pinnedLm.type === 'face' ? 'f' + pinnedLm.idx : 'p' + pinnedLm.idx;
+    navigator.clipboard.writeText(id).catch(function() {});
+}
+
+function unpinLandmark() {
+    pinnedLm = null;
+    updatePinnedDetail();
+    buildLists();
+}
+
+// ── Toggles ───────────────────────────────────────────────────
+function toggleLayer(layer) {
+    if (layer === 'face')        showFace = !showFace;
+    else if (layer === 'pose')   showPose = !showPose;
+    else if (layer === 'connections') showConnections = !showConnections;
+    else if (layer === 'ids')    showIds  = !showIds;
+    document.getElementById('toggle-' + layer).classList.toggle('active');
+}
+
+// ── Search ────────────────────────────────────────────────────
+function onSearch(q) {
+    searchQuery = q.toLowerCase().trim();
+    buildLists();
+}
+
+// ── Tabs ──────────────────────────────────────────────────────
+function switchTab(tab) {
+    activeTab = tab;
+    document.getElementById('tab-pose-btn').classList.toggle('active', tab === 'pose');
+    document.getElementById('tab-face-btn').classList.toggle('active', tab === 'face');
+    document.getElementById('pose-list').style.display = tab === 'pose' ? '' : 'none';
+    document.getElementById('face-list').style.display = tab === 'face' ? '' : 'none';
+    buildLists();
+}
+
+// ── List builders ─────────────────────────────────────────────
+function makeItem(type, idx, idText, nameText) {
+    const item = document.createElement('div');
+    item.className = 'lm-item' + (pinnedLm && pinnedLm.type === type && pinnedLm.idx === idx ? ' pinned' : '');
+    item.innerHTML =
+        '<div class="lm-id' + (type === 'pose' ? ' pose-id' : '') + '">' + idText + '</div>' +
+        '<div class="lm-name" title="' + nameText + '">' + nameText + '</div>' +
+        '<button class="copy-btn">複製</button>';
+
+    item.addEventListener('mouseenter', function() { hoveredLm = { type, idx }; });
+    item.addEventListener('mouseleave', function() { hoveredLm = null; });
+
+    item.querySelector('.copy-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        navigator.clipboard.writeText(idText).catch(function() {});
+        const btn = e.target;
+        btn.textContent = '✓';
+        btn.style.color = '#34A853';
+        setTimeout(function() { btn.textContent = '複製'; btn.style.color = ''; }, 800);
+    });
+
+    item.addEventListener('click', function(e) {
+        if (e.target.classList.contains('copy-btn')) return;
+        pinnedLm = (pinnedLm && pinnedLm.type === type && pinnedLm.idx === idx)
+            ? null : { type, idx };
+        updatePinnedDetail();
+        buildLists();
+    });
+    return item;
+}
+
+function buildPoseList() {
+    const c = document.getElementById('pose-list');
+    c.innerHTML = '';
+    POSE_NAMES.forEach(function(name, idx) {
+        const id = 'p' + idx, zh = POSE_NAMES_ZH[idx];
+        if (searchQuery && !id.includes(searchQuery) && !(zh + ' ' + name).toLowerCase().includes(searchQuery)) return;
+        c.appendChild(makeItem('pose', idx, id, zh + ' · ' + name));
+    });
+}
+
+function buildFaceList() {
+    const c = document.getElementById('face-list');
+    c.innerHTML = '';
+    if (searchQuery) {
+        for (let i = 0; i < 468; i++) {
+            const id = 'f' + i, kn = FACE_KEY[i], nm = kn ? kn[0] + ' ' + kn[1] : '';
+            if (!id.includes(searchQuery) && !nm.toLowerCase().includes(searchQuery)) continue;
+            c.appendChild(makeItem('face', i, id, kn ? kn[0] + ' · ' + kn[1] : '—'));
+        }
+    } else {
+        Object.keys(FACE_KEY).forEach(function(idxStr) {
+            const idx = parseInt(idxStr), kn = FACE_KEY[idx];
+            c.appendChild(makeItem('face', idx, 'f' + idx, kn[0] + ' · ' + kn[1]));
+        });
+    }
+}
+
+function buildLists() {
+    buildPoseList();
+    buildFaceList();
+}
+
+// ── Init / reinit ─────────────────────────────────────────────
+function initMpMap() {
+    if (window._mpMapFetchId) clearInterval(window._mpMapFetchId);
+    window._mpMapFetchId = setInterval(fetchLandmarks, 100);
+    fetchLandmarks();
+    buildLists();
+    drawLoop();
+}
+
+initMpMap();
+</script>
+{% endblock %}
