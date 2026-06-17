@@ -353,8 +353,8 @@
                 cancelable: true
             }));
 
-            // Call page-specific data loaders — scripts in {% block scripts %} may not
-            // be re-executed by HTMX 1.9.x when content is identical or already parsed.
+            // Call page-specific data loaders after HTMX swap.
+            // HTMX 1.9.x may not re-execute page scripts on hx-boost navigation.
             const path = window.location.pathname;
             if (path === '/skills' && typeof loadSkills === 'function') {
                 loadSkills();
