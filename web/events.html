@@ -1140,10 +1140,10 @@
             }
         }
 
-        // Initialize Language
+        // Initialize
         setLang('zh-TW');
         loadAvailableCameras();
-        window.addEventListener("load", loadEvents);
+        loadEvents();
 
         // Poll
         setInterval(fetchStatus, 100);
