@@ -194,6 +194,10 @@ def serve_events():
 def serve_apps_launcher():
     return render_template('apps_launcher.html', active_page='apps')
 
+@app.route('/mpMap')
+def serve_mpmap():
+    return render_template('mpmap.html', active_page='mpmap')
+
 @app.route('/app/<filename>')
 def serve_app(filename):
     safe_filename = "".join(c for c in filename if c.isalnum() or c in ('_', '-'))
@@ -214,6 +218,11 @@ def video_feed():
 
 
 
+
+@app.route('/api/landmarks')
+def api_landmarks():
+    face_lms, pose_lms = state.get_landmarks()
+    return jsonify({'face': face_lms, 'pose': pose_lms})
 
 @app.route('/status')
 def status():

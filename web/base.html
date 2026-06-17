@@ -360,6 +360,8 @@
                 loadSkills();
             } else if (path === '/events' && typeof loadEvents === 'function') {
                 loadEvents();
+            } else if (path === '/mpMap' && typeof initMpMap === 'function') {
+                initMpMap();
             }
         });
     </script>
@@ -386,6 +388,7 @@
                 <a href="/camera" style="padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;transition:all 0.2s ease;text-decoration:none;{% if active_page == 'camera' %}color:#fff;background:rgba(255,255,255,0.06);{% else %}color:#8f8f9e;{% endif %}" {% if active_page == 'camera' %}class="text-primary"{% endif %} onmouseover="if(!this.classList.contains('text-primary'))this.style.color='#fff'" onmouseout="if(!this.classList.contains('text-primary'))this.style.color='#8f8f9e'">Camera</a>
                 <a href="/skills" style="padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;transition:all 0.2s ease;text-decoration:none;{% if active_page == 'skills' %}color:#fff;background:rgba(255,255,255,0.06);{% else %}color:#8f8f9e;{% endif %}" {% if active_page == 'skills' %}class="text-primary"{% endif %} onmouseover="if(!this.classList.contains('text-primary'))this.style.color='#fff'" onmouseout="if(!this.classList.contains('text-primary'))this.style.color='#8f8f9e'">Skills</a>
                 <a href="/events" style="padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;transition:all 0.2s ease;text-decoration:none;{% if active_page == 'events' %}color:#fff;background:rgba(255,255,255,0.06);{% else %}color:#8f8f9e;{% endif %}" {% if active_page == 'events' %}class="text-primary"{% endif %} onmouseover="if(!this.classList.contains('text-primary'))this.style.color='#fff'" onmouseout="if(!this.classList.contains('text-primary'))this.style.color='#8f8f9e'">Events</a>
+                <a href="/mpMap" style="padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;transition:all 0.2s ease;text-decoration:none;{% if active_page == 'mpmap' %}color:#fff;background:rgba(255,255,255,0.06);{% else %}color:#8f8f9e;{% endif %}" {% if active_page == 'mpmap' %}class="text-primary"{% endif %} onmouseover="if(!this.classList.contains('text-primary'))this.style.color='#fff'" onmouseout="if(!this.classList.contains('text-primary'))this.style.color='#8f8f9e'">mpMap</a>
                 <a href="/apps" style="padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;transition:all 0.2s ease;text-decoration:none;{% if active_page == 'apps' %}color:#fff;background:rgba(255,255,255,0.06);{% else %}color:#8f8f9e;{% endif %}" {% if active_page == 'apps' %}class="text-primary"{% endif %} onmouseover="if(!this.classList.contains('text-primary'))this.style.color='#fff'" onmouseout="if(!this.classList.contains('text-primary'))this.style.color='#8f8f9e'">Apps</a>
             </div>
 

@@ -38,7 +38,12 @@ class SharedState:
             privacy_mode=self.prefs.get("privacy_mode", True)
         )
         self.status_lock = threading.Lock()
-        
+
+        # Landmark cache for mpMap real-time preview
+        self._last_face_landmarks: list = []
+        self._last_pose_landmarks: list = []
+        self._landmark_lock = threading.Lock()
+
         logger.info(f"SharedState initialized. Memory loaded from {prefs_path}")
 
     def _load_prefs(self) -> Dict[str, Any]:
@@ -186,3 +191,12 @@ class SharedState:
         with self.network_frame_lock:
             now = time.time()
             return [src for src, (_, ts) in self.network_frames.items() if (now - ts) < 3.0]
+
+    def update_landmarks(self, face_lms: list, pose_lms: list) -> None:
+        with self._landmark_lock:
+            self._last_face_landmarks = face_lms
+            self._last_pose_landmarks = pose_lms
+
+    def get_landmarks(self):
+        with self._landmark_lock:
+            return list(self._last_face_landmarks), list(self._last_pose_landmarks)
