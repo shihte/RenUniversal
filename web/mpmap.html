@@ -4,13 +4,14 @@
 {% block extra_head %}
 #topo-canvas { display: block; cursor: grab; user-select: none; }
 #topo-canvas:active { cursor: grabbing; }
+.mp-seg { display:flex; background:#111115; border:1px solid #2a2a32; border-radius:9px; padding:3px; gap:2px; }
 .mp-tab {
-    padding: 7px 20px; border-radius: 8px; font-size: 13px; font-weight: 600;
-    border: 1px solid #2a2a32; background: transparent; color: #55555f;
-    cursor: pointer; transition: all 0.2s ease; letter-spacing: 0.3px;
+    padding: 6px 18px; border-radius: 6px; font-size: 12px; font-weight: 600;
+    border: none; background: transparent; color: #55555f;
+    cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
 }
-.mp-tab.active { background: rgba(255,255,255,0.08); border-color: #3a3a42; color: #fff; }
-.mp-tab:hover:not(.active) { color: #bbb; border-color: #3a3a42; }
+.mp-tab.active { background: #2a2a38; color: #fff; }
+.mp-tab:hover:not(.active) { color: #aaa; }
 {% endblock %}
 
 {% block content %}
@@ -26,8 +27,10 @@
         <div style="width:1px;height:16px;background:#1f1f23;"></div>
 
         <!-- Tabs -->
-        <button id="tab-face" class="mp-tab active" onclick="switchTab('face')">Face Mesh (468)</button>
-        <button id="tab-pose" class="mp-tab" onclick="switchTab('pose')">Pose Skeleton (33)</button>
+        <div class="mp-seg">
+            <button id="tab-face" class="mp-tab active" onclick="switchTab('face')">Face Mesh</button>
+            <button id="tab-pose" class="mp-tab" onclick="switchTab('pose')">Pose Skeleton</button>
+        </div>
 
         <div style="width:1px;height:16px;background:#1f1f23;margin-left:4px;"></div>
 
@@ -37,13 +40,15 @@
                       border:1px solid #2a2a32;color:#fff;border-radius:8px;font-family:var(--font-mono);"
                oninput="onSearch(this.value)">
 
-        <!-- Fit button -->
-        <button onclick="fitView()"
-                style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;
-                       border:1px solid #2a2a32;background:#111115;color:#8f8f9e;
-                       cursor:pointer;transition:all 0.2s ease;margin-left:auto;"
+        <!-- Fit to view button -->
+        <button onclick="fitView()" title="重置視圖 / Fit to view"
+                style="padding:6px 9px;border-radius:8px;border:1px solid #2a2a32;
+                       background:#111115;color:#8f8f9e;cursor:pointer;
+                       display:flex;align-items:center;transition:color 0.15s ease;margin-left:auto;"
                 onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#8f8f9e'">
-            Fit 適合
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                <path d="M1 6V1h5M10 1h5v5M15 10v5h-5M6 15H1v-5"/>
+            </svg>
         </button>
     </div>
 
@@ -108,6 +113,7 @@ let activePrefix = 'f';
 let activeColor  = 'rgba(66,133,244,0.65)';
 
 let transform    = { s: 1, ox: 0, oy: 0 };
+let fitScale     = 1;
 let selectedIdx  = null;
 let hoveredIdx   = null;
 let searchTarget = null;   // index of search-highlighted node
@@ -148,6 +154,7 @@ function fitView() {
     const rW = maxX - minX || 0.001;
     const rH = maxY - minY || 0.001;
     const s = Math.min((W * 0.85) / rW, (H * 0.85) / rH);
+    fitScale     = s;
     transform.s  = s;
     transform.ox = (W - rW * s) / 2 - minX * s;
     transform.oy = (H - rH * s) / 2 - minY * s;
@@ -232,9 +239,9 @@ function canvasPos(e) {
 canvas.addEventListener('wheel', function(e) {
     e.preventDefault();
     const p = canvasPos(e);
-    const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+    const factor = e.deltaY < 0 ? 1.08 : 1 / 1.08;
     const [wx, wy] = unproj(p.x, p.y);
-    transform.s  = Math.max(0.2, Math.min(80, transform.s * factor));
+    transform.s  = Math.max(fitScale * 0.3, Math.min(fitScale * 60, transform.s * factor));
     transform.ox = p.x - wx * transform.s;
     transform.oy = p.y - wy * transform.s;
     document.getElementById('info-zoom').textContent = Math.round(transform.s * 10) + '%';
