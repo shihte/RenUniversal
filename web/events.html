@@ -1140,10 +1140,17 @@
             }
         }
 
-        // Initialize
+        // Initialize (hard page load)
         setLang('zh-TW');
         loadAvailableCameras();
         loadEvents();
+
+        // Re-initialize after HTMX page swap (hx-boost navigation)
+        document.addEventListener('htmx:afterSettle', function reloadEvents() {
+            if (document.getElementById('events-list-container')) {
+                loadEvents();
+            }
+        }, { once: true });
 
         // Poll
         setInterval(fetchStatus, 100);
