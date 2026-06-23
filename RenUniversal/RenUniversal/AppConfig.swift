@@ -7,4 +7,5 @@ struct AppConfig: Codable, Identifiable, Equatable {
     var url: String
     var enabled: Bool
     var html: String?
+    var iconSystemName: String?
 }

@@ -109,6 +109,7 @@ struct TriggersView: View {
                 }
             }
             .navigationTitle("Triggers")
+            .navigationBarTitleDisplayMode(.large)
             .navigationBarItems(
                 trailing: Button(action: {
                     activeSheet = .create(nil)
@@ -220,7 +221,7 @@ struct TriggerRowView: View {
             }
         }
         .padding(.vertical, 4)
-        .listRowBackground(Color(white: 0.15))
+        .listRowBackground(Color(white: 0.1))
     }
 }
 
