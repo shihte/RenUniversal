@@ -68,10 +68,10 @@ struct AppsView: View {
                 get: { selectedGameUrl },
                 set: { selectedGameUrl = $0 }
             )) { url in
-                // Present GameWebView for the URL
                 GameWebView(state: state, htmlFileName: url)
             }
         }
+        .navigationViewStyle(.stack)
     }
     
     private func t(_ key: String) -> String {

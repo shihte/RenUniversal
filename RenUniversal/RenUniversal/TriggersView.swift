@@ -120,7 +120,7 @@ struct TriggersView: View {
                 switch sheet {
                 case .create(let trigger):
                     CreateTriggerView(state: state, isPresented: Binding(
-                        get: { 
+                        get: {
                             if case .create = activeSheet { return true }
                             return false
                         },
@@ -128,7 +128,7 @@ struct TriggersView: View {
                     ), editingTrigger: trigger)
                 case .importExportSkill:
                     SingleEntityImportExportView(state: state, isPresented: Binding(
-                        get: { 
+                        get: {
                             if case .importExportSkill = activeSheet { return true }
                             return false
                         },
@@ -136,7 +136,7 @@ struct TriggersView: View {
                     ), type: .skill)
                 case .importExportEvent:
                     SingleEntityImportExportView(state: state, isPresented: Binding(
-                        get: { 
+                        get: {
                             if case .importExportEvent = activeSheet { return true }
                             return false
                         },
@@ -145,6 +145,7 @@ struct TriggersView: View {
                 }
             }
         }
+        .navigationViewStyle(.stack)
     }
     
     private func deleteTrigger(at offsets: IndexSet, type: TriggerType) {
@@ -387,6 +388,7 @@ struct CreateTriggerView: View {
                 }
             }
         }
+        .navigationViewStyle(.stack)
         .preferredColorScheme(.dark)
     }
 }
