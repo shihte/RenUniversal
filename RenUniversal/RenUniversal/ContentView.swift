@@ -68,14 +68,27 @@ struct ContentView: View {
                     Spacer()
                 }
             } else {
-                Color(white: 0.1).edgesIgnoringSafeArea(.top)
-                VStack {
-                    Image(systemName: "camera.slash")
-                        .font(.system(size: 60))
-                        .foregroundColor(.gray)
-                    Text("Camera Disabled")
-                        .foregroundColor(.gray)
-                        .padding()
+                Color.black.ignoresSafeArea()
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(t("live_monitor"))
+                        .font(.largeTitle)
+                        .bold()
+                        .foregroundColor(.white)
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        VStack(spacing: 12) {
+                            Image(systemName: "camera.slash")
+                                .font(.system(size: 60))
+                                .foregroundColor(.gray)
+                            Text("Camera Disabled")
+                                .foregroundColor(.gray)
+                        }
+                        Spacer()
+                    }
+                    Spacer()
                 }
             }
             
