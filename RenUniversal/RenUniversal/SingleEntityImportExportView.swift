@@ -64,6 +64,7 @@ struct SingleEntityImportExportView: View {
                 trailing: Button("Done") { isPresented = false }
             )
         }
+        .navigationViewStyle(.stack)
         .preferredColorScheme(.dark)
         .onAppear {
             generateExport()

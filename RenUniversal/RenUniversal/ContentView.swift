@@ -21,22 +21,7 @@ struct ContentView: View {
             .padding()
             .background(Color(white: 0.12))
             
-            TabView {
-                cameraTab
-                    .tabItem { Label(t("live_monitor"), systemImage: "camera.viewfinder") }
-                
-                metricsTab
-                    .tabItem { Label(t("metrics"), systemImage: "chart.bar.xaxis") }
-                
-                TriggersView(state: sharedState)
-                    .tabItem {
-                        Image(systemName: "bolt.horizontal")
-                        Text("Triggers")
-                    }
-                
-                AppsView(state: sharedState)
-                    .tabItem { Label(t("apps_launcher"), systemImage: "gamecontroller.fill") }
-            }
+            mainTabView
         }
         .onDisappear {
             sharedState.pipelineManager?.stop()
@@ -44,6 +29,32 @@ struct ContentView: View {
         .preferredColorScheme(.dark)
     }
     
+    // On iPadOS 18+ the default TabView becomes a sidebar; force tab-bar layout.
+    @ViewBuilder
+    private var mainTabView: some View {
+        if #available(iOS 18.0, *) {
+            rawTabView.tabViewStyle(.tabBarOnly)
+        } else {
+            rawTabView
+        }
+    }
+
+    private var rawTabView: some View {
+        TabView {
+            cameraTab
+                .tabItem { Label(t("live_monitor"), systemImage: "camera.viewfinder") }
+            metricsTab
+                .tabItem { Label(t("metrics"), systemImage: "chart.bar.xaxis") }
+            TriggersView(state: sharedState)
+                .tabItem {
+                    Image(systemName: "bolt.horizontal")
+                    Text("Triggers")
+                }
+            AppsView(state: sharedState)
+                .tabItem { Label(t("apps_launcher"), systemImage: "gamecontroller.fill") }
+        }
+    }
+
     // Helper to translate strings
     private func t(_ key: String) -> String {
         return I18nManager.shared.t(key, lang: sharedState.language)
@@ -294,8 +305,9 @@ struct ContentView: View {
             }
             .navigationTitle(t("metrics"))
         }
+        .navigationViewStyle(.stack)
     }
-    
+
     private func metricCard(title: String, value: String, valueColor: Color = .white, icon: String) -> some View {
         HStack {
             Image(systemName: icon)
