@@ -8,44 +8,39 @@ struct AppsView: View {
     
     var body: some View {
         NavigationView {
-            ZStack {
-                Color(white: 0.1).edgesIgnoringSafeArea(.all)
-                
+            Group {
                 if state.apps.isEmpty {
-                    VStack {
+                    VStack(spacing: 12) {
                         Image(systemName: "app.badge")
                             .font(.system(size: 60))
                             .foregroundColor(.gray)
                         Text("No Apps Installed")
                             .foregroundColor(.gray)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView {
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150))], spacing: 20) {
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 160))], spacing: 16) {
                             ForEach(state.apps) { app in
                                 if app.enabled {
-                                    Button(action: {
-                                        selectedGameUrl = app.url
-                                    }) {
-                                        VStack {
-                                            Image(systemName: "gamecontroller.fill")
-                                                .font(.system(size: 40))
+                                    Button(action: { selectedGameUrl = app.url }) {
+                                        VStack(spacing: 8) {
+                                            Image(systemName: app.iconSystemName ?? "gamecontroller.fill")
+                                                .font(.system(size: 44))
                                                 .foregroundColor(.blue)
-                                                .padding()
-                                            
+                                                .frame(width: 64, height: 64)
                                             Text(app.name)
                                                 .font(.headline)
                                                 .foregroundColor(.white)
-                                            
                                             Text(app.description)
                                                 .font(.caption2)
                                                 .foregroundColor(.gray)
                                                 .multilineTextAlignment(.center)
-                                                .padding(.horizontal)
+                                                .padding(.horizontal, 8)
                                         }
                                         .frame(height: 180)
                                         .frame(maxWidth: .infinity)
-                                        .background(Color(white: 0.15))
+                                        .background(Color(white: 0.1))
                                         .cornerRadius(16)
                                     }
                                 }
@@ -55,7 +50,9 @@ struct AppsView: View {
                     }
                 }
             }
+            .background(Color.black.ignoresSafeArea())
             .navigationTitle(t("apps_launcher"))
+            .navigationBarTitleDisplayMode(.large)
             .navigationBarItems(trailing: Button(action: {
                 showingImportExport = true
             }) {
@@ -68,10 +65,10 @@ struct AppsView: View {
                 get: { selectedGameUrl },
                 set: { selectedGameUrl = $0 }
             )) { url in
-                // Present GameWebView for the URL
                 GameWebView(state: state, htmlFileName: url)
             }
         }
+        .navigationViewStyle(.stack)
     }
     
     private func t(_ key: String) -> String {

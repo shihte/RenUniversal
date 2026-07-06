@@ -23,7 +23,7 @@ class GenericActionDetector:
     """
 
     RULE_PATTERN = re.compile(
-        r'([fp]?\d+)\s*,\s*([fp]?\d+)\s*(><|<>|>><<|~~)\s*num=(\d+(?:\.\d+)?)(%|px)?',
+        r'([fp]?\d+)\s*,\s*([fp]?\d+)\s*([xy]?)\s*(><|<>|>><<|~~)\s*num=(\d+(?:\.\d+)?)(%|px)?',
         re.IGNORECASE
     )
 
@@ -46,17 +46,25 @@ class GenericActionDetector:
         return pts
 
     def get_point_pairs(self) -> list:
+        """回傳 (pt1_id, pt2_id, op) 三元組，op 包含軸前綴 (如 'y<>')。"""
         pairs = []
         for m in self.RULE_PATTERN.finditer(self.rule_syntax):
-            pairs.append((m.group(1).lower(), m.group(2).lower()))
+            axis = m.group(3).lower()
+            op = m.group(4)
+            full_op = axis + op  # e.g. '' + '<>' = '<>', or 'y' + '<>' = 'y<>'
+            pairs.append((m.group(1).lower(), m.group(2).lower(), full_op))
         return pairs
 
     def _get_coord(self, pt_id: str, face_lm, pose_lm, face_dim, body_dim, baseline=False):
         return get_landmark_coord(pt_id, face_lm, pose_lm, face_dim, body_dim, baseline)
 
-    def _dist(self, a, b):
+    def _dist(self, a, b, axis=None):
         if a is None or b is None:
             return None
+        if axis == 'x':
+            return abs(a[0] - b[0])
+        if axis == 'y':
+            return abs(a[1] - b[1])
         return math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
 
     def _dist_to_segment(self, p, v, w):
@@ -68,7 +76,7 @@ class GenericActionDetector:
         proj = (v[0] + t * (w[0] - v[0]), v[1] + t * (w[1] - v[1]))
         return self._dist(p, proj)
 
-    def _evaluate_pattern(self, pt1_id, pt2_id, op, num_str, pct_sign, face_landmarks, pose_landmarks, face_dim, body_dim, baselines, preferences):
+    def _evaluate_pattern(self, pt1_id, pt2_id, axis, op, num_str, pct_sign, face_landmarks, pose_landmarks, face_dim, body_dim, baselines, preferences):
         threshold = float(num_str)
         is_pct = (pct_sign == '%')
         if is_pct and op != "~~":
@@ -76,7 +84,7 @@ class GenericActionDetector:
         
         # Override with slider preference if available, but NOT if explicitly using px unit
         pref_key = f"{self.config.get('name', '')}_threshold"
-        if pref_key in preferences and pct_sign != 'px':
+        if pref_key in preferences:
             try:
                 pref_val = float(preferences[pref_key])
                 if op == "~~" or not is_pct:
@@ -107,13 +115,16 @@ class GenericActionDetector:
 
         c1 = self._get_coord(pt1_id, face_landmarks, pose_landmarks, face_dim, body_dim)
         c2 = self._get_coord(pt2_id, face_landmarks, pose_landmarks, face_dim, body_dim)
-        d_curr = self._dist(c1, c2)
+        d_curr = self._dist(c1, c2, axis)
 
         b1 = self._get_coord(pt1_id, base_face, base_pose, face_dim, body_dim, baseline=True)
         b2 = self._get_coord(pt2_id, base_face, base_pose, face_dim, body_dim, baseline=True)
-        d_base = self._dist(b1, b2)
+        d_base = self._dist(b1, b2, axis)
 
-        if d_curr is None or d_base is None or d_base == 0:
+        if d_curr is None or d_base is None:
+            return False, 0.0
+            
+        if d_base == 0 and is_pct:
             return False, 0.0
 
         scale = 1.0
@@ -145,7 +156,10 @@ class GenericActionDetector:
                 })
         else:
             d_norm = d_curr * scale
-            change = (d_norm - d_base) / d_base
+            if is_pct:
+                change = (d_norm - d_base) / d_base
+            else:
+                change = d_norm - d_base
 
             if op == "><":
                 triggered = change <= -threshold
@@ -178,9 +192,9 @@ class GenericActionDetector:
         self.capsules_to_draw = []
 
         for m in matches:
-            pt1_id, pt2_id, op, num_str, pct_sign = m.group(1), m.group(2), m.group(3), m.group(4), m.group(5)
+            pt1_id, pt2_id, axis, op, num_str, pct_sign = m.group(1), m.group(2), m.group(3).lower(), m.group(4), m.group(5), m.group(6)
             triggered, change = self._evaluate_pattern(
-                pt1_id, pt2_id, op, num_str, pct_sign,
+                pt1_id, pt2_id, axis, op, num_str, pct_sign,
                 face_landmarks, pose_landmarks, face_dim, body_dim, baselines, preferences
             )
             if abs(change) > abs(max_change):
