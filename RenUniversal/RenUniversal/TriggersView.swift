@@ -191,6 +191,12 @@ struct TriggerRowView: View {
                             case "><": return t("rule_shorter")
                             case "<>": return t("rule_longer")
                             case ">><<": return t("rule_change")
+                            case "x><": return t("rule_shorter") + " (X)"
+                            case "x<>": return t("rule_longer") + " (X)"
+                            case "x>><<": return t("rule_change") + " (X)"
+                            case "y><": return t("rule_shorter") + " (Y)"
+                            case "y<>": return t("rule_longer") + " (Y)"
+                            case "y>><<": return t("rule_change") + " (Y)"
                             case "~~": return t("rule_capsule")
                             default: return rule.op
                             }
@@ -246,6 +252,12 @@ struct CreateTriggerView: View {
             ("><", t("rule_shorter")),
             ("<>", t("rule_longer")),
             (">><<", t("rule_change")),
+            ("x><", t("rule_shorter") + " (X)"),
+            ("x<>", t("rule_longer") + " (X)"),
+            ("x>><<", t("rule_change") + " (X)"),
+            ("y><", t("rule_shorter") + " (Y)"),
+            ("y<>", t("rule_longer") + " (Y)"),
+            ("y>><<", t("rule_change") + " (Y)"),
             ("~~", t("rule_capsule"))
         ]
     }
