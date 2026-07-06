@@ -97,11 +97,13 @@ struct OverlayView: View {
                         let color = info.triggered ? Color.red : Color.green
                         
                         Path { path in
-                            if info.op == "x>" || info.op == "x<" {
+                            if info.op.hasPrefix("x") {
+                                // x 軸水平距離：畫一條水平線，兩點的 y 座標取平均
                                 let midY = (cy1 + cy2) / 2
                                 path.move(to: CGPoint(x: cx1, y: midY))
                                 path.addLine(to: CGPoint(x: cx2, y: midY))
-                            } else if info.op == "y>" || info.op == "y<" {
+                            } else if info.op.hasPrefix("y") {
+                                // y 軸垂直距離：畫一條垂直線，兩點的 x 座標取平均
                                 let midX = (cx1 + cx2) / 2
                                 path.move(to: CGPoint(x: midX, y: cy1))
                                 path.addLine(to: CGPoint(x: midX, y: cy2))
