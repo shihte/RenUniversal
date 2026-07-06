@@ -97,8 +97,18 @@ struct OverlayView: View {
                         let color = info.triggered ? Color.red : Color.green
                         
                         Path { path in
-                            path.move(to: CGPoint(x: cx1, y: cy1))
-                            path.addLine(to: CGPoint(x: cx2, y: cy2))
+                            if info.op == "x>" || info.op == "x<" {
+                                let midY = (cy1 + cy2) / 2
+                                path.move(to: CGPoint(x: cx1, y: midY))
+                                path.addLine(to: CGPoint(x: cx2, y: midY))
+                            } else if info.op == "y>" || info.op == "y<" {
+                                let midX = (cx1 + cx2) / 2
+                                path.move(to: CGPoint(x: midX, y: cy1))
+                                path.addLine(to: CGPoint(x: midX, y: cy2))
+                            } else {
+                                path.move(to: CGPoint(x: cx1, y: cy1))
+                                path.addLine(to: CGPoint(x: cx2, y: cy2))
+                            }
                         }
                         .stroke(color, lineWidth: 3)
                     }
@@ -112,6 +122,7 @@ struct OverlayView: View {
         let pt1Id: String
         let pt2Id: String
         let isCapsule: Bool
+        let op: String
         let value: Double
         let isPercentage: Bool
         let triggered: Bool
@@ -129,6 +140,7 @@ struct OverlayView: View {
                 pt1Id: cond.pt1,
                 pt2Id: cond.pt2,
                 isCapsule: cond.op == "~~",
+                op: cond.op,
                 value: cond.value,
                 isPercentage: cond.isPercentage,
                 triggered: triggered
