@@ -22,6 +22,7 @@ struct ProfileImportExportView: View {
                 selectionView
             }
         }
+        .navigationViewStyle(.stack)
         .preferredColorScheme(.dark)
         .onAppear {
             // Select all by default

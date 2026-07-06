@@ -635,10 +635,16 @@ class AgentPipeline:
                     if name in active_skills_state:
                         triggered = active_skills_state[name]
                         if hasattr(detector, 'get_point_pairs'):
-                            for p1, p2 in detector.get_point_pairs():
-                                active_pairs.append((p1, p2, triggered))
+                            for pair in detector.get_point_pairs():
+                                # 相容舊格式 (p1, p2) 和新格式 (p1, p2, op)
+                                if len(pair) == 3:
+                                    p1, p2, op = pair
+                                else:
+                                    p1, p2 = pair
+                                    op = ''
+                                active_pairs.append((p1, p2, op, triggered))
 
-                for p1_id, p2_id, triggered in active_pairs:
+                for p1_id, p2_id, op, triggered in active_pairs:
                     try:
                         def get_pt(pt_id):
                             pt_id = str(pt_id).strip().lower()
@@ -668,7 +674,6 @@ class AgentPipeline:
                         lm1 = get_pt(p1_id)
                         lm2 = get_pt(p2_id)
                         if lm1 and lm2:
-                            # 判斷這個點應該畫在哪個 frame (單相機就都在 face_frame_tuple[1], 雙相機的話 pose 點在 pose frame)
                             def is_pose_id(pid):
                                 pid = str(pid).strip().lower()
                                 return pid.startswith('p') or (pid.isdigit() and int(pid) <= 32)
@@ -682,11 +687,19 @@ class AgentPipeline:
                             cx1, cy1 = int(lm1.x * w1), int(lm1.y * h1)
                             cx2, cy2 = int(lm2.x * w2), int(lm2.y * h2)
                             
-                            color = (0, 0, 255) if triggered else (0, 255, 0) # BGR 格式 (紅:觸發, 綠:監控)
+                            color = (0, 0, 255) if triggered else (0, 255, 0)
                             
-                            # 如果兩個點在同一個 frame 上，才畫線，否則只畫點
                             if target_frame_1 is target_frame_2:
-                                cv2.line(target_frame_1, (cx1, cy1), (cx2, cy2), color, 2, cv2.LINE_AA)
+                                if op.startswith('x'):
+                                    # x 軸水平距離：在兩點 y 座標中點畫水平線
+                                    mid_y = (cy1 + cy2) // 2
+                                    cv2.line(target_frame_1, (cx1, mid_y), (cx2, mid_y), color, 2, cv2.LINE_AA)
+                                elif op.startswith('y'):
+                                    # y 軸垂直距離：在兩點 x 座標中點畫垂直線
+                                    mid_x = (cx1 + cx2) // 2
+                                    cv2.line(target_frame_1, (mid_x, cy1), (mid_x, cy2), color, 2, cv2.LINE_AA)
+                                else:
+                                    cv2.line(target_frame_1, (cx1, cy1), (cx2, cy2), color, 2, cv2.LINE_AA)
                                 
                             cv2.circle(target_frame_1, (cx1, cy1), 4, color, -1)
                             cv2.circle(target_frame_2, (cx2, cy2), 4, color, -1)
