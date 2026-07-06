@@ -1,7 +1,7 @@
 {
   "name": "bad_posture",
-  "description": "錯誤代償動作 (前傾或轉頭)",
+  "description": "錯誤代償動作 (前傾、轉頭或歪頭)",
   "enabled": true,
-  "rule_syntax": "lean OR turn",
+  "rule_syntax": "lean OR turn OR tilt",
   "default_preferences": {}
 }

@@ -10,9 +10,9 @@ RenUniversal 起初是作為一個 Web/Python 架構的專案，但為了解決�
 
 ## 📥 立即下載 (Direct Install)
 
-為了實現我們「零門檻阿公級臨床部署」的初衷，我們準備了已經砸殼 (Decrypted) 的越獄/側載直裝版 IPA 檔案：
+為了實現我們「零門檻阿公級臨床部署」的初衷，我們準備了無殼 (DRM-Free) 的越獄/側載直裝版 IPA 檔案：
 
-👉 **[下載 RenUniversal iOS 1.3.0 (砸殼版 IPA)](../releases/RenUniversal_v1.3.0_iOS.ipa)** *(大小約 19MB)*
+👉 **[下載 RenUniversal iOS 1.3.0 (無殼版 IPA)](../releases/RenUniversal_v1.3.0_iOS.ipa)** *(大小約 19MB)*
 
 > 🛡️ **安全與防偽驗證 (Anti-Tampering Hash)**
 > 為避免有心人士二次打包植入惡意程式碼（釣魚或木馬），請在下載後核對檔案的唯一哈希值（SHA-256 Checksum）：
