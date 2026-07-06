@@ -47,14 +47,18 @@ class EventEngine:
     def get_landmark_coords(self, pt_id, landmarks, pose_landmarks, face_dim, body_dim):
         return get_landmark_coord(pt_id, landmarks, pose_landmarks, face_dim, body_dim)
 
-    def calculate_distance(self, pt1_id, pt2_id, landmarks, pose_landmarks, face_dim, body_dim):
+    def calculate_distance(self, pt1_id, pt2_id, landmarks, pose_landmarks, face_dim, body_dim, axis=None):
         c1 = self.get_landmark_coords(pt1_id, landmarks, pose_landmarks, face_dim, body_dim)
         c2 = self.get_landmark_coords(pt2_id, landmarks, pose_landmarks, face_dim, body_dim)
         if c1 is None or c2 is None:
             return None
+        if axis == 'x':
+            return abs(c1[0] - c2[0])
+        elif axis == 'y':
+            return abs(c1[1] - c2[1])
         return math.sqrt((c1[0] - c2[0])**2 + (c1[1] - c2[1])**2)
 
-    def evaluate_custom_pattern(self, pt1_id, pt2_id, op, threshold_val, landmarks, pose_landmarks, baselines, current_eye_distance, current_shoulder_width, face_dim, body_dim):
+    def evaluate_custom_pattern(self, pt1_id, pt2_id, axis, op, threshold_val, landmarks, pose_landmarks, baselines, current_eye_distance, current_shoulder_width, face_dim, body_dim):
         if not baselines:
             return False
             
@@ -63,12 +67,12 @@ class EventEngine:
         base_pose = baselines.get("pose_landmarks")
         
         # Calculate baseline distance between the points
-        d_base = self.calculate_distance(pt1_id, pt2_id, base_face, base_pose, face_dim, body_dim)
+        d_base = self.calculate_distance(pt1_id, pt2_id, base_face, base_pose, face_dim, body_dim, axis)
         if d_base is None or d_base == 0:
             return False
             
         # Calculate current distance between the points
-        d_curr = self.calculate_distance(pt1_id, pt2_id, landmarks, pose_landmarks, face_dim, body_dim)
+        d_curr = self.calculate_distance(pt1_id, pt2_id, landmarks, pose_landmarks, face_dim, body_dim, axis)
         if d_curr is None:
             return False
             
@@ -122,23 +126,24 @@ class EventEngine:
             
             # Find and evaluate custom patterns like: pt1,pt2 >< num=15%
             # Operator regex: >< (shrink), <> (expand), >><< (both)
-            pattern_regex = r'([fp]?\d+)\s*,\s*([fp]?\d+)\s*(><|<>|>><<)\s*num=(\d+)(%)?'
+            # Support optional axis prefix x/y for horizontal/vertical absolute distances
+            pattern_regex = r'([fp]?\d+)\s*,\s*([fp]?\d+)\s*([xy]?)\s*(><|<>|>><<)\s*num=(\d+)(%)?'
             
             # We want to substitute each matching sub-expression with its True/False evaluation
             working_syntax = syntax
             matches = re.findall(pattern_regex, working_syntax)
             
-            for pt1, pt2, op, num_str, pct in matches:
+            for pt1, pt2, axis, op, num_str, pct in matches:
                 # Reconstruct full string to replace
-                full_pattern = f"{pt1},{pt2}{op}num={num_str}"
+                full_pattern = f"{pt1},{pt2}{axis}{op}num={num_str}"
                 if pct:
                     full_pattern += pct
                 # Handle flexible spacing around operator and comma for replacement matching
-                full_pattern_escaped = re.escape(pt1) + r'\s*,\s*' + re.escape(pt2) + r'\s*' + re.escape(op) + r'\s*num=' + re.escape(num_str) + (r'%' if pct else '')
+                full_pattern_escaped = re.escape(pt1) + r'\s*,\s*' + re.escape(pt2) + r'\s*' + re.escape(axis) + r'\s*' + re.escape(op) + r'\s*num=' + re.escape(num_str) + (r'%' if pct else '')
                 
                 # Evaluate the individual custom rule
                 eval_bool = self.evaluate_custom_pattern(
-                    pt1, pt2, op, float(num_str),
+                    pt1, pt2, axis, op, float(num_str),
                     landmarks, pose_landmarks, baselines,
                     current_eye_distance, current_shoulder_width,
                     face_dim, body_dim

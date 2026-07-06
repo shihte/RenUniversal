@@ -14,6 +14,16 @@ class RuleEngine {
         let w = viewSize.width
         let h = viewSize.height
         
+        var baseOp = op
+        var axis: String? = nil
+        if op.hasPrefix("x") {
+            axis = "x"
+            baseOp = String(op.dropFirst())
+        } else if op.hasPrefix("y") {
+            axis = "y"
+            baseOp = String(op.dropFirst())
+        }
+        
         let c1 = getCoord(id: rule.pt1, face: face, pose: pose)
         let c2 = getCoord(id: rule.pt2, face: face, pose: pose)
         let b1 = getCoord(id: rule.pt1, face: baselineFace, pose: baselinePose)
@@ -21,15 +31,15 @@ class RuleEngine {
         
         guard let c1 = c1, let c2 = c2, let b1 = b1, let b2 = b2 else { return (false, nil) }
         
-        let d_curr = distanceInScreen(c1, c2, w: w, h: h)
-        let d_base = distanceInScreen(b1, b2, w: w, h: h)
+        let d_curr = distanceInScreen(c1, c2, w: w, h: h, axis: axis)
+        let d_base = distanceInScreen(b1, b2, w: w, h: h, axis: axis)
         
         if d_base == 0 { return (false, nil) }
         
-        if op == "~~" {
+        if baseOp == "~~" {
             let scaled_radius = isPct ? (scaledThreshold * d_base) : scaledThreshold
-            let dist1 = distanceInScreen(c1, b1, w: w, h: h)
-            let dist2 = distanceInScreen(c2, b2, w: w, h: h)
+            let dist1 = distanceInScreen(c1, b1, w: w, h: h, axis: axis)
+            let dist2 = distanceInScreen(c2, b2, w: w, h: h, axis: axis)
             let max_dist = max(dist1, dist2)
             let ratio = scaled_radius > 0 ? Double(max_dist / scaled_radius) * 100.0 : 0
             return (dist1 > scaled_radius || dist2 > scaled_radius, ratio)
@@ -38,13 +48,13 @@ class RuleEngine {
             let pctChange = Double(absoluteChange / d_base) * 100.0
             
             if isPct {
-                if op == "><" { return (pctChange <= -Double(threshold), pctChange) }
-                if op == "<>" { return (pctChange >= Double(threshold), pctChange) }
-                if op == ">><<" { return (abs(pctChange) >= Double(threshold), pctChange) }
+                if baseOp == "><" { return (pctChange <= -Double(threshold), pctChange) }
+                if baseOp == "<>" { return (pctChange >= Double(threshold), pctChange) }
+                if baseOp == ">><<" { return (abs(pctChange) >= Double(threshold), pctChange) }
             } else {
-                if op == "><" { return (Double(absoluteChange) <= -Double(threshold), pctChange) }
-                if op == "<>" { return (Double(absoluteChange) >= Double(threshold), pctChange) }
-                if op == ">><<" { return (abs(Double(absoluteChange)) >= Double(threshold), pctChange) }
+                if baseOp == "><" { return (Double(absoluteChange) <= -Double(threshold), pctChange) }
+                if baseOp == "<>" { return (Double(absoluteChange) >= Double(threshold), pctChange) }
+                if baseOp == ">><<" { return (abs(Double(absoluteChange)) >= Double(threshold), pctChange) }
             }
         }
         
@@ -101,9 +111,14 @@ class RuleEngine {
         return Float(hypot(p1.x - p2.x, p1.y - p2.y))
     }
     
-    private func distanceInScreen(_ p1: CGPoint, _ p2: CGPoint, w: CGFloat, h: CGFloat) -> Float {
+    private func distanceInScreen(_ p1: CGPoint, _ p2: CGPoint, w: CGFloat, h: CGFloat, axis: String? = nil) -> Float {
         let dx = (p1.x - p2.x) * w
         let dy = (p1.y - p2.y) * h
+        if axis == "x" {
+            return Float(abs(dx))
+        } else if axis == "y" {
+            return Float(abs(dy))
+        }
         return Float(hypot(dx, dy))
     }
     
