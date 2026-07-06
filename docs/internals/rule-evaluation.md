@@ -37,7 +37,7 @@ flowchart TD
 
 | 步驟 | 位置 |
 | :--- | :--- |
-| 幾何模式正則 | `RULE_PATTERN = r'([fp]?\d+)\s*,\s*([fp]?\d+)\s*(><|<>|>><<|~~)\s*num=(\d+(?:\.\d+)?)(%|px)?'` |
+| 幾何模式正則 | `RULE_PATTERN = r'([fp]?\d+)\s*,\s*([fp]?\d+)\s*([xy]?)(><|<>|>><<|~~)\s*num=(\d+(?:\.\d+)?)(%|px)?'` |
 | 幾何求值 | `_evaluate_pattern()`（skill）／`evaluate_custom_pattern()`（event） |
 | 邏輯正規化 | `re.sub(r'\bAND\b','and', ...)`、`replace('!',' not ')` |
 | 變數替換 | event：查 `active_skills_dict`；skill：殘留字元一律 → `False` |
@@ -67,6 +67,7 @@ flowchart TD
 
 關鍵實作細節：
 
+- **軸向前綴 (x/y)**：解析時若有 `x` 或 `y` 前綴，`d_curr` 和 `d_base` 將只計算單一軸向的像素差異（例如 `abs(pt1.x - pt2.x) * width`），而非歐式距離。
 - **基準即 100%**：依使用者要求，已**移除動態遠近補償**——`scale = 1.0`，直接以校準當下的 `d_base` 為基準，轉頭距離縮短就是縮短，不被補償抵消。
 - **百分比 vs 像素**：`num=N%` 會 `/100`；`num=Npx` 為絕對像素，且**不受**滑桿偏好覆寫（`pct_sign != 'px'` 才套用 `<name>_threshold` 偏好）。
 - **膠囊（`~~`）副作用**：求值時順便把 `b1/b2/radius/triggered` 填入 `capsules_to_draw`，供 pipeline 繪製防護圈。

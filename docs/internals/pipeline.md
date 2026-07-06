@@ -110,7 +110,7 @@ flowchart LR
 判定後 pipeline 直接在 BGR 影格上繪製（OpenCV）：
 
 - **基礎追蹤點**：雙眼（綠）、鼻（藍）、下巴（紅）、雙肩，以及鼻–下巴參考線。
-- **自訂技能點位／連線**：從每個 detector 的 `get_used_points()` / `get_point_pairs()` 取得；觸發時連線轉紅，監控時為綠／藍。
+- **自訂技能點位／連線**：從每個 detector 的 `get_used_points()` / `get_point_pairs()` 取得。`get_point_pairs()` 現在會回傳 `(pt1, pt2, op)`，若 `op` 有 `x` 或 `y` 前綴，pipeline 會畫出**水平線**或**垂直線**；無前綴則畫兩點連線。觸發時連線轉紅，監控時為綠。
 - **虛擬膠囊（`~~`）**：detector 在評估時填入 `capsules_to_draw`，pipeline 繪製雙獨立球體防護圈與切線；出界轉紅。
 - **雙鏡頭分流**：以 `is_pose_id()` 判斷該點屬臉或身體，將其畫到對應的 `face_frame_tuple` 或 `pose_frame_tuple`。
 
