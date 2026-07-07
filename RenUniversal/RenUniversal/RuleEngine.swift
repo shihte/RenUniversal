@@ -34,7 +34,7 @@ class RuleEngine {
         let d_curr = distanceInScreen(c1, c2, w: w, h: h, axis: axis)
         let d_base = distanceInScreen(b1, b2, w: w, h: h, axis: axis)
         
-        if d_base == 0 { return (false, nil) }
+        if d_base == 0 && isPct { return (false, nil) }
         
         if baseOp == "~~" {
             let scaled_radius = isPct ? (scaledThreshold * d_base) : scaledThreshold
