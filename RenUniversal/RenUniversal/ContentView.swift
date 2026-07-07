@@ -62,6 +62,7 @@ struct ContentView: View {
                 }
                 
                 OverlayView(state: sharedState)
+                    .edgesIgnoringSafeArea(.top)
                 
                 VStack {
                     cameraHUD
@@ -223,29 +224,35 @@ struct ContentView: View {
                     .background(Color(white: 0.1))
                     .cornerRadius(12)
 
-                    HStack {
-                        Image(systemName: "globe")
-                            .font(.title2)
-                            .foregroundColor(.gray)
-                            .frame(width: 40)
-                        Text("Language / 語言")
-                            .font(.subheadline)
-                            .foregroundColor(.white)
-                        Spacer()
-                        Picker("", selection: $sharedState.language) {
-                            Text("English").tag("en")
-                            Text("繁體中文").tag("zh-TW")
-                            Text("日本語").tag("ja")
-                            Text("한국어").tag("ko")
-                            Text("Español").tag("es")
-                            Text("Français").tag("fr")
+                    Menu {
+                        Button("English") { sharedState.language = "en" }
+                        Button("繁體中文") { sharedState.language = "zh-TW" }
+                        Button("日本語") { sharedState.language = "ja" }
+                        Button("한국어") { sharedState.language = "ko" }
+                        Button("Español") { sharedState.language = "es" }
+                        Button("Français") { sharedState.language = "fr" }
+                    } label: {
+                        HStack {
+                            Image(systemName: "globe")
+                                .font(.title2)
+                                .foregroundColor(.gray)
+                                .frame(width: 40)
+                            Text("Language / 語言")
+                                .font(.subheadline)
+                                .foregroundColor(.white)
+                            Spacer()
+                            Text(languageDisplayName(sharedState.language))
+                                .font(.subheadline)
+                                .foregroundColor(.blue)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.caption)
+                                .foregroundColor(.gray)
                         }
-                        .pickerStyle(MenuPickerStyle())
-                        .tint(.blue)
+                        .padding()
+                        .background(Color(white: 0.1))
+                        .cornerRadius(12)
+                        .contentShape(Rectangle())
                     }
-                    .padding()
-                    .background(Color(white: 0.1))
-                    .cornerRadius(12)
 
                     NavigationLink(destination: PointReferenceView(state: sharedState)) {
                         HStack {
@@ -318,7 +325,17 @@ struct ContentView: View {
         .cornerRadius(12)
     }
     
-    // Removed skillsTab as it's replaced by TriggersView
+    private func languageDisplayName(_ code: String) -> String {
+        switch code {
+        case "en": return "English"
+        case "zh-TW": return "繁體中文"
+        case "ja": return "日本語"
+        case "ko": return "한국어"
+        case "es": return "Español"
+        case "fr": return "Français"
+        default: return code
+        }
+    }
 }
 
 #Preview {
