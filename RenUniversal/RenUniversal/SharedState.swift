@@ -97,6 +97,7 @@ class SharedState: ObservableObject {
         
         let defaultApps = [
             AppConfig(id: "ctar_counter", name: "CTAR 計數器", description: "計算下巴內收 (CTAR Tuck) 的狀態與總次數", url: "local://ctar_counter", enabled: true, iconSystemName: "chart.bar.fill"),
+            AppConfig(id: "statistics", name: "姿勢統計", description: "即時追蹤四種錯誤姿勢並產生圖表與數據報表", url: "local://statistics", enabled: true, html: BundledGames.statisticsHtml, iconSystemName: "chart.pie.fill"),
             AppConfig(id: "flappy_bird", name: "Flappy Ctar", description: "像素鳥！做 CTAR Tuck 讓鳥拍動翅膀飛行", url: "local://flappy_bird", enabled: true, html: BundledGames.flappyBirdHtml, iconSystemName: "paperplane.fill"),
             AppConfig(id: "dino_run", name: "Dino Run", description: "恐龍跑酷！做 CTAR Tuck 來跨越仙人掌", url: "local://dino_run", enabled: true, html: BundledGames.dinoHtml, iconSystemName: "bolt.fill")
         ]
