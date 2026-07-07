@@ -62,6 +62,7 @@ struct ContentView: View {
                 }
                 
                 OverlayView(state: sharedState)
+                    .edgesIgnoringSafeArea(.top)
                 
                 VStack {
                     cameraHUD

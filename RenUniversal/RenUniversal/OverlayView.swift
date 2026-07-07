@@ -194,12 +194,11 @@ struct OverlayView: View {
         Circle()
             .fill(color)
             .frame(width: 10, height: 10)
-            .position(x: x, y: y)
             .overlay(
                 Circle()
                     .stroke(Color.white, lineWidth: 1.5)
                     .frame(width: 14, height: 14)
-                    .position(x: x, y: y)
             )
+            .position(x: x, y: y)
     }
 }
