@@ -12,7 +12,7 @@ RenUniversal 起初是作為一個 Web/Python 架構的專案，但為了解決�
 
 為了實現我們「零門檻阿公級臨床部署」的初衷，我們準備了無殼 (DRM-Free) 的越獄/側載直裝版 IPA 檔案：
 
-👉 **[下載 RenUniversal iOS 1.3.0 (無殼版 IPA)](../releases/RenUniversal_v1.3.0_iOS.ipa)** *(大小約 19MB)*
+👉 **[下載 RenUniversal iOS 1.3.1 (無殼版 IPA)](../releases/RenUniversal_v1.3.1_iOS.ipa)** *(大小約 19MB)*
 
 > 🛡️ **安全與防偽驗證 (Anti-Tampering Hash)**
 > 為避免有心人士二次打包植入惡意程式碼（釣魚或木馬），請在下載後核對檔案的唯一哈希值（SHA-256 Checksum）：
@@ -88,7 +88,7 @@ iOS 原生版的 **`RuleEngine` 幾何引擎經過了最高級別的重構**：
 
 ## 📝 版本更新紀錄 (Changelog)
 
-### v1.3.0 (Current)
+### v1.3.1 (Current)
 *   **[新功能] 歪頭偵測 (Tilt Skill)**：新增對 y 軸絕對距離放大的支援，自動連動 bad_posture 事件。
 *   **[新功能] x/y 軸距離標示線**：當使用軸向距離運算子（如 `y<>`）時，畫面會精準畫出水平或垂直的距離標示線。
 *   **[狀態同步] 舊裝置熱更新**：安裝新版的裝置會在啟動後，自動幫使用者的舊狀態補齊 tilt Skill 並更新 bad_posture 規則。
