@@ -16,7 +16,7 @@ RenUniversal 起初是作為一個 Web/Python 架構的專案，但為了解決�
 
 > 🛡️ **安全與防偽驗證 (Anti-Tampering Hash)**
 > 為避免有心人士二次打包植入惡意程式碼（釣魚或木馬），請在下載後核對檔案的唯一哈希值（SHA-256 Checksum）：
-> `bbbc9c63c3fab8096b47868587e9f7b678f0cb7cda35baa3f794884a24d6ecf8`
+> `10a0db7798f6c239a3ad36ea0dc7da236670abfeae9ab5d8e1b7dd3f967ea89b`
 
 ### 安裝方式 (無須 Mac)
 若您沒有 Mac 電腦，可以透過以下任一主流側載工具將 App 安裝至您的 iPhone/iPad：
